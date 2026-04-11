@@ -24,6 +24,14 @@ A Generative AI Agentic Framework for Personalized Legal Drafting and Case Intel
 
 To run this application, you need to start both the Python backend server and the Next.js frontend server simultaneously in two separate terminal windows.
 
+### 🗄️ Database Setup (Crucial Step for Colleagues)
+The Vector Database (`chroma_db`) is ignored by Git to keep the repository lightweight. To run this project locally, you must download the pre-built database.
+
+1. Download the `chroma_db.zip` file from our shared team drive: [INSERT_YOUR_GOOGLE_DRIVE_LINK_HERE]
+2. Extract the zip file.
+3. Place the extracted `chroma_db` folder directly inside the `backend/database/` directory. 
+4. Your folder structure should look like this: `backend/database/chroma_db/`
+
 ### Step 1: Start the Backend (FastAPI + AI Engine)
 1. Open a terminal and navigate to the backend folder:
    ```bash
@@ -133,4 +141,4 @@ Open your web browser and navigate to **`http://localhost:3000`**. You can now t
 ---
 
 ## 📄 License
-Created for Capstone Development. All rights reserved.
+Created by Prime Minds. All rights reserved.
