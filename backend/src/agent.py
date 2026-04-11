@@ -23,7 +23,7 @@ def search_database(query: str):
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embeddings)
     
-    print(f"🔍 Searching for: '{query}'")
+    print(f"Searching for: '{query}'")
     results = db.similarity_search(query, k=2)
     
     if not results:
