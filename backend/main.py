@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sys
 import os
+from typing import Optional
 
 # Add the src folder to the path so we can import your agent
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
@@ -21,8 +22,12 @@ app.add_middleware(
 )
 
 # Define the format of the incoming request from Next.js
+
 class LegalQuery(BaseModel):
     question: str
+    doc_type: Optional[str] = None
+    start_year: Optional[int] = None
+    end_year: Optional[int] = None
 
 @app.get("/")
 def read_root():
