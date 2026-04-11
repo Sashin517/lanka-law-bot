@@ -1,7 +1,9 @@
 name: LankaLawBot CI/CD Pipeline
 
-# This makes the robot run every time someone opens a Pull Request to main
+# This makes the robot run on Pull Requests AND when code is merged (pushed) to main
 on:
+  push:
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
