@@ -1,0 +1,14 @@
+# Next.js / Node
+frontend/node_modules/
+frontend/.next/
+
+# Python
+backend/__pycache__/
+backend/venv/
+.env
+
+# Massive Data & Databases
+backend/data/
+backend/database/
+
+backend/temp_lk_legal_docs/

@@ -1,0 +1,10 @@
+langchain==0.1.20
+langchain-community
+langchain-huggingface
+chromadb
+sentence-transformers
+simsimd>=5.9.2
+numpy==1.26.4
+fastapi
+uvicorn
+pydantic
