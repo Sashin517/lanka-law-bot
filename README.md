@@ -27,7 +27,7 @@ To run this application, you need to start both the Python backend server and th
 ### 🗄️ Database Setup (Crucial Step for Colleagues)
 The Vector Database (`chroma_db`) is ignored by Git to keep the repository lightweight. To run this project locally, you must download the pre-built database.
 
-1. Download the `chroma_db.zip` file from our shared team drive: [INSERT_YOUR_GOOGLE_DRIVE_LINK_HERE]
+1. Download the `chroma_db.zip` file from our shared team drive: [Download file](https://drive.google.com/drive/folders/1y-I_gl9o1FnFu3rA2kLYzOMS9pakjz6O?usp=drive_link)
 2. Extract the zip file.
 3. Place the extracted `chroma_db` folder directly inside the `backend/database/` directory. 
 4. Your folder structure should look like this: `backend/database/chroma_db/`
