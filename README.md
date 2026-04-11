@@ -24,7 +24,7 @@ A Generative AI Agentic Framework for Personalized Legal Drafting and Case Intel
 
 To run this application, you need to start both the Python backend server and the Next.js frontend server simultaneously in two separate terminal windows.
 
-### 🗄️ Database Setup (Crucial Step for Colleagues)
+### 🗄️ Database Setup
 The Vector Database (`chroma_db`) is ignored by Git to keep the repository lightweight. To run this project locally, you must download the pre-built database.
 
 1. Download the `chroma_db.zip` file from our shared team drive: [Download file](https://drive.google.com/drive/folders/1y-I_gl9o1FnFu3rA2kLYzOMS9pakjz6O?usp=drive_link)
