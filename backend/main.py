@@ -25,7 +25,7 @@ app.add_middleware(
 
 class LegalQuery(BaseModel):
     question: str
-    doc_type: Optional[str] = None
+    doc_type: str | None = None
     start_year: Optional[int] = None
     end_year: Optional[int] = None
 
@@ -35,10 +35,21 @@ def read_root():
 
 @app.post("/api/search")
 def search_law(query: LegalQuery):
-    # Pass the question to the exact script you just ran
-    result_text = search_database(query.question)
+    # Pass the UI filters into your new agent function
+    docs = search_database(query.question, query.doc_type, query.start_year)
     
-    if not result_text:
-        return {"answer": "I could not find any relevant legal precedents for that question."}
+    #Format the LangChain documents into JSON objects for React
+    formatted_results = []
+    for i, doc in enumerate(docs):
+        # Extract the source filename from ChromaDB metadata (e.g., Year_1995_Act_21)
+        source_name = doc.metadata.get("source", "Unknown Document").replace(".json", "")
         
-    return {"answer": result_text}
+        formatted_results.append({
+            "id": i,
+            "title": source_name.replace("_", " "), # Makes it readable: "Year 1995 Act 21"
+            "subtitle": "Legal Precedent",
+            "excerpt": doc.page_content[:250] + "...", # Send the first 250 characters as a preview
+            "score": "High" # ChromaDB similarity score placeholder
+        })
+        
+    return {"results": formatted_results}
