@@ -38,7 +38,7 @@ The Vector Database (`chroma_db`) is ignored by Git to keep the repository light
    cd backend
    ```
 2. Activate your Python virtual environment (Ensure you are using Python 3.12):
-   * **Windows:** `venv\Scripts\activate`
+   * **Windows:** `venvcls\Scripts\activate`
    * **Mac/Linux:** `source venv/bin/activate`
 3. Start the FastAPI server:
    ```bash
