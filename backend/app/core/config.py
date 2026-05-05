@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.1
     LLM_MAX_TOKENS: int = 2048
 
+    ROUTER_MODEL_NAME: str = ""
+    ROUTER_TEMPERATURE: float = 0.0
+    ROUTER_MAX_TOKENS: int = 1024
+    ROUTER_ENABLE_LLM: bool = True
+
     model_config = SettingsConfigDict(
         env_file=os.path.join(_BACKEND_DIR, ".env"),
         env_file_encoding="utf-8",

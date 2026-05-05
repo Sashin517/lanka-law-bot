@@ -25,10 +25,24 @@ class ConfidenceLevel(str, Enum):
     LOW = "low"
 
 
+class RouteMetadata(BaseModel):
+    """Public route metadata for query understanding diagnostics."""
+
+    route: str
+    task_type: str
+    answer_mode: str
+    target_corpus: str
+    confidence: str
+    needs_clarification: bool = False
+    clarification_question: str | None = None
+    routing_reason: str = ""
+
+
 class LegalResponse(BaseModel):
     """Complete structured response from the RAG pipeline."""
     summary: str = Field(..., description="2-3 sentence direct answer with key citations.")
     analysis: list[CitedClaim] = Field(default_factory=list, description="Detailed breakdown of legal claims with citations.")
     sources: list[SourceReference] = Field(default_factory=list, description="All source documents referenced in the response.")
     confidence: str = ConfidenceLevel.MEDIUM
+    route: RouteMetadata | None = None
     disclaimer: str = "This information is for research purposes only and does not constitute legal advice. Please consult a qualified legal professional for specific legal matters."
