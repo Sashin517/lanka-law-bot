@@ -4,6 +4,7 @@ frontend/.next/
 
 # Python
 backend/__pycache__/
+__pycache__
 backend/venv/
 backend/venvcls/
 
