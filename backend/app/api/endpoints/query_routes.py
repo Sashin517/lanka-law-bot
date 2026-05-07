@@ -21,9 +21,21 @@ async def search_law(query: LegalQuery):
 
     response, route = await process_query_with_route(query.question)
 
+    # Build the "results" array the frontend expects
+    results = []
+    for i, source in enumerate(response.sources):
+        results.append({
+            "id": source.citation_id or f"source-{i}",
+            "title": source.title or "Unknown Act",
+            "subtitle": f"Year: {source.year} | {source.section or 'N/A'}",
+            "excerpt": source.excerpt or "",
+            "score": response.confidence or "medium",
+        })
+
     return {
         "route": route.model_dump(),
         "answer": response.summary,
+        "results": results,  # <-- the key the frontend reads
         "analysis": [
             {
                 "statement": claim.statement,

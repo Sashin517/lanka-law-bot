@@ -4,7 +4,8 @@ frontend/.next/
 
 # Python
 backend/__pycache__/
-__pycache__
+__pycache__/
+*.py[cod]
 backend/venv/
 backend/venvcls/
 
