@@ -1,39 +1,37 @@
+from __future__ import annotations
+
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import sys
-import os
 
-# Add the src folder to the path so we can import your agent
-sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
-from agent import search_database
+from app.api.api_routes import api_router
+from app.core.config import settings
 
-app = FastAPI(title="LankaLawBot API")
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(name)-30s | %(levelname)-7s | %(message)s",
+)
+logger = logging.getLogger(__name__)
 
-# --- CORS Permission Slip ---
-# This allows your Next.js frontend to securely talk to this Python backend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"], 
-    allow_credentials=True,
-    allow_methods=["*"], 
-    allow_headers=["*"], 
+# FastAPI App
+app = FastAPI(
+    title="LankaLawBot API",
+    description="AI-powered Sri Lankan legal research assistant",
+    version="2.0.0",
 )
 
-# Define the format of the incoming request from Next.js
-class LegalQuery(BaseModel):
-    question: str
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
 
-@app.get("/")
-def read_root():
-    return {"status": "LankaLawBot Backend is running!"}
 
-@app.post("/api/search")
-def search_law(query: LegalQuery):
-    # Pass the question to the exact script you just ran
-    result_text = search_database(query.question)
-    
-    if not result_text:
-        return {"answer": "I could not find any relevant legal precedents for that question."}
-        
-    return {"answer": result_text}
+app.include_router(api_router)
