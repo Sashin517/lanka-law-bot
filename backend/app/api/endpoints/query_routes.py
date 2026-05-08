@@ -35,7 +35,7 @@ async def search_law(query: LegalQuery):
     return {
         "route": route.model_dump(),
         "answer": response.summary,
-        "results": results,  # <-- the key the frontend reads
+        "results": results,  
         "analysis": [
             {
                 "statement": claim.statement,

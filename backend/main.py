@@ -17,7 +17,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # FastAPI App
-
 app = FastAPI(
     title="LankaLawBot API",
     description="AI-powered Sri Lankan legal research assistant",
