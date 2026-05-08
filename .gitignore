@@ -16,4 +16,5 @@ backend/venvcls/
 backend/data/
 backend/database/
 
-backend/temp_lk_legal_docs/
+backend/temp_lk_legal_docs/"__pycache__/" 
+"__pycache__/" 
