@@ -6,6 +6,7 @@ frontend/.next/
 backend/__pycache__/
 __pycache__/
 *.py[cod]
+*.pyc
 backend/venv/
 backend/venvcls/
 
