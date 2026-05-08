@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langsmith import traceable
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
@@ -38,6 +38,7 @@ class GenerationService:
 
         logger.info("GenerationService ready.")
 
+    @traceable(name="LLM_Generation")
     async def generate(
         self,
         question: str,

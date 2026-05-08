@@ -3,6 +3,7 @@ langchain-community>=0.4.1
 langchain-classic
 langchain-huggingface
 langchain-google-genai
+langsmith
 chromadb
 sentence-transformers
 simsimd>=5.9.2

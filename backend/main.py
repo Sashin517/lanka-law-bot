@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables before any other imports so LangSmith picks them up
+load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

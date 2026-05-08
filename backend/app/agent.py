@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from langsmith import traceable
 
 from app.schemas.responses import ConfidenceLevel, LegalResponse, RouteMetadata
 from app.services.retrieval_service import RetrievalService
@@ -59,6 +60,7 @@ def _clarification_response(route: RouteMetadata) -> LegalResponse:
     )
 
 
+@traceable(name="AgentOrchestrator")
 async def process_query_with_route(question: str) -> tuple[LegalResponse, RouteMetadata]:
     router_result = await _router.classify(question)
     route = _route_metadata(router_result.plan)
@@ -94,6 +96,7 @@ async def process_query_with_route(question: str) -> tuple[LegalResponse, RouteM
     return response, route
 
 
+@traceable(name="LegalRAGPipeline")
 async def process_legal_query(question: str) -> LegalResponse:
     """
     Full RAG pipeline:
