@@ -14,3 +14,10 @@ pydantic
 pydantic-settings
 python-dotenv
 rank-bm25
+docling
+qdrant-client
+voyageai
+python-multipart
+aiofiles
+rq
+redis

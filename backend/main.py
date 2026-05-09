@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from app.api.api_routes import api_router
 from app.core.config import settings
+from app.database.session import init_db
 
 # Configure logging
 logging.basicConfig(
@@ -39,3 +40,8 @@ app.add_middleware(
 
 
 app.include_router(api_router)
+
+
+@app.on_event("startup")
+def startup() -> None:
+    init_db()

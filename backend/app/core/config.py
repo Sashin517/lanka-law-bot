@@ -25,6 +25,27 @@ class Settings(BaseSettings):
 
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
+    USER_UPLOAD_DIR: str = os.path.join(_BACKEND_DIR, "storage", "uploads")
+    USER_MARKDOWN_DIR: str = os.path.join(_BACKEND_DIR, "storage", "processed_markdown")
+    METADATA_DB_PATH: str = os.path.join(_BACKEND_DIR, "database", "metadata.sqlite3")
+
+    QDRANT_URL: str = ""
+    QDRANT_API_KEY: str = ""
+    QDRANT_COLLECTION_USER_DOCS: str = "user_documents"
+
+    VOYAGE_API_KEY: str = ""
+    VOYAGE_EMBEDDING_MODEL: str = "voyage-law-2"
+    VOYAGE_EMBEDDING_DIMENSION: int = 1024
+    VOYAGE_EMBEDDING_INPUT_TYPE: str = "document"
+
+    UPLOAD_MAX_MB: int = 50
+    ALLOWED_UPLOAD_EXTENSIONS: List[str] = [".pdf", ".docx", ".txt", ".md"]
+    INGESTION_BATCH_SIZE: int = 64
+    USER_PARENT_CHUNK_SIZE: int = 2200
+    USER_PARENT_CHUNK_OVERLAP: int = 250
+    USER_CHILD_CHUNK_SIZE: int = 550
+    USER_CHILD_CHUNK_OVERLAP: int = 120
+
 
     PARENT_CHUNK_SIZE: int = 2000
     PARENT_CHUNK_OVERLAP: int = 200
