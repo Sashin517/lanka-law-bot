@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
-  Send,
   ChevronDown,
   ChevronUp,
   X,
@@ -15,7 +14,12 @@ import {
   BookOpen,
   AlertTriangle,
   Info,
+  FileText,
 } from "lucide-react";
+
+import { ChatInputBar } from "@/components/ChatInputBar";
+import { deleteDocument, getDocumentStatus, sendLegalQuery, uploadDocument } from "@/lib/api";
+import type { AttachedDocument, UploadedDocument } from "@/types/documents";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -39,6 +43,7 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  attachedDocuments?: AttachedDocument[];
   analysis?: AnalysisClaim[];
   sources?: SourceRef[];
   confidence?: string;
@@ -55,6 +60,7 @@ export default function ResearchDashboard() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
 
   // Collapsible state for bot responses (keyed by message id)
   const [expandedAnalysis, setExpandedAnalysis] = useState<Set<string>>(new Set());
@@ -75,23 +81,193 @@ export default function ResearchDashboard() {
 
   // Auto-scroll ref
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const pollingTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    const timers = pollingTimersRef.current;
+    return () => {
+      timers.forEach((timer) => clearInterval(timer));
+      timers.clear();
+    };
+  }, []);
+
   /* ---------------------------------------------------------------- */
   /* Handlers                                                          */
   /* ---------------------------------------------------------------- */
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateFile = (file: File) => {
+    const allowedExtensions = [".pdf", ".docx", ".txt", ".md"];
+    const lowerName = file.name.toLowerCase();
+    if (!allowedExtensions.some((ext) => lowerName.endsWith(ext))) {
+      throw new Error("Upload a PDF, DOCX, TXT, or Markdown file.");
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      throw new Error("File size must be 50 MB or less.");
+    }
+  };
+
+  const updateDocument = (
+    key: string,
+    updater: (doc: UploadedDocument) => UploadedDocument,
+  ) => {
+    setUploadedDocuments((prev) =>
+      prev.map((doc) => (doc.local_id === key || doc.document_id === key ? updater(doc) : doc)),
+    );
+  };
+
+  const stopPolling = (documentId: string) => {
+    const timer = pollingTimersRef.current.get(documentId);
+    if (timer) {
+      clearInterval(timer);
+      pollingTimersRef.current.delete(documentId);
+    }
+  };
+
+  const startStatusPolling = (documentId: string) => {
+    stopPolling(documentId);
+
+    const poll = async () => {
+      try {
+        const status = await getDocumentStatus(documentId);
+        setUploadedDocuments((prev) =>
+          prev.map((doc) =>
+            doc.document_id === documentId
+              ? {
+                  ...doc,
+                  job_id: status.job_id ?? doc.job_id,
+                  filename: status.filename,
+                  status: status.status,
+                  chunk_count: status.chunk_count,
+                  error: status.error,
+                  file: undefined,
+                }
+              : doc,
+          ),
+        );
+        if (status.status === "completed" || status.status === "failed") {
+          stopPolling(documentId);
+        }
+      } catch (error) {
+        setUploadedDocuments((prev) =>
+          prev.map((doc) =>
+            doc.document_id === documentId
+              ? {
+                  ...doc,
+                  status: "failed",
+                  error: error instanceof Error ? error.message : "Unable to check document status.",
+                }
+              : doc,
+          ),
+        );
+        stopPolling(documentId);
+      }
+    };
+
+    void poll();
+    pollingTimersRef.current.set(documentId, setInterval(poll, 1500));
+  };
+
+  const handleFileSelected = async (file: File) => {
+    const localId = crypto.randomUUID();
+    try {
+      validateFile(file);
+    } catch (error) {
+      setUploadedDocuments((prev) => [
+        ...prev,
+        {
+          local_id: localId,
+          document_id: localId,
+          job_id: "",
+          filename: file.name,
+          status: "failed",
+          error: error instanceof Error ? error.message : "Invalid file.",
+          file,
+          uploaded_at: new Date().toISOString(),
+        },
+      ]);
+      return;
+    }
+
+    setUploadedDocuments((prev) => [
+      ...prev,
+      {
+        local_id: localId,
+        document_id: localId,
+        job_id: "",
+        filename: file.name,
+        status: "queued",
+        file,
+        uploaded_at: new Date().toISOString(),
+      },
+    ]);
+
+    try {
+      const uploaded = await uploadDocument(file);
+      updateDocument(localId, (doc) => ({
+        ...doc,
+        document_id: uploaded.document_id,
+        job_id: uploaded.job_id,
+        filename: uploaded.filename,
+        status: uploaded.status,
+        file: undefined,
+      }));
+      startStatusPolling(uploaded.document_id);
+    } catch (error) {
+      updateDocument(localId, (doc) => ({
+        ...doc,
+        status: "failed",
+        error: error instanceof Error ? error.message : "Document upload failed.",
+      }));
+    }
+  };
+
+  const handleRemoveDocument = async (documentId: string) => {
+    stopPolling(documentId);
+    const doc = uploadedDocuments.find(
+      (item) => item.document_id === documentId || item.local_id === documentId,
+    );
+    setUploadedDocuments((prev) =>
+      prev.filter((item) => item.document_id !== documentId && item.local_id !== documentId),
+    );
+
+    if (doc?.job_id && doc.document_id !== doc.local_id) {
+      try {
+        await deleteDocument(doc.document_id);
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: `The document was removed from this chat, but the backend could not delete "${doc.filename}".`,
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    }
+  };
+
+  const handleSend = async () => {
     if (!inputQuery.trim() || isLoading) return;
+    if (uploadedDocuments.some((doc) => doc.status !== "completed")) return;
+
+    const attachedDocuments = uploadedDocuments
+      .filter((doc) => doc.status === "completed")
+      .map((doc) => ({
+        document_id: doc.document_id,
+        filename: doc.filename,
+        status: doc.status,
+      }));
 
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
       content: inputQuery.trim(),
+      attachedDocuments,
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMsg]);
@@ -107,12 +283,13 @@ export default function ResearchDashboard() {
     if (filterDate === "last5") start_year = new Date().getFullYear() - 5;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: query, doc_type, start_year }),
+      const data = await sendLegalQuery({
+        question: query,
+        doc_type,
+        start_year,
+        matter_id: null,
+        document_ids: attachedDocuments.map((doc) => doc.document_id),
       });
-      const data = await res.json();
 
       const botMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -361,6 +538,20 @@ export default function ResearchDashboard() {
                     <div className="max-w-[75%]">
                       <div className="bg-[#D4AF37] text-[#161B28] px-5 py-3 rounded-2xl rounded-br-md shadow-md">
                         <p className="text-sm font-medium leading-relaxed">{msg.content}</p>
+                        {msg.attachedDocuments && msg.attachedDocuments.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {msg.attachedDocuments.map((doc) => (
+                              <div
+                                key={doc.document_id}
+                                className="flex max-w-full items-center gap-1.5 rounded-lg bg-[#161B28]/15 px-2 py-1 text-[11px] font-semibold"
+                                title={doc.filename}
+                              >
+                                <FileText size={12} />
+                                <span className="max-w-[220px] truncate">{doc.filename}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <p className="text-[10px] text-slate-500 text-right mt-1 mr-1">
                         {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -512,24 +703,15 @@ export default function ResearchDashboard() {
 
           {/* ── Input bar (bottom-pinned) ── */}
           <div className="shrink-0 border-t border-slate-700/40 bg-[#1E2636] px-6 py-4">
-            <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-3">
-              <input
-                type="text"
-                value={inputQuery}
-                onChange={(e) => setInputQuery(e.target.value)}
-                placeholder="Ask a legal question…"
-                disabled={isLoading}
-                className="flex-1 bg-[#161B28] border border-slate-600/50 text-white placeholder:text-slate-500 px-5 py-3 rounded-xl text-sm focus:outline-none focus:border-[#D4AF37]/60 focus:ring-1 focus:ring-[#D4AF37]/30 transition disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={isLoading || !inputQuery.trim()}
-                className="bg-[#D4AF37] hover:bg-[#C5A030] disabled:bg-slate-600 disabled:cursor-not-allowed text-[#161B28] font-bold px-5 py-3 rounded-xl flex items-center gap-2 transition text-sm"
-              >
-                <Send size={16} />
-                <span className="hidden sm:inline">Send</span>
-              </button>
-            </form>
+            <ChatInputBar
+              value={inputQuery}
+              isLoading={isLoading}
+              documents={uploadedDocuments}
+              onChange={setInputQuery}
+              onFileSelected={handleFileSelected}
+              onRemoveDocument={handleRemoveDocument}
+              onSubmit={handleSend}
+            />
           </div>
         </main>
 
