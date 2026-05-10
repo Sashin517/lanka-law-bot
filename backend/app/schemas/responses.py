@@ -16,6 +16,9 @@ class SourceReference(BaseModel):
     year: int = 0
     breadcrumb: str | None = None
     excerpt: str = ""
+    source_type: str | None = None
+    document_id: str | None = None
+    filename: str | None = None
 
 
 class ConfidenceLevel(str, Enum):

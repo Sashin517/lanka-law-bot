@@ -175,26 +175,46 @@ class RetrievalService:
         return results
 
     def _load_children_for_bm25(self) -> list[Document]:
-        """Load all child chunks from ChromaDB to build the BM25 index."""
-        results = self._chroma.get(
-            where={"chunk_type": "child"},
-            include=["documents", "metadatas"],
-        )
+        """Load all child chunks from ChromaDB to build the BM25 index in batches to avoid SQLite variable limits."""
         documents: list[Document] = []
-        if results and results.get("documents"):
-            for text, meta in zip(results["documents"], results["metadatas"]):
+        batch_size = 5000
+        offset = 0
+        while True:
+            results = self._chroma.get(
+                where={"chunk_type": "child"},
+                include=["documents", "metadatas"],
+                limit=batch_size,
+                offset=offset,
+            )
+            if not results or not results.get("documents"):
+                break
+            docs_batch = results["documents"]
+            for text, meta in zip(docs_batch, results["metadatas"]):
                 documents.append(Document(page_content=text, metadata=meta))
+            if len(docs_batch) < batch_size:
+                break
+            offset += batch_size
         return documents
 
     def _load_all_documents(self) -> list[Document]:
-        """Load ALL documents from ChromaDB (fallback for old DB without chunk_type)."""
-        results = self._chroma.get(
-            include=["documents", "metadatas"],
-        )
+        """Load ALL documents from ChromaDB in batches (fallback for old DB without chunk_type)."""
         documents: list[Document] = []
-        if results and results.get("documents"):
-            for text, meta in zip(results["documents"], results["metadatas"]):
+        batch_size = 5000
+        offset = 0
+        while True:
+            results = self._chroma.get(
+                include=["documents", "metadatas"],
+                limit=batch_size,
+                offset=offset,
+            )
+            if not results or not results.get("documents"):
+                break
+            docs_batch = results["documents"]
+            for text, meta in zip(docs_batch, results["metadatas"]):
                 documents.append(Document(page_content=text, metadata=meta))
+            if len(docs_batch) < batch_size:
+                break
+            offset += batch_size
         return documents
 
     def _fetch_parent(self, parent_citation_id: str) -> Document | None:

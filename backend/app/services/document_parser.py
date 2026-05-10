@@ -40,13 +40,23 @@ class DocumentParser:
             return source.read_text(encoding="utf-8", errors="ignore")
 
         try:
-            from docling.document_converter import DocumentConverter
+            from docling.document_converter import DocumentConverter, PdfFormatOption
+            from docling.datamodel.pipeline_options import PdfPipelineOptions, AcceleratorOptions
+            from docling.datamodel.base_models import InputFormat
         except ImportError as exc:
             raise RuntimeError(
                 "Docling is not installed. Install backend requirements before ingesting PDFs/DOCX."
             ) from exc
 
-        converter = DocumentConverter()
+        pipeline_options = PdfPipelineOptions(
+            accelerator_options=AcceleratorOptions(num_threads=1)
+        )
+
+        converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+            }
+        )
         result = converter.convert(str(source))
         document = result.document
 
@@ -54,7 +64,9 @@ class DocumentParser:
             return document.export_to_markdown()
         if hasattr(document, "export_to_text"):
             return document.export_to_text()
-        raise RuntimeError("Docling conversion did not expose a Markdown/text exporter.")
+        raise RuntimeError(
+            "Docling conversion did not expose a Markdown/text exporter."
+        )
 
     @staticmethod
     def _extract_pages(markdown: str) -> list[int]:

@@ -1,24 +1,39 @@
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
 from langsmith import traceable
+from pydantic import BaseModel
 
 from app.schemas.responses import ConfidenceLevel, LegalResponse, RouteMetadata
 from app.services.retrieval_service import RetrievalService
-from app.services.context_assembler import ContextAssembler
+from app.services.context_assembler import MultiSourceContextAssembler
 from app.services.generation_service import GenerationService
 from app.services.citation_verifier import CitationVerifier
 from app.services.intent_routing import IntentRoute, SemanticIntentRouter
-from app.services.intent_routing.models import IntentRoutePlan
+from app.services.intent_routing.models import IntentRoutePlan, LegalTaskType, TargetCorpus
+from app.services.user_document_retrieval_service import UserDocumentRetrievalService
 
 logger = logging.getLogger(__name__)
 
 # Initialise all services once at module load
 _retrieval = RetrievalService()
-_assembler = ContextAssembler()
+_assembler = MultiSourceContextAssembler()
 _generator = GenerationService()
 _verifier = CitationVerifier()
 _router = SemanticIntentRouter()
+
+
+class RetrievalPlan(BaseModel):
+    use_legal_corpus: bool
+    use_user_documents: bool
+    legal_top_k: int = 5
+    user_doc_top_k: int = 6
+
+
+@lru_cache(maxsize=1)
+def _user_document_retrieval() -> UserDocumentRetrievalService:
+    return UserDocumentRetrievalService()
 
 
 def _route_metadata(plan: IntentRoutePlan) -> RouteMetadata:
@@ -61,16 +76,28 @@ def _clarification_response(route: RouteMetadata) -> LegalResponse:
 
 
 @traceable(name="AgentOrchestrator")
-async def process_query_with_route(question: str) -> tuple[LegalResponse, RouteMetadata]:
+async def process_query_with_route(
+    question: str,
+    document_ids: list[str] | None = None,
+    matter_id: str | None = None,
+) -> tuple[LegalResponse, RouteMetadata]:
+    document_ids = document_ids or []
     router_result = await _router.classify(question)
     route = _route_metadata(router_result.plan)
+    retrieval_plan = _build_retrieval_plan(
+        question=question,
+        route_plan=router_result.plan,
+        document_ids=document_ids,
+    )
 
     logger.info(
-        "Intent route selected: route=%s task=%s confidence=%s source=%s",
+        "Intent route selected: route=%s task=%s confidence=%s source=%s legal=%s docs=%s",
         route.route,
         route.task_type,
         route.confidence,
         router_result.source,
+        retrieval_plan.use_legal_corpus,
+        retrieval_plan.use_user_documents,
     )
 
     if router_result.plan.route == IntentRoute.UNSUPPORTED:
@@ -79,25 +106,34 @@ async def process_query_with_route(question: str) -> tuple[LegalResponse, RouteM
     if router_result.plan.needs_clarification:
         return _clarification_response(route), route
 
-    if router_result.plan.route == IntentRoute.REVIEW:
+    if router_result.plan.route == IntentRoute.REVIEW and not document_ids:
         review_route = route.model_copy(
             update={
                 "needs_clarification": True,
                 "clarification_question": (
-                    "Document review is classified correctly, but this version "
-                    "does not yet accept reviewable document text or uploads."
+                    "Please upload or attach the document you want reviewed."
                 ),
             }
         )
         return _clarification_response(review_route), review_route
 
-    response = await process_legal_query(question)
+    response = await process_legal_query(
+        question=question,
+        retrieval_plan=retrieval_plan,
+        document_ids=document_ids,
+        matter_id=matter_id,
+    )
     response.route = route
     return response, route
 
 
 @traceable(name="LegalRAGPipeline")
-async def process_legal_query(question: str) -> LegalResponse:
+async def process_legal_query(
+    question: str,
+    retrieval_plan: RetrievalPlan | None = None,
+    document_ids: list[str] | None = None,
+    matter_id: str | None = None,
+) -> LegalResponse:
     """
     Full RAG pipeline:
 
@@ -122,15 +158,48 @@ async def process_legal_query(question: str) -> LegalResponse:
         references, confidence level, and legal disclaimer.
     """
     logger.info("Processing query: '%s'", question[:100])
-
-    # Step 1: Retrieve (hybrid + re-rank + parent expansion)
-    results = _retrieval.search(
-        query=question,
-        top_k=5,
-        expand_parents=True,
+    retrieval_plan = retrieval_plan or RetrievalPlan(
+        use_legal_corpus=True,
+        use_user_documents=False,
     )
+    document_ids = document_ids or []
 
-    if not results:
+    legal_results: list[dict] = []
+    user_document_results: list[dict] = []
+
+    if retrieval_plan.use_legal_corpus:
+        legal_results = _retrieval.search(
+            query=question,
+            top_k=retrieval_plan.legal_top_k,
+            expand_parents=True,
+        )
+
+    if retrieval_plan.use_user_documents:
+        try:
+            user_document_results = _user_document_retrieval().search(
+                query=question,
+                document_ids=document_ids,
+                matter_id=matter_id,
+                top_k=retrieval_plan.user_doc_top_k,
+                expand_parents=True,
+            )
+        except Exception:
+            logger.exception("User-document retrieval failed.")
+            user_document_results = []
+
+    if retrieval_plan.use_user_documents and not user_document_results:
+        logger.warning("No user document retrieval results for query: '%s'", question[:80])
+        return LegalResponse(
+            summary=(
+                "No relevant uploaded document context was found for this query. "
+                "Please confirm the document finished processing and try a more specific question."
+            ),
+            analysis=[],
+            sources=[],
+            confidence=ConfidenceLevel.LOW,
+        )
+
+    if not legal_results and not user_document_results:
         logger.warning("No retrieval results for query: '%s'", question[:80])
         return LegalResponse(
             summary=(
@@ -144,7 +213,10 @@ async def process_legal_query(question: str) -> LegalResponse:
         )
 
     # Step 2: Assemble context with citation anchors
-    context_str, citation_map = _assembler.assemble(results)
+    context_str, citation_map = _assembler.assemble(
+        legal_results=legal_results,
+        user_document_results=user_document_results,
+    )
     logger.info(
         "Context assembled: %d sources, %d chars.",
         len(citation_map),
@@ -164,3 +236,88 @@ async def process_legal_query(question: str) -> LegalResponse:
         len(response.analysis),
     )
     return response
+
+
+def _build_retrieval_plan(
+    question: str,
+    route_plan: IntentRoutePlan,
+    document_ids: list[str],
+) -> RetrievalPlan:
+    has_documents = bool(document_ids)
+    if not has_documents:
+        return RetrievalPlan(
+            use_legal_corpus=route_plan.route != IntentRoute.UNSUPPORTED,
+            use_user_documents=False,
+        )
+
+    if _is_document_summary_query(question):
+        return RetrievalPlan(
+            use_legal_corpus=False,
+            use_user_documents=True,
+            legal_top_k=0,
+            user_doc_top_k=8,
+        )
+
+    if route_plan.route in {IntentRoute.REVIEW, IntentRoute.DRAFTING}:
+        return RetrievalPlan(
+            use_legal_corpus=True,
+            use_user_documents=True,
+            legal_top_k=5,
+            user_doc_top_k=8,
+        )
+
+    if route_plan.target_corpus == TargetCorpus.USER_DOCUMENT:
+        return RetrievalPlan(
+            use_legal_corpus=False,
+            use_user_documents=True,
+            legal_top_k=0,
+            user_doc_top_k=8,
+        )
+
+    if route_plan.task_type in {LegalTaskType.QA, LegalTaskType.RESEARCH}:
+        return RetrievalPlan(
+            use_legal_corpus=True,
+            use_user_documents=False,
+        )
+
+    return RetrievalPlan(
+        use_legal_corpus=_mentions_legal_authority(question),
+        use_user_documents=True,
+        legal_top_k=5,
+        user_doc_top_k=8,
+    )
+
+
+def _is_document_summary_query(question: str) -> bool:
+    text = question.lower()
+    return any(
+        phrase in text
+        for phrase in (
+            "summarize this",
+            "summarise this",
+            "summary of this",
+            "summarize the document",
+            "summarise the document",
+            "what does this document say",
+        )
+    )
+
+
+def _mentions_legal_authority(question: str) -> bool:
+    text = question.lower()
+    return any(
+        term in text
+        for term in (
+            "law",
+            "legal",
+            "sri lanka",
+            "sri lankan",
+            "act",
+            "case",
+            "court",
+            "valid",
+            "enforceable",
+            "liability",
+            "rights",
+        )
+    )
