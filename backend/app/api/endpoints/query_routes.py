@@ -19,7 +19,14 @@ def read_root():
 async def search_law(query: LegalQuery):
     logger.info("Received query: '%s'", query.question[:100])
 
-    response, route = await process_query_with_route(query.question)
+    if query.document_ids or query.matter_id:
+        response, route = await process_query_with_route(
+            question=query.question,
+            document_ids=query.document_ids,
+            matter_id=query.matter_id,
+        )
+    else:
+        response, route = await process_query_with_route(query.question)
 
     # Build the "results" array the frontend expects
     results = []
