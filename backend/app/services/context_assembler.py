@@ -39,14 +39,14 @@ class ContextAssembler:
             )
             context_parts.append(f"{header}\n{content}\n")
 
-            # Build the citation reference for the response payload
+            # Build the citation reference for the response payload.
             citation_map[anchor] = SourceReference(
                 citation_id=anchor,
                 title=title,
                 section=meta.get("section"),
                 year=int(year) if isinstance(year, (int, float)) else 0,
                 breadcrumb=meta.get("breadcrumb"),
-                excerpt=content[:200],
+                excerpt=child.page_content[:300],
             )
 
         return "\n".join(context_parts), citation_map
@@ -107,13 +107,15 @@ class MultiSourceContextAssembler:
                 )
             )
 
+            # Excerpt uses the CHILD chunk (the semantically matched text),
+            child_text = result["child"].page_content
             citation_map[anchor] = SourceReference(
                 citation_id=anchor,
                 title=title,
                 section=meta.get("section"),
                 year=int(year) if isinstance(year, (int, float)) else 0,
                 breadcrumb=meta.get("breadcrumb"),
-                excerpt=content[:200],
+                excerpt=child_text[:300],
                 source_type="legal_authority",
             )
 
@@ -154,13 +156,14 @@ class MultiSourceContextAssembler:
                 )
             )
 
+            child_text = result["child"].page_content
             citation_map[anchor] = SourceReference(
                 citation_id=anchor,
                 title=filename,
                 section=clause if clause != "N/A" else None,
                 year=0,
                 breadcrumb=heading or None,
-                excerpt=content[:200],
+                excerpt=child_text[:300],
                 source_type="user_document",
                 document_id=meta.get("document_id"),
                 filename=filename,

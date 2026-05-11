@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     RERANKER_TOP_N: int = 5
     USER_DOC_RERANKER_TOP_N: int = 8
+    RELEVANCE_SCORE_THRESHOLD: float = 0.0
 
     GOOGLE_API_KEY: str = ""
     LLM_MODEL_NAME: str = "gemini-3.1-flash-lite-preview"

@@ -4,14 +4,24 @@ from langchain_core.documents import Document
 
 
 def retrieval_dedup_key(document: Document) -> str:
+    """Return a stable key for deduplicating retrieval results.
+
+    Priority: chunk_id > point_id > citation_id > text_hash > content prefix.
+
+    NOTE: ``parent_id`` is deliberately excluded because multiple distinct
+    child chunks share the same parent.  Using it would incorrectly merge
+    them during Reciprocal Rank Fusion.
+    """
     metadata = document.metadata or {}
-    return (
-        metadata.get("parent_id")
-        or metadata.get("chunk_id")
+    primary = (
+        metadata.get("chunk_id")
         or metadata.get("point_id")
-        or metadata.get("text_hash")
-        or document.page_content[:200]
+        or metadata.get("citation_id")
     )
+    if primary:
+        return primary
+    # Content-based fallback — use a longer window for accuracy
+    return metadata.get("text_hash") or document.page_content[:500]
 
 
 def reciprocal_rank_fusion(

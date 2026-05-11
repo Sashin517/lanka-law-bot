@@ -118,9 +118,18 @@ class RetrievalService:
         query: str,
         top_k: int = 5,
         expand_parents: bool = True,
+        year_filter: int | None = None,
+        act_name_filter: str | None = None,
     ) -> list[dict]:
         """
         Execute hybrid search → re-rank → deduplicate → parent expansion.
+
+        Parameters
+        ----------
+        year_filter : int | None
+            If set, prefer chunks whose ``year`` metadata matches.
+        act_name_filter : str | None
+            If set, prefer chunks whose ``title`` metadata contains this.
 
         Returns a list of dicts, each containing:
             - ``child``    : Document  — the matched child chunk
@@ -131,6 +140,7 @@ class RetrievalService:
         if self._reranked_retriever:
             try:
                 candidates = self._reranked_retriever.invoke(query)
+                candidates = self._prune_low_relevance(candidates)
             except Exception:
                 logger.exception("Re-ranked retrieval failed; trying hybrid.")
         if not candidates and self._hybrid_retriever:
@@ -141,16 +151,32 @@ class RetrievalService:
         if not candidates:
             candidates = self._dense_retriever.invoke(query)
 
-        # 2. Deduplicate by citation_id
-        seen: set[str] = set()
+        # 2. Deduplicate by citation_id AND content fingerprint
+        seen_ids: set[str] = set()
+        seen_content: set[str] = set()
         unique: list[Document] = []
         for doc in candidates:
-            cid = doc.metadata.get("citation_id", str(id(doc)))
-            if cid not in seen:
-                seen.add(cid)
-                unique.append(doc)
+            cid = doc.metadata.get("citation_id", "")
+            content_key = doc.page_content[:500].strip()
 
-        # 3. Expand to parents
+            # Skip if we have already seen this citation_id OR this content
+            if cid and cid in seen_ids:
+                continue
+            if content_key in seen_content:
+                continue
+
+            if cid:
+                seen_ids.add(cid)
+            seen_content.add(content_key)
+            unique.append(doc)
+
+        # 3. Post-filter by metadata (entity-aware, with fallback)
+        if year_filter or act_name_filter:
+            unique = self._post_filter_metadata(
+                unique, year_filter, act_name_filter,
+            )
+
+        # 4. Expand to parents
         results: list[dict] = []
         for child in unique[:top_k]:
             parent = None
@@ -240,3 +266,92 @@ class RetrievalService:
                 parent_citation_id,
             )
         return None
+
+    # ── Phase 4: Relevance score pruning ──────────────────────────
+
+    def _prune_low_relevance(
+        self, candidates: list[Document]
+    ) -> list[Document]:
+        """Drop candidates whose cross-encoder score falls below the
+        configured threshold.  If pruning would remove *every* result,
+        keep at least the top candidate as a safety valve.
+
+        Documents that lack a ``relevance_score`` (e.g. when the reranker
+        was bypassed) are always kept.
+        """
+        threshold = settings.RELEVANCE_SCORE_THRESHOLD
+        if threshold <= 0:
+            return candidates  # pruning disabled
+
+        pruned: list[Document] = []
+        for doc in candidates:
+            score = doc.metadata.get("relevance_score")
+            if score is not None and score < threshold:
+                logger.debug(
+                    "Pruned low-relevance chunk (score=%.4f, threshold=%.4f): %s",
+                    score,
+                    threshold,
+                    doc.page_content[:80],
+                )
+                continue
+            pruned.append(doc)
+
+        # Safety valve: never return an empty list
+        return pruned if pruned else candidates[:1]
+
+    # ── Phase 3: Post-retrieval metadata filtering ────────────────
+
+    @staticmethod
+    def _post_filter_metadata(
+        candidates: list[Document],
+        year_filter: int | None,
+        act_name_filter: str | None,
+    ) -> list[Document]:
+        """Filter already-retrieved candidates by metadata constraints.
+
+        This runs *after* the hybrid pipeline so the statically-initialised
+        retriever chain is never modified.  If filtering would produce an
+        empty result set, the original unfiltered list is returned as a
+        safety fallback.
+        """
+        if not year_filter and not act_name_filter:
+            return candidates
+
+        filtered: list[Document] = []
+        for doc in candidates:
+            meta = doc.metadata or {}
+
+            if year_filter:
+                doc_year = meta.get("year")
+                # Coerce to int for comparison (metadata may store as str)
+                try:
+                    if int(doc_year) != year_filter:
+                        continue
+                except (TypeError, ValueError):
+                    # Chunk has no parseable year — keep it rather than
+                    # discarding potentially relevant content.
+                    pass
+
+            if act_name_filter:
+                title = (meta.get("title") or "").lower()
+                if act_name_filter.lower() not in title:
+                    continue
+
+            filtered.append(doc)
+
+        if filtered:
+            logger.debug(
+                "Metadata filter kept %d/%d candidates (year=%s, act=%s)",
+                len(filtered),
+                len(candidates),
+                year_filter,
+                act_name_filter,
+            )
+            return filtered
+
+        # Fallback: filters too restrictive — return everything
+        logger.debug(
+            "Metadata filter matched 0/%d candidates — falling back to unfiltered.",
+            len(candidates),
+        )
+        return candidates
