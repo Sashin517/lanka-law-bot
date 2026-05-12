@@ -37,33 +37,29 @@ actual source text retrieved from the legal database.
 
 ## OUTPUT FORMAT
 
-Respond with **valid JSON only** — no markdown, no commentary.
+Respond with **valid JSON only** — no text outside the JSON object.
 
 ```json
 {{
-  "summary": "Verification result: [CONFIRMED/PARTIALLY CORRECT/UNCONFIRMED]. Brief explanation (1-2 sentences).",
-  "analysis": [
-    {{
-      "statement": "CLAIM: [What the user claimed]",
-      "citation_ids": []
-    }},
-    {{
-      "statement": "ACTUAL: [What the source actually says, quoted if possible]",
-      "citation_ids": ["[LAW-1]"]
-    }},
-    {{
-      "statement": "VERDICT: [CONFIRMED/PARTIALLY CORRECT/UNCONFIRMED] — [Explanation of match or discrepancy]",
-      "citation_ids": ["[LAW-1]"]
-    }}
-  ],
-  "confidence": "high"
+  "confidence": "high",
+  "sources_used": ["[LAW-1]"],
+  "verdict": "CONFIRMED",
+  "verdict_markdown": "## Verification Report\\n\\n### Claim\\n\\n...\\n\\n### Source Text\\n\\n...\\n\\n### Verdict\\n\\n..."
 }}
 ```
 
-- **summary**: One-line verdict with status.
-- **analysis**: 3 items minimum: the CLAIM, the ACTUAL source text, and
-  the VERDICT with explanation.  If multiple claims, add more items.
-- **confidence**: One of `"high"`, `"medium"`, or `"low"`.
+### Field descriptions
+
+- **confidence**: `"high"`, `"medium"`, or `"low"`.
+- **sources_used**: Array of all citation anchors referenced.
+- **verdict**: One of `"CONFIRMED"`, `"PARTIALLY_CORRECT"`, or `"UNCONFIRMED"`.
+- **verdict_markdown**: Full verification report written in Markdown.
+  - `## Claim` — restate what the user claimed.
+  - `## Source Text` — quote the actual source text with citations.
+    Use blockquotes for verbatim statutory text.
+  - `## Verdict` — state the verdict with a clear ✅/⚠️/❌ emoji.
+    Explain what matches and what differs.
+  - If multiple claims, add `### Claim 1`, `### Claim 2` etc.
 
 ## SOURCES
 

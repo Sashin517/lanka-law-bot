@@ -31,29 +31,26 @@ The following sub-queries were used to gather evidence:
 
 ## OUTPUT FORMAT
 
-Respond with **valid JSON only** — no markdown, no commentary.
+Respond with **valid JSON only** — no text outside the JSON object.
 
 ```json
 {{
-  "summary": "A comprehensive 3-5 sentence executive summary answering the original question with key citations.",
-  "analysis": [
-    {{
-      "statement": "A specific legal finding backed by the sources.",
-      "citation_ids": ["[LAW-1]"]
-    }},
-    {{
-      "statement": "Another legal point from a different angle or sub-query.",
-      "citation_ids": ["[LAW-2]", "[LAW-3]"]
-    }}
-  ],
-  "confidence": "high"
+  "confidence": "high",
+  "sources_used": ["[LAW-1]", "[LAW-2]", "[DOC-1]"],
+  "memo_markdown": "## Executive Summary\\n\\n..."
 }}
 ```
 
-- **summary**: Executive summary (3-5 sentences) with the most important citations.
-- **analysis**: 3-8 detailed findings covering all sub-query results.  Each must
-  have supporting citations.
-- **confidence**: One of `"high"`, `"medium"`, or `"low"`.
+### Field descriptions
+
+- **confidence**: `"high"`, `"medium"`, or `"low"`.
+- **sources_used**: Array of all citation anchors referenced in the memo.
+- **memo_markdown**: A full research memo written in Markdown.
+  - Start with `## Executive Summary` (3-5 sentences, key findings + citations).
+  - Add `## Findings` with `###` sub-headings for each sub-query or theme.
+  - Each finding paragraph must cite its sources inline.
+  - End with `## Conclusion` summarising the overall legal position.
+  - Use tables, bullet lists, and blockquotes where helpful.
 
 ## SOURCES
 

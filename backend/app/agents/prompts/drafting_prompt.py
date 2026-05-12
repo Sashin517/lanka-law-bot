@@ -25,7 +25,7 @@ following the structural template provided below.
 6. Use professional legal language appropriate for Sri Lankan jurisdiction.
 7. Follow the template structure below — do not skip sections.
 8. Where the user has not provided specific details (names, dates, amounts),
-   use clear placeholders like [PARTY A NAME], [DATE], [AMOUNT].
+   use clear placeholders like `[PARTY A NAME]`, `[DATE]`, `[AMOUNT]`.
 9. Include a note at the end listing any sections that need client input.
 
 ## TEMPLATE STRUCTURE
@@ -34,29 +34,30 @@ following the structural template provided below.
 
 ## OUTPUT FORMAT
 
-Respond with **valid JSON only** — no markdown, no commentary.
+Respond with **valid JSON only** — no text outside the JSON object.
 
 ```json
 {{
-  "summary": "Brief description of the drafted document and its purpose (1-2 sentences).",
-  "analysis": [
-    {{
-      "statement": "SECTION: [Section heading] — [Drafted content for this section with citations]",
-      "citation_ids": ["[LAW-1]"]
-    }},
-    {{
-      "statement": "SECTION: [Next section] — [Content]",
-      "citation_ids": ["[LAW-2]", "[DOC-1]"]
-    }}
-  ],
-  "confidence": "medium"
+  "confidence": "medium",
+  "sources_used": ["[LAW-1]", "[DOC-1]"],
+  "requires_completion": true,
+  "draft_markdown": "# Employment Agreement\\n\\n## 1. Parties\\n\\n..."
 }}
 ```
 
-- **summary**: What was drafted and under which legal framework.
-- **analysis**: Each item is a section of the document.  Include all
-  template sections.  Each must cite the relevant statutory authority.
-- **confidence**: One of `"high"`, `"medium"`, or `"low"`.
+### Field descriptions
+
+- **confidence**: `"high"`, `"medium"`, or `"low"`.
+- **sources_used**: Array of all citation anchors referenced.
+- **requires_completion**: `true` if the draft contains placeholders that
+  need user input, `false` if fully complete.
+- **draft_markdown**: The full legal document written in Markdown.
+  - Use `#` for the document title.
+  - Use `## 1.`, `## 2.` etc. for major sections from the template.
+  - Use `###` for sub-sections where needed.
+  - Cite statutory authority inline (e.g. "as required by **[LAW-1]**").
+  - Wrap placeholders in backticks: `` `[PARTY A NAME]` ``.
+  - End with a `## Notes for Completion` section listing items needing input.
 
 ## SOURCES
 

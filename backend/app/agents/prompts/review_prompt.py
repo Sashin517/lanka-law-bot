@@ -37,29 +37,35 @@ For each issue found, produce a finding with:
 
 ## OUTPUT FORMAT
 
-Respond with **valid JSON only** — no markdown, no commentary.
+Respond with **valid JSON only** — no text outside the JSON object.
 
 ```json
 {{
-  "summary": "Overall assessment of the document (2-3 sentences). Mention the document type and the number of risks identified.",
-  "analysis": [
-    {{
-      "statement": "RISK: [Clause description from DOC] — [What is wrong/missing] — Required by [legal provision]. Recommendation: [How to fix].",
-      "citation_ids": ["[DOC-1]", "[LAW-1]"]
-    }},
-    {{
-      "statement": "COMPLIANT: [Clause description from DOC] — This clause appears consistent with [legal provision].",
-      "citation_ids": ["[DOC-2]", "[LAW-2]"]
-    }}
-  ],
-  "confidence": "medium"
+  "confidence": "medium",
+  "sources_used": ["[DOC-1]", "[LAW-1]", "[LAW-2]"],
+  "risk_count": 3,
+  "report_markdown": "## Document Review Report\\n\\n### Summary\\n\\n..."
 }}
 ```
 
-- **summary**: Overall risk assessment (2-3 sentences).
-- **analysis**: 3-10 findings.  Mark each as RISK, COMPLIANT, or MISSING.
-  MISSING items flag clauses that should exist but don't.
-- **confidence**: One of `"high"`, `"medium"`, or `"low"`.
+### Field descriptions
+
+- **confidence**: `"high"`, `"medium"`, or `"low"`.
+- **sources_used**: Array of all citation anchors referenced.
+- **risk_count**: Number of risk or non-compliance findings.
+- **report_markdown**: Full review report written in Markdown.
+  - Start with `## Summary` (2-3 sentences: document type, number of risks).
+  - Add a `## Findings` section with a table:
+
+    | # | Status | Clause | Finding | Authority | Recommendation |
+    |---|--------|--------|---------|-----------|----------------|
+    | 1 | ⚠️ RISK | Clause 5.1 **[DOC-1]** | Missing termination notice period | Section 12 **[LAW-1]** | Add 30-day notice requirement |
+    | 2 | ✅ COMPLIANT | Clause 3.2 **[DOC-2]** | Consistent with statutory requirement | Section 8 **[LAW-2]** | No action needed |
+    | 3 | ❌ MISSING | — | No dispute resolution clause | Section 15 **[LAW-3]** | Add arbitration/mediation clause |
+
+  - After the table, add `## Detailed Analysis` with expanded discussion
+    of each RISK and MISSING finding.
+  - End with `## Recommendations` summarising the key actions.
 
 ## SOURCES
 

@@ -17,15 +17,15 @@ from pydantic import BaseModel, Field
 class SourceChunk(BaseModel):
     """A single retrieved source chunk with full metadata."""
 
-    citation_id: str = ""                        # "[LAW-1]", "[DOC-2]"
+    citation_id: str = ""  # "[LAW-1]", "[DOC-2]"
     content: str = ""
     title: str = ""
     section: str | None = None
     year: int = 0
     breadcrumb: str | None = None
-    excerpt: str = ""                            # First ~300 chars of child text
+    excerpt: str = ""  # First ~300 chars of child text
     relevance_score: float = 0.0
-    source_type: str = "legal_authority"          # "legal_authority" | "user_document"
+    source_type: str = "legal_authority"  # "legal_authority" | "user_document"
     document_id: str | None = None
     filename: str | None = None
 
@@ -35,16 +35,16 @@ class CitedClaim(BaseModel):
 
     statement: str
     citation_ids: list[str] = Field(default_factory=list)
-    is_grounded: bool = True                     # Set by grounding verifier
+    is_grounded: bool = True  # Set by grounding verifier
 
 
 class GroundingResult(BaseModel):
     """Output produced by the Grounding Verifier node."""
 
     is_grounded: bool = False
-    grounding_score: float = 0.0                 # 0.0 – 1.0
+    grounding_score: float = 0.0  # 0.0 – 1.0
     ungrounded_claims: list[str] = Field(default_factory=list)
-    feedback: str = ""                           # Correction hints for retry
+    feedback: str = ""  # Correction hints for retry
 
 
 # ── Main agent state ──────────────────────────────────────────────
@@ -64,7 +64,7 @@ class AgentState(BaseModel):
     session_id: str = ""
 
     # ── Router output ──
-    route: str = ""                               # quick_qa, deep_research, …
+    route: str = ""  # quick_qa, deep_research, …
     task_type: str = ""
     answer_mode: str = ""
     target_corpus: str = ""
@@ -88,7 +88,8 @@ class AgentState(BaseModel):
     sub_queries: list[str] = Field(default_factory=list)
 
     # ── Generation output ──
-    summary: str = ""
+    summary: str = ""                             # Plain-text fallback
+    markdown_content: str = ""                    # Rich markdown for frontend rendering
     analysis: list[CitedClaim] = Field(default_factory=list)
     confidence: str = "medium"
     draft_content: str = ""

@@ -10,7 +10,7 @@ You are a **Grounding Verifier** for a Sri Lankan legal AI assistant.
 ## YOUR TASK
 
 You will receive:
-1. A **GENERATED RESPONSE** (summary + analysis claims) produced by the AI.
+1. A **GENERATED RESPONSE** (summary + full generated content) produced by the AI.
 2. The **SOURCE DOCUMENTS** that were provided to the AI when generating
    the response.
 
@@ -56,7 +56,7 @@ Respond with **valid JSON only** — no markdown, no commentary.
 ### Summary
 {summary}
 
-### Analysis Claims
+### Generated Content
 {claims}
 
 ## SOURCE DOCUMENTS
