@@ -5,42 +5,38 @@ Pipeline:
   2. Retrieve relevant statutes from legal corpus
   3. Optionally retrieve user document context when document_ids present
   4. Assemble dual-source context with [LAW-*] and [DOC-*] anchors
-  5. Generate draft using template-injected prompt
-  6. Verify citations
+  5. Generate draft using template-injected prompt (hybrid JSON + markdown)
+  6. Verify citations via existing CitationVerifier
 """
 
 from __future__ import annotations
 
 import logging
-import re
-from functools import lru_cache
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
 
-from app.agents.state import AgentState, CitedClaim, SourceChunk
+from app.agents.state import AgentState
+from app.agents.shared import (
+    retrieval_service as _retrieval,
+    context_assembler as _assembler,
+    citation_verifier as _verifier,
+    get_user_doc_retrieval,
+)
 from app.agents.prompts.drafting_prompt import DRAFTING_PROMPT
 from app.agents.templates import TEMPLATE_REGISTRY
-from app.core.config import settings
-from app.schemas.responses import (
-    CitedClaim as SchemaCitedClaim,
-    ConfidenceLevel,
-    LegalResponse,
-    SourceReference,
+from app.agents.nodes.helpers import (
+    extract_first_paragraph,
+    normalize_confidence,
+    build_and_verify_sources,
+    strip_invalid_anchors,
+    to_source_chunks,
 )
-from app.services.retrieval_service import RetrievalService
-from app.services.context_assembler import MultiSourceContextAssembler
-from app.services.citation_verifier import CitationVerifier
-from app.services.user_document_retrieval_service import UserDocumentRetrievalService
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
-
-# Shared singletons
-_retrieval = RetrievalService()
-_assembler = MultiSourceContextAssembler()
-_verifier = CitationVerifier()
 
 # Drafting LLM — uses main model for structured generation capability
 _drafting_llm = ChatGoogleGenerativeAI(
@@ -58,12 +54,6 @@ _DOC_TYPE_PATTERNS: list[tuple[str, list[str]]] = [
     ("notice", ["notice", "demand", "letter of demand", "quit notice", "termination notice"]),
     ("affidavit", ["affidavit", "sworn statement", "declaration", "deposition"]),
 ]
-
-
-@lru_cache(maxsize=1)
-def _user_doc_retrieval() -> UserDocumentRetrievalService:
-    """Lazy-load user-document retrieval service."""
-    return UserDocumentRetrievalService()
 
 
 @traceable(name="DraftingNode")
@@ -91,7 +81,7 @@ async def drafting_node(state: AgentState) -> dict:
     user_doc_results: list[dict] = []
     if state.use_user_documents and state.document_ids:
         try:
-            user_doc_results = _user_doc_retrieval().search(
+            user_doc_results = get_user_doc_retrieval().search(
                 query=state.question,
                 document_ids=state.document_ids,
                 matter_id=state.matter_id,
@@ -101,10 +91,9 @@ async def drafting_node(state: AgentState) -> dict:
         except Exception:
             logger.exception("User-document retrieval failed in drafting_node.")
 
-    # Handle empty retrieval — drafting can still proceed with template
+    # Drafting can proceed with template even without retrieval results
     if not legal_results and not user_doc_results:
         logger.warning("No retrieval results for drafting: '%s'", state.question[:80])
-        # Drafting can still produce a template-based output, just lower confidence
 
     # ── Step 4: Assemble context with citation anchors ──
     context_str, citation_map = _assembler.assemble(
@@ -116,7 +105,7 @@ async def drafting_node(state: AgentState) -> dict:
         len(citation_map), len(context_str),
     )
 
-    # ── Step 5: Generate draft with template-injected prompt ──
+    # ── Step 5: Generate draft with template-injected prompt (hybrid JSON) ──
     prompt = ChatPromptTemplate.from_template(DRAFTING_PROMPT)
     chain = prompt | _drafting_llm | _drafting_parser
 
@@ -124,65 +113,43 @@ async def drafting_node(state: AgentState) -> dict:
         raw: dict = await chain.ainvoke({
             "question": state.question,
             "template": template_text,
-            "context": context_str or "(No source documents available — use template structure only.)",
+            "context": context_str
+            or "(No source documents available — use template structure only.)",
         })
     except Exception:
         logger.exception("Drafting LLM generation failed.")
         raw = {
-            "summary": (
+            "draft_markdown": (
                 "The AI drafting service is temporarily unavailable. "
                 "Please try again shortly."
             ),
-            "analysis": [],
             "confidence": "low",
+            "sources_used": [],
+            "requires_completion": True,
         }
 
-    # ── Step 6: Build response and verify citations ──
-    analysis_items = [
-        SchemaCitedClaim(
-            statement=item.get("statement", ""),
-            citation_ids=item.get("citation_ids", []),
-        )
-        for item in raw.get("analysis", [])
-        if isinstance(item, dict)
-    ]
+    # ── Step 6: Verify citations via existing CitationVerifier ──
+    markdown = raw.get("draft_markdown", "")
+    sources_used = raw.get("sources_used", [])
 
-    confidence = raw.get("confidence", "medium")
-    if confidence not in {e.value for e in ConfidenceLevel}:
-        confidence = "medium"
+    valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+    markdown = strip_invalid_anchors(markdown, valid_ids)
 
-    response = LegalResponse(
-        summary=raw.get("summary", ""),
-        analysis=analysis_items,
-        sources=list(citation_map.values()),
-        confidence=confidence,
-    )
-    response = _verifier.verify(response)
-
-    # ── Step 7: Convert to agent state format ──
-    sources = _to_source_chunks(citation_map)
-    analysis = [
-        CitedClaim(statement=c.statement, citation_ids=c.citation_ids)
-        for c in response.analysis
-    ]
-
-    # Build the full draft text from analysis sections
-    draft_content = "\n\n".join(c.statement for c in response.analysis)
+    confidence = normalize_confidence(raw.get("confidence", "medium"))
+    sources = to_source_chunks(citation_map)
 
     logger.info(
-        "Drafting complete: template=%s, %d sources, %d sections.",
-        template_key, len(sources), len(analysis),
+        "Drafting complete: template=%s, %d sources, confidence=%s.",
+        template_key, len(sources), confidence,
     )
 
     return {
         "retrieved_sources": sources,
         "context_str": context_str,
-        "summary": response.summary,
-        "analysis": analysis,
-        "draft_content": draft_content,
-        "confidence": response.confidence
-        if isinstance(response.confidence, str)
-        else response.confidence.value,
+        "summary": extract_first_paragraph(markdown),
+        "markdown_content": markdown,
+        "draft_content": markdown,          # Backward compat
+        "confidence": confidence,
     }
 
 
@@ -206,24 +173,3 @@ def _select_template(question: str, answer_mode: str) -> str:
 
     # Default to contract (most common drafting request)
     return "contract"
-
-
-def _to_source_chunks(
-    citation_map: dict[str, SourceReference],
-) -> list[SourceChunk]:
-    """Convert citation map into agent-state SourceChunks."""
-    return [
-        SourceChunk(
-            citation_id=ref.citation_id,
-            content=ref.excerpt,
-            title=ref.title,
-            section=ref.section,
-            year=ref.year,
-            breadcrumb=ref.breadcrumb,
-            excerpt=ref.excerpt,
-            source_type=ref.source_type or "legal_authority",
-            document_id=ref.document_id,
-            filename=ref.filename,
-        )
-        for ref in citation_map.values()
-    ]

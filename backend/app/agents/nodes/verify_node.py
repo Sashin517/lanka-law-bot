@@ -23,37 +23,33 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
 
-from app.agents.state import AgentState, CitedClaim, SourceChunk
-from app.agents.prompts.verify_prompt import VERIFY_PROMPT
-from app.core.config import settings
-from app.schemas.responses import (
-    CitedClaim as SchemaCitedClaim,
-    ConfidenceLevel,
-    LegalResponse,
-    SourceReference,
+from app.agents.state import AgentState
+from app.agents.shared import (
+    retrieval_service as _retrieval,
+    context_assembler as _assembler,
+    citation_verifier as _verifier,
 )
-from app.services.retrieval_service import RetrievalService
-from app.services.context_assembler import MultiSourceContextAssembler
-from app.services.citation_verifier import CitationVerifier
+from app.agents.prompts.verify_prompt import VERIFY_PROMPT
+from app.agents.nodes.helpers import (
+    extract_first_paragraph,
+    normalize_confidence,
+    build_and_verify_sources,
+    strip_invalid_anchors,
+    to_source_chunks,
+)
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Shared singletons
-_retrieval = RetrievalService()
-_assembler = MultiSourceContextAssembler()
-_verifier = CitationVerifier()
-
-# Verify LLM — uses main model for precise comparison capability
+# Verify LLM — deterministic for fact-checking
 _verify_llm = ChatGoogleGenerativeAI(
     model=settings.LLM_MODEL_NAME,
     google_api_key=settings.GOOGLE_API_KEY,
-    temperature=0.0,              # Deterministic for fact-checking
+    temperature=0.0,  # Deterministic for fact-checking
     max_output_tokens=settings.LLM_MAX_TOKENS,
 )
 _verify_chain = (
-    ChatPromptTemplate.from_template(VERIFY_PROMPT)
-    | _verify_llm
-    | JsonOutputParser()
+    ChatPromptTemplate.from_template(VERIFY_PROMPT) | _verify_llm | JsonOutputParser()
 )
 
 
@@ -68,11 +64,11 @@ async def verify_node(state: AgentState) -> dict:
     act_name, section_ref = _extract_citation_target(state.question)
     logger.info(
         "Verify target: act='%s', section='%s'",
-        act_name or "(none)", section_ref or "(none)",
+        act_name or "(none)",
+        section_ref or "(none)",
     )
 
     # ── Step 2: Targeted retrieval — narrow search for the cited provision ──
-    # Build a focused query incorporating the specific act/section
     search_query = state.question
     if act_name and section_ref:
         search_query = f"{section_ref} {act_name}"
@@ -83,19 +79,20 @@ async def verify_node(state: AgentState) -> dict:
         query=search_query,
         top_k=5,
         expand_parents=True,
-        act_name_filter=act_name,        # Narrow to specific act when detected
+        act_name_filter=act_name,  # Narrow to specific act when detected
     )
 
     # Handle empty retrieval
     if not legal_results:
         logger.warning("No results for verification: '%s'", state.question[:80])
         return {
-            "summary": (
-                "UNCONFIRMED — The cited provision could not be found "
+            "summary": "UNCONFIRMED — The cited provision could not be found.",
+            "markdown_content": (
+                "## Verification Report\n\n"
+                "❌ **UNCONFIRMED** — The cited provision could not be found "
                 "in the available legal database. The citation may refer "
                 "to a source not yet indexed."
             ),
-            "analysis": [],
             "retrieved_sources": [],
             "context_str": "",
             "confidence": "low",
@@ -111,7 +108,7 @@ async def verify_node(state: AgentState) -> dict:
         len(citation_map), len(context_str),
     )
 
-    # ── Step 4: Compare claim against sources ──
+    # ── Step 4: Compare claim against sources (hybrid JSON) ──
     try:
         raw: dict = await _verify_chain.ainvoke({
             "question": state.question,
@@ -120,56 +117,36 @@ async def verify_node(state: AgentState) -> dict:
     except Exception:
         logger.exception("Verify LLM generation failed.")
         raw = {
-            "summary": (
+            "verdict_markdown": (
                 "The verification service is temporarily unavailable. "
                 "Please try again shortly."
             ),
-            "analysis": [],
             "confidence": "low",
+            "sources_used": [],
+            "verdict": "UNCONFIRMED",
         }
 
-    # ── Step 5: Build response and verify citations ──
-    analysis_items = [
-        SchemaCitedClaim(
-            statement=item.get("statement", ""),
-            citation_ids=item.get("citation_ids", []),
-        )
-        for item in raw.get("analysis", [])
-        if isinstance(item, dict)
-    ]
+    # ── Step 5: Verify citations via existing CitationVerifier ──
+    markdown = raw.get("verdict_markdown", "")
+    sources_used = raw.get("sources_used", [])
 
-    confidence = raw.get("confidence", "medium")
-    if confidence not in {e.value for e in ConfidenceLevel}:
-        confidence = "medium"
+    valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+    markdown = strip_invalid_anchors(markdown, valid_ids)
 
-    response = LegalResponse(
-        summary=raw.get("summary", ""),
-        analysis=analysis_items,
-        sources=list(citation_map.values()),
-        confidence=confidence,
-    )
-    response = _verifier.verify(response)
-
-    # ── Step 6: Convert to agent state format ──
-    sources = _to_source_chunks(citation_map)
-    analysis = [
-        CitedClaim(statement=c.statement, citation_ids=c.citation_ids)
-        for c in response.analysis
-    ]
+    confidence = normalize_confidence(raw.get("confidence", "medium"))
+    sources = to_source_chunks(citation_map)
 
     logger.info(
-        "Verification complete: %d sources, verdict in summary.",
-        len(sources),
+        "Verification complete: %d sources, verdict=%s.",
+        len(sources), raw.get("verdict", "unknown"),
     )
 
     return {
         "retrieved_sources": sources,
         "context_str": context_str,
-        "summary": response.summary,
-        "analysis": analysis,
-        "confidence": response.confidence
-        if isinstance(response.confidence, str)
-        else response.confidence.value,
+        "summary": extract_first_paragraph(markdown),
+        "markdown_content": markdown,
+        "confidence": confidence,
     }
 
 
@@ -216,24 +193,3 @@ def _extract_citation_target(question: str) -> tuple[str | None, str | None]:
             return match.group(1).strip(), None
 
     return None, None
-
-
-def _to_source_chunks(
-    citation_map: dict[str, SourceReference],
-) -> list[SourceChunk]:
-    """Convert citation map into agent-state SourceChunks."""
-    return [
-        SourceChunk(
-            citation_id=ref.citation_id,
-            content=ref.excerpt,
-            title=ref.title,
-            section=ref.section,
-            year=ref.year,
-            breadcrumb=ref.breadcrumb,
-            excerpt=ref.excerpt,
-            source_type=ref.source_type or "legal_authority",
-            document_id=ref.document_id,
-            filename=ref.filename,
-        )
-        for ref in citation_map.values()
-    ]

@@ -37,37 +37,27 @@ Structure your analysis using the **IRAC** method:
 
 ## OUTPUT FORMAT
 
-Respond with **valid JSON only** — no markdown, no commentary.
+Respond with **valid JSON only** — no text outside the JSON object.
 
 ```json
 {{
-  "summary": "A concise 2-4 sentence conclusion answering the legal question with key citations.",
-  "analysis": [
-    {{
-      "statement": "ISSUE: [Identify the legal question]",
-      "citation_ids": []
-    }},
-    {{
-      "statement": "RULE: [State the applicable legal rule with citation]",
-      "citation_ids": ["[LAW-1]"]
-    }},
-    {{
-      "statement": "APPLICATION: [Apply the rule to the facts, reasoning through the analysis]",
-      "citation_ids": ["[LAW-1]", "[LAW-2]"]
-    }},
-    {{
-      "statement": "CONCLUSION: [State the legal conclusion with certainty level]",
-      "citation_ids": ["[LAW-1]"]
-    }}
-  ],
-  "confidence": "high"
+  "confidence": "high",
+  "sources_used": ["[LAW-1]", "[LAW-2]"],
+  "analysis_markdown": "## Issue\\n\\n...\\n\\n## Rule\\n\\n...\\n\\n## Application\\n\\n...\\n\\n## Conclusion\\n\\n..."
 }}
 ```
 
-- **summary**: Direct answer (2-4 sentences) with the most important citations.
-- **analysis**: IRAC-structured findings.  Include 4-8 items, grouping by
-  sub-issue if the question involves multiple legal points.
-- **confidence**: One of `"high"`, `"medium"`, or `"low"`.
+### Field descriptions
+
+- **confidence**: `"high"`, `"medium"`, or `"low"`.
+- **sources_used**: Array of all citation anchors referenced.
+- **analysis_markdown**: Full IRAC analysis written in Markdown.
+  - Use `## Issue`, `## Rule`, `## Application`, `## Conclusion` headings.
+  - If the question involves multiple legal points, add numbered sub-issues
+    (e.g. `### Issue 1: …`, `### Issue 2: …`) each with their own IRAC cycle.
+  - Cite sources inline (e.g. "Under Section 12 **[LAW-1]**, …").
+  - Use blockquotes for verbatim statutory text.
+  - End the Conclusion with a clear statement of certainty and any caveats.
 
 ## SOURCES
 

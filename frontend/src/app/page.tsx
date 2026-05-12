@@ -11,14 +11,19 @@ import {
   BarChart2,
   User,
   Scale,
-  BookOpen,
   AlertTriangle,
   Info,
   FileText,
 } from "lucide-react";
 
 import { ChatInputBar } from "@/components/ChatInputBar";
-import { deleteDocument, getDocumentStatus, sendLegalQuery, uploadDocument } from "@/lib/api";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import {
+  deleteDocument,
+  getDocumentStatus,
+  sendLegalQuery,
+  uploadDocument,
+} from "@/lib/api";
 import type { AttachedDocument, UploadedDocument } from "@/types/documents";
 
 /* ------------------------------------------------------------------ */
@@ -34,17 +39,12 @@ interface SourceRef {
   excerpt: string;
 }
 
-interface AnalysisClaim {
-  statement: string;
-  citations: string[];
-}
-
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
-  content: string;
+  content: string;                  // Plain text fallback
+  markdownContent?: string;         // Rich markdown from backend
   attachedDocuments?: AttachedDocument[];
-  analysis?: AnalysisClaim[];
   sources?: SourceRef[];
   confidence?: string;
   disclaimer?: string;
@@ -60,14 +60,20 @@ export default function ResearchDashboard() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState<
+    UploadedDocument[]
+  >([]);
 
   // Collapsible state for bot responses (keyed by message id)
-  const [expandedAnalysis, setExpandedAnalysis] = useState<Set<string>>(new Set());
-  const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
+  const [expandedSources, setExpandedSources] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Sidebar – Filters
-  const [filterSource, setFilterSource] = useState({ acts: true, caseLaws: true });
+  const [filterSource, setFilterSource] = useState({
+    acts: true,
+    caseLaws: true,
+  });
   const [filterDate, setFilterDate] = useState("all");
   const [openSections, setOpenSections] = useState({
     source: true,
@@ -81,7 +87,9 @@ export default function ResearchDashboard() {
 
   // Auto-scroll ref
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const pollingTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+  const pollingTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(
+    new Map(),
+  );
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -115,7 +123,9 @@ export default function ResearchDashboard() {
     updater: (doc: UploadedDocument) => UploadedDocument,
   ) => {
     setUploadedDocuments((prev) =>
-      prev.map((doc) => (doc.local_id === key || doc.document_id === key ? updater(doc) : doc)),
+      prev.map((doc) =>
+        doc.local_id === key || doc.document_id === key ? updater(doc) : doc,
+      ),
     );
   };
 
@@ -158,7 +168,10 @@ export default function ResearchDashboard() {
               ? {
                   ...doc,
                   status: "failed",
-                  error: error instanceof Error ? error.message : "Unable to check document status.",
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : "Unable to check document status.",
                 }
               : doc,
           ),
@@ -220,7 +233,8 @@ export default function ResearchDashboard() {
       updateDocument(localId, (doc) => ({
         ...doc,
         status: "failed",
-        error: error instanceof Error ? error.message : "Document upload failed.",
+        error:
+          error instanceof Error ? error.message : "Document upload failed.",
       }));
     }
   };
@@ -231,7 +245,10 @@ export default function ResearchDashboard() {
       (item) => item.document_id === documentId || item.local_id === documentId,
     );
     setUploadedDocuments((prev) =>
-      prev.filter((item) => item.document_id !== documentId && item.local_id !== documentId),
+      prev.filter(
+        (item) =>
+          item.document_id !== documentId && item.local_id !== documentId,
+      ),
     );
 
     if (doc?.job_id && doc.document_id !== doc.local_id) {
@@ -295,7 +312,7 @@ export default function ResearchDashboard() {
         id: crypto.randomUUID(),
         role: "assistant",
         content: data.answer || "No response generated.",
-        analysis: data.analysis || [],
+        markdownContent: data.markdown_content,
         sources: data.sources || [],
         confidence: data.confidence,
         disclaimer: data.disclaimer,
@@ -308,7 +325,8 @@ export default function ResearchDashboard() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: "Unable to reach the legal research backend. Please ensure the server is running and try again.",
+          content:
+            "Unable to reach the legal research backend. Please ensure the server is running and try again.",
           timestamp: new Date(),
         },
       ]);
@@ -321,13 +339,6 @@ export default function ResearchDashboard() {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const toggleAnalysis = (id: string) => {
-    setExpandedAnalysis((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
 
   const toggleSources = (id: string) => {
     setExpandedSources((prev) => {
@@ -344,12 +355,16 @@ export default function ResearchDashboard() {
   };
 
   const removeMaterial = (citationId: string) => {
-    setAddedMaterials((prev) => prev.filter((m) => m.citation_id !== citationId));
+    setAddedMaterials((prev) =>
+      prev.filter((m) => m.citation_id !== citationId),
+    );
   };
 
   const confidenceColor = (c?: string) => {
-    if (c === "high") return "text-emerald-400 bg-emerald-400/10 border-emerald-400/30";
-    if (c === "medium") return "text-amber-400 bg-amber-400/10 border-amber-400/30";
+    if (c === "high")
+      return "text-emerald-400 bg-emerald-400/10 border-emerald-400/30";
+    if (c === "medium")
+      return "text-amber-400 bg-amber-400/10 border-amber-400/30";
     return "text-red-400 bg-red-400/10 border-red-400/30";
   };
 
@@ -402,7 +417,9 @@ export default function ResearchDashboard() {
       <div className="flex flex-1 overflow-hidden">
         {/* ──────── LEFT SIDEBAR: FILTERS ──────── */}
         <aside className="w-[260px] bg-[#161B28] text-white p-5 overflow-y-auto shrink-0 border-r border-slate-700/40 chat-scroll">
-          <h2 className="text-base font-semibold mb-4 text-slate-200">Filters</h2>
+          <h2 className="text-base font-semibold mb-4 text-slate-200">
+            Filters
+          </h2>
 
           {/* Source Type */}
           <div className="mb-4">
@@ -411,7 +428,11 @@ export default function ResearchDashboard() {
               className="bg-[#C5D0E6] text-[#161B28] p-2 rounded flex justify-between items-center cursor-pointer font-semibold text-sm"
             >
               <span>Source Type</span>
-              {openSections.source ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {openSections.source ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
             </div>
             {openSections.source && (
               <div className="space-y-2 pt-2 px-2 text-sm text-slate-300">
@@ -419,7 +440,12 @@ export default function ResearchDashboard() {
                   <input
                     type="checkbox"
                     checked={filterSource.acts}
-                    onChange={(e) => setFilterSource({ ...filterSource, acts: e.target.checked })}
+                    onChange={(e) =>
+                      setFilterSource({
+                        ...filterSource,
+                        acts: e.target.checked,
+                      })
+                    }
                     className="w-4 h-4 accent-[#D4AF37]"
                   />
                   <span>Acts</span>
@@ -428,7 +454,12 @@ export default function ResearchDashboard() {
                   <input
                     type="checkbox"
                     checked={filterSource.caseLaws}
-                    onChange={(e) => setFilterSource({ ...filterSource, caseLaws: e.target.checked })}
+                    onChange={(e) =>
+                      setFilterSource({
+                        ...filterSource,
+                        caseLaws: e.target.checked,
+                      })
+                    }
                     className="w-4 h-4 accent-[#D4AF37]"
                   />
                   <span>Case Laws</span>
@@ -444,7 +475,11 @@ export default function ResearchDashboard() {
               className="bg-[#C5D0E6] text-[#161B28] p-2 rounded flex justify-between items-center cursor-pointer font-semibold text-sm"
             >
               <span>Date Range</span>
-              {openSections.date ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {openSections.date ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
             </div>
             {openSections.date && (
               <div className="space-y-2 pt-2 px-2 text-sm text-slate-300">
@@ -453,7 +488,10 @@ export default function ResearchDashboard() {
                   { value: "last5", label: "Last 5 Years" },
                   { value: "custom", label: "Custom" },
                 ].map((opt) => (
-                  <label key={opt.value} className="flex items-center space-x-3 cursor-pointer hover:text-white">
+                  <label
+                    key={opt.value}
+                    className="flex items-center space-x-3 cursor-pointer hover:text-white"
+                  >
                     <input
                       type="radio"
                       name="date"
@@ -475,13 +513,28 @@ export default function ResearchDashboard() {
               className="bg-[#C5D0E6] text-[#161B28] p-2 rounded flex justify-between items-center cursor-pointer font-semibold text-sm"
             >
               <span>Topic</span>
-              {openSections.topic ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {openSections.topic ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
             </div>
             {openSections.topic && (
               <div className="space-y-2 pt-2 px-2 text-sm text-slate-300">
-                {["Contract & Commercial", "Property & Land", "Labour & Employment", "Civil Procedure"].map((t) => (
-                  <label key={t} className="flex items-center space-x-3 cursor-pointer hover:text-white">
-                    <input type="checkbox" className="w-4 h-4 accent-[#D4AF37]" />
+                {[
+                  "Contract & Commercial",
+                  "Property & Land",
+                  "Labour & Employment",
+                  "Civil Procedure",
+                ].map((t) => (
+                  <label
+                    key={t}
+                    className="flex items-center space-x-3 cursor-pointer hover:text-white"
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-[#D4AF37]"
+                    />
                     <span>{t}</span>
                   </label>
                 ))}
@@ -497,13 +550,28 @@ export default function ResearchDashboard() {
                 className="bg-[#C5D0E6] text-[#161B28] p-2 rounded flex justify-between items-center cursor-pointer font-semibold text-sm"
               >
                 <span>Court Level</span>
-                {openSections.court ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {openSections.court ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
               </div>
               {openSections.court && (
                 <div className="space-y-2 pt-2 px-2 text-sm text-slate-300">
-                  {["Supreme Court (SC)", "Court of Appeal (COA)", "Commercial High Court (CHC)", "District Court (DC)"].map((c) => (
-                    <label key={c} className="flex items-center space-x-3 cursor-pointer hover:text-white">
-                      <input type="checkbox" className="w-4 h-4 accent-[#D4AF37]" />
+                  {[
+                    "Supreme Court (SC)",
+                    "Court of Appeal (COA)",
+                    "Commercial High Court (CHC)",
+                    "District Court (DC)",
+                  ].map((c) => (
+                    <label
+                      key={c}
+                      className="flex items-center space-x-3 cursor-pointer hover:text-white"
+                    >
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 accent-[#D4AF37]"
+                      />
                       <span>{c}</span>
                     </label>
                   ))}
@@ -522,10 +590,13 @@ export default function ResearchDashboard() {
               {messages.length === 0 && !isLoading && (
                 <div className="flex flex-col items-center justify-center h-full py-24 text-center">
                   <Scale size={48} className="text-[#D4AF37] mb-4" />
-                  <h2 className="text-xl font-serif text-white mb-2">Welcome to LankaLawBot</h2>
+                  <h2 className="text-xl font-serif text-white mb-2">
+                    Welcome to LankaLawBot
+                  </h2>
                   <p className="text-slate-400 text-sm max-w-md">
-                    Ask any question about Sri Lankan law. The AI will search through acts
-                    and case laws, then provide a cited, structured answer.
+                    Ask any question about Sri Lankan law. The AI will search
+                    through acts and case laws, then provide a cited, structured
+                    answer.
                   </p>
                 </div>
               )}
@@ -537,24 +608,32 @@ export default function ResearchDashboard() {
                   <div key={msg.id} className="flex justify-end">
                     <div className="max-w-[75%]">
                       <div className="bg-[#D4AF37] text-[#161B28] px-5 py-3 rounded-2xl rounded-br-md shadow-md">
-                        <p className="text-sm font-medium leading-relaxed">{msg.content}</p>
-                        {msg.attachedDocuments && msg.attachedDocuments.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {msg.attachedDocuments.map((doc) => (
-                              <div
-                                key={doc.document_id}
-                                className="flex max-w-full items-center gap-1.5 rounded-lg bg-[#161B28]/15 px-2 py-1 text-[11px] font-semibold"
-                                title={doc.filename}
-                              >
-                                <FileText size={12} />
-                                <span className="max-w-[220px] truncate">{doc.filename}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <p className="text-sm font-medium leading-relaxed">
+                          {msg.content}
+                        </p>
+                        {msg.attachedDocuments &&
+                          msg.attachedDocuments.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {msg.attachedDocuments.map((doc) => (
+                                <div
+                                  key={doc.document_id}
+                                  className="flex max-w-full items-center gap-1.5 rounded-lg bg-[#161B28]/15 px-2 py-1 text-[11px] font-semibold"
+                                  title={doc.filename}
+                                >
+                                  <FileText size={12} />
+                                  <span className="max-w-[220px] truncate">
+                                    {doc.filename}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                       </div>
                       <p className="text-[10px] text-slate-500 text-right mt-1 mr-1">
-                        {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {msg.timestamp.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                     </div>
                   </div>
@@ -566,55 +645,31 @@ export default function ResearchDashboard() {
                         {/* Header */}
                         <div className="flex items-center gap-2 px-5 pt-4 pb-2">
                           <Scale size={16} className="text-[#D4AF37]" />
-                          <span className="text-[#D4AF37] font-semibold text-sm">LankaLawBot</span>
+                          <span className="text-[#D4AF37] font-semibold text-sm">
+                            LankaLawBot
+                          </span>
                           {msg.confidence && (
-                            <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full border flex items-center gap-1 ${confidenceColor(msg.confidence)}`}>
+                            <span
+                              className={`ml-auto text-[11px] px-2 py-0.5 rounded-full border flex items-center gap-1 ${confidenceColor(msg.confidence)}`}
+                            >
                               {confidenceDots(msg.confidence)}
-                              <span className="ml-1 capitalize">{msg.confidence}</span>
+                              <span className="ml-1 capitalize">
+                                {msg.confidence}
+                              </span>
                             </span>
                           )}
                         </div>
 
-                        {/* Summary / Main answer */}
+                        {/* Main content — markdown or plain text */}
                         <div className="px-5 pb-3">
-                          <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
-                            {msg.content}
-                          </p>
+                          {msg.markdownContent ? (
+                            <MarkdownRenderer content={msg.markdownContent} />
+                          ) : (
+                            <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
+                              {msg.content}
+                            </p>
+                          )}
                         </div>
-
-                        {/* Analysis section (collapsible) */}
-                        {msg.analysis && msg.analysis.length > 0 && (
-                          <div className="border-t border-slate-700/40">
-                            <button
-                              onClick={() => toggleAnalysis(msg.id)}
-                              className="w-full flex items-center justify-between px-5 py-2.5 text-sm text-slate-300 hover:bg-slate-800/40 transition"
-                            >
-                              <span className="flex items-center gap-2">
-                                <BookOpen size={14} className="text-[#D4AF37]" />
-                                Legal Analysis ({msg.analysis.length} points)
-                              </span>
-                              {expandedAnalysis.has(msg.id) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                            </button>
-                            {expandedAnalysis.has(msg.id) && (
-                              <div className="px-5 pb-4 space-y-3">
-                                {msg.analysis.map((claim, idx) => (
-                                  <div key={idx} className="bg-slate-800/40 rounded-lg p-3">
-                                    <p className="text-slate-300 text-sm leading-relaxed">{claim.statement}</p>
-                                    {claim.citations.length > 0 && (
-                                      <div className="flex gap-1.5 mt-2">
-                                        {claim.citations.map((cid) => (
-                                          <span key={cid} className="text-[10px] font-bold bg-[#D4AF37]/20 text-[#D4AF37] px-1.5 py-0.5 rounded">
-                                            {cid}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
 
                         {/* Sources section (collapsible) */}
                         {msg.sources && msg.sources.length > 0 && (
@@ -627,12 +682,19 @@ export default function ResearchDashboard() {
                                 <Info size={14} className="text-sky-400" />
                                 Sources ({msg.sources.length})
                               </span>
-                              {expandedSources.has(msg.id) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                              {expandedSources.has(msg.id) ? (
+                                <ChevronUp size={14} />
+                              ) : (
+                                <ChevronDown size={14} />
+                              )}
                             </button>
                             {expandedSources.has(msg.id) && (
                               <div className="px-5 pb-4 space-y-2">
                                 {msg.sources.map((src) => (
-                                  <div key={src.citation_id} className="bg-slate-800/30 rounded-lg p-3 flex items-start justify-between gap-3">
+                                  <div
+                                    key={src.citation_id}
+                                    className="bg-slate-800/30 rounded-lg p-3 flex items-start justify-between gap-3"
+                                  >
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-2 mb-1">
                                         <span className="text-[10px] font-bold bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded shrink-0">
@@ -643,10 +705,15 @@ export default function ResearchDashboard() {
                                         </span>
                                       </div>
                                       <p className="text-[11px] text-slate-400">
-                                        {src.year > 0 ? `Year: ${src.year}` : ""}{src.section ? ` · ${src.section}` : ""}
+                                        {src.year > 0
+                                          ? `Year: ${src.year}`
+                                          : ""}
+                                        {src.section ? ` · ${src.section}` : ""}
                                       </p>
                                       {src.excerpt && (
-                                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">{src.excerpt}</p>
+                                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                                          {src.excerpt}
+                                        </p>
                                       )}
                                     </div>
                                     <button
@@ -666,13 +733,21 @@ export default function ResearchDashboard() {
                         {/* Disclaimer */}
                         {msg.disclaimer && (
                           <div className="border-t border-slate-700/40 px-5 py-2.5 flex items-start gap-2">
-                            <AlertTriangle size={12} className="text-amber-500 mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-slate-500 leading-relaxed">{msg.disclaimer}</p>
+                            <AlertTriangle
+                              size={12}
+                              className="text-amber-500 mt-0.5 shrink-0"
+                            />
+                            <p className="text-[11px] text-slate-500 leading-relaxed">
+                              {msg.disclaimer}
+                            </p>
                           </div>
                         )}
                       </div>
                       <p className="text-[10px] text-slate-500 mt-1 ml-1">
-                        {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {msg.timestamp.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                     </div>
                   </div>
@@ -685,13 +760,17 @@ export default function ResearchDashboard() {
                   <div className="bg-[#161B28] border border-slate-700/50 rounded-2xl rounded-bl-md px-5 py-4 shadow-lg">
                     <div className="flex items-center gap-2">
                       <Scale size={14} className="text-[#D4AF37]" />
-                      <span className="text-[#D4AF37] text-sm font-semibold">LankaLawBot</span>
+                      <span className="text-[#D4AF37] text-sm font-semibold">
+                        LankaLawBot
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-2">
                       <span className="typing-dot w-2 h-2 rounded-full bg-slate-400" />
                       <span className="typing-dot w-2 h-2 rounded-full bg-slate-400" />
                       <span className="typing-dot w-2 h-2 rounded-full bg-slate-400" />
-                      <span className="text-xs text-slate-500 ml-2">Analyzing Sri Lankan law…</span>
+                      <span className="text-xs text-slate-500 ml-2">
+                        Analyzing Sri Lankan law…
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -724,12 +803,16 @@ export default function ResearchDashboard() {
           <div className="space-y-3">
             {addedMaterials.length === 0 ? (
               <p className="text-slate-500 text-xs italic leading-relaxed">
-                No materials added yet. Expand &quot;Sources&quot; in a response and click
-                &quot;+ Add&quot; to save references here for drafting.
+                No materials added yet. Expand &quot;Sources&quot; in a response
+                and click &quot;+ Add&quot; to save references here for
+                drafting.
               </p>
             ) : (
               addedMaterials.map((item) => (
-                <div key={item.citation_id} className="flex justify-between items-start group bg-slate-800/30 rounded-lg p-3">
+                <div
+                  key={item.citation_id}
+                  className="flex justify-between items-start group bg-slate-800/30 rounded-lg p-3"
+                >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-[10px] font-bold bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded shrink-0">
@@ -740,7 +823,8 @@ export default function ResearchDashboard() {
                       {item.title}
                     </h4>
                     <p className="text-[10px] text-slate-500 mt-0.5">
-                      {item.year > 0 ? `Year: ${item.year}` : ""}{item.section ? ` · ${item.section}` : ""}
+                      {item.year > 0 ? `Year: ${item.year}` : ""}
+                      {item.section ? ` · ${item.section}` : ""}
                     </p>
                   </div>
                   <button

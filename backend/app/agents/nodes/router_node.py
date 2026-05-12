@@ -43,7 +43,18 @@ _ROUTE_TO_NODE: dict[str, str] = {
 @traceable(name="RouterNode")
 async def router_node(
     state: AgentState,
-) -> Command[Literal["quick_qa", "deep_research", "reasoning", "drafting", "review", "verify", "unsupported", "formatter"]]:
+) -> Command[
+    Literal[
+        "quick_qa",
+        "deep_research",
+        "reasoning",
+        "drafting",
+        "review",
+        "verify",
+        "unsupported",
+        "formatter",
+    ]
+]:
     """Classify intent, build retrieval plan, and dispatch to a worker."""
 
     # ── Step 1: Classify intent via LLM + fallback ──
@@ -60,30 +71,10 @@ async def router_node(
 
     # ── Step 2: Handle early exits ──
 
-    # Clarification needed — skip worker, go to formatter directly
-    if plan.needs_clarification:
-        return Command(
-            update={
-                "route": plan.route.value,
-                "task_type": plan.task_type.value,
-                "answer_mode": plan.answer_mode.value,
-                "target_corpus": plan.target_corpus.value,
-                "route_confidence": plan.confidence.value,
-                "routing_reason": plan.routing_reason,
-                "needs_clarification": True,
-                "clarification_question": plan.clarification_question,
-                "summary": plan.clarification_question or (
-                    "Please provide more detail so the system can "
-                    "route this legal query correctly."
-                ),
-                "confidence": "low",
-                "current_agent": "router",
-            },
-            goto="formatter",
-        )
+    has_user_documents = bool(state.document_ids)
 
     # Review route without documents — request upload
-    if plan.route == IntentRoute.REVIEW and not state.document_ids:
+    if plan.route == IntentRoute.REVIEW and not has_user_documents:
         return Command(
             update={
                 "route": plan.route.value,
@@ -101,6 +92,37 @@ async def router_node(
                 "current_agent": "router",
             },
             goto="formatter",
+        )
+
+    # Clarification needed — skip worker, except when a review document is already attached.
+    if plan.needs_clarification and not (
+        plan.route == IntentRoute.REVIEW and has_user_documents
+    ):
+        return Command(
+            update={
+                "route": plan.route.value,
+                "task_type": plan.task_type.value,
+                "answer_mode": plan.answer_mode.value,
+                "target_corpus": plan.target_corpus.value,
+                "route_confidence": plan.confidence.value,
+                "routing_reason": plan.routing_reason,
+                "needs_clarification": True,
+                "clarification_question": plan.clarification_question,
+                "summary": plan.clarification_question
+                or (
+                    "Please provide more detail so the system can "
+                    "route this legal query correctly."
+                ),
+                "confidence": "low",
+                "current_agent": "router",
+            },
+            goto="formatter",
+        )
+
+    if plan.needs_clarification and plan.route == IntentRoute.REVIEW:
+        logger.info(
+            "Router clarification bypassed for review because %d document(s) are attached.",
+            len(state.document_ids),
         )
 
     # ── Step 3: Build retrieval plan ──
@@ -216,7 +238,7 @@ def _build_retrieval_plan(
             "use_user_documents": has_documents,
             "legal_top_k": 5,
             "user_doc_top_k": 8,
-            "year_filter": None,          # No filters — broad search for research
+            "year_filter": None,  # No filters — broad search for research
             "act_name_filter": None,
         }
 
@@ -262,8 +284,11 @@ def _is_document_summary_query(question: str) -> bool:
     return any(
         phrase in text
         for phrase in (
-            "summarize this", "summarise this", "summary of this",
-            "summarize the document", "summarise the document",
+            "summarize this",
+            "summarise this",
+            "summary of this",
+            "summarize the document",
+            "summarise the document",
             "what does this document say",
         )
     )
