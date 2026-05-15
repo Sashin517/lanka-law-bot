@@ -351,3 +351,16 @@ class RetrievalService:
             len(candidates),
         )
         return candidates
+
+
+# --- Singleton factory (module-level) ---
+
+_instance: RetrievalService | None = None
+
+
+def get_retrieval_service() -> RetrievalService:
+    """Singleton factory for RetrievalService."""
+    global _instance
+    if _instance is None:
+        _instance = RetrievalService()
+    return _instance

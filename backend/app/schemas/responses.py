@@ -38,7 +38,6 @@ class RouteMetadata(BaseModel):
     confidence: str
     needs_clarification: bool = False
     clarification_question: str | None = None
-    routing_reason: str = ""
 
 
 class LegalResponse(BaseModel):

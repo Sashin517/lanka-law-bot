@@ -2,6 +2,7 @@ import type {
   DocumentStatusResponse,
   UploadDocumentResponse,
 } from "@/types/documents";
+import type { QueryMode } from "@/types/QueryMode";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -18,10 +19,9 @@ export interface SourceRef {
 
 export interface LegalQueryPayload {
   question: string;
+  mode?: QueryMode;
   document_ids?: string[];
   matter_id?: string | null;
-  doc_type?: string | null;
-  start_year?: number | null;
 }
 
 export interface LegalQueryResponse {

@@ -8,7 +8,10 @@ agent layer can evolve independently of the API contract.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+# Valid mode values — must match QueryMode enum in schemas.requests
+_VALID_MODES = frozenset({"quick_qa", "deep_research", "drafting", "review", "reasoning"})
 
 
 # ── Supporting data models ────────────────────────────────────────
@@ -59,9 +62,18 @@ class AgentState(BaseModel):
 
     # ── User input ──
     question: str = ""
+    mode: str = "quick_qa"
     document_ids: list[str] = Field(default_factory=list)
     matter_id: str | None = None
     session_id: str = ""
+
+    @field_validator("mode")
+    @classmethod
+    def validate_mode(cls, v: str) -> str:
+        """Ensure mode is always a valid value; fall back to quick_qa."""
+        if v not in _VALID_MODES:
+            return "quick_qa"
+        return v
 
     # ── Router output ──
     route: str = ""  # quick_qa, deep_research, …

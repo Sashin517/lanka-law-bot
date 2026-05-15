@@ -10,8 +10,6 @@ from app.services.retrieval_service import get_retrieval_service
 from app.services.context_assembler import MultiSourceContextAssembler
 from app.services.generation_service import GenerationService
 from app.services.citation_verifier import CitationVerifier
-from app.services.intent_routing import IntentRoute, SemanticIntentRouter
-from app.services.intent_routing.models import IntentRoutePlan, LegalTaskType, TargetCorpus
 from app.services.user_document_retrieval_service import UserDocumentRetrievalService
 
 logger = logging.getLogger(__name__)
@@ -21,7 +19,6 @@ _retrieval = get_retrieval_service()
 _assembler = MultiSourceContextAssembler()
 _generator = GenerationService()
 _verifier = CitationVerifier()
-_router = SemanticIntentRouter()
 
 
 class RetrievalPlan(BaseModel):

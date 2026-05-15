@@ -1,18 +1,30 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { Plus, Send } from "lucide-react";
+import { Plus, Send, Telescope, PenTool, FileSearch, Scale } from "lucide-react";
 
 import { ChatAttachmentCard } from "@/components/ChatAttachmentCard";
 import type { UploadedDocument } from "@/types/documents";
+import type { QueryMode } from "@/types/QueryMode";
+import { QUERY_MODES } from "@/types/QueryMode";
+
+/** Map icon string names to Lucide components. */
+const ICON_MAP: Record<string, React.ElementType> = {
+  Telescope,
+  PenTool,
+  FileSearch,
+  Scale,
+};
 
 interface ChatInputBarProps {
   value: string;
   isLoading: boolean;
   documents: UploadedDocument[];
+  selectedMode: QueryMode;
   onChange: (value: string) => void;
   onFileSelected: (file: File) => void;
   onRemoveDocument: (documentId: string) => void;
+  onModeChange: (mode: QueryMode) => void;
   onSubmit: () => void;
 }
 
@@ -23,9 +35,11 @@ export function ChatInputBar({
   value,
   isLoading,
   documents,
+  selectedMode,
   onChange,
   onFileSelected,
   onRemoveDocument,
+  onModeChange,
   onSubmit,
 }: ChatInputBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +56,11 @@ export function ChatInputBar({
     if (canSubmit) {
       onSubmit();
     }
+  };
+
+  const toggleMode = (mode: QueryMode) => {
+    // Toggle: if already selected, revert to quick_qa (default)
+    onModeChange(selectedMode === mode ? "quick_qa" : mode);
   };
 
   return (
@@ -103,6 +122,34 @@ export function ChatInputBar({
         >
           <Send size={17} />
         </button>
+      </div>
+
+      {/* ── Mode selector buttons ── */}
+      <div className="mt-2 flex items-center gap-1.5 px-1">
+        {QUERY_MODES.map((mode) => {
+          const Icon = ICON_MAP[mode.icon];
+          const isActive = selectedMode === mode.value;
+          return (
+            <button
+              key={mode.value}
+              type="button"
+              onClick={() => toggleMode(mode.value)}
+              disabled={isLoading}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150
+                ${
+                  isActive
+                    ? "bg-[#D4AF37]/20 text-[#D4AF37] ring-1 ring-[#D4AF37]/40"
+                    : "text-slate-400 hover:bg-slate-700/50 hover:text-slate-200"
+                }
+                disabled:cursor-not-allowed disabled:opacity-50`}
+              aria-pressed={isActive}
+              aria-label={`${mode.label} mode`}
+            >
+              {Icon && <Icon size={14} />}
+              <span>{mode.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {(hasPendingDocument || hasFailedDocument) && (

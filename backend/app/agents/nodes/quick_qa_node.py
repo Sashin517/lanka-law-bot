@@ -4,11 +4,16 @@ Pipeline: Retrieve → Assemble → Generate (hybrid JSON) → Verify citations.
 
 Uses its own LLM chain with the hybrid output format (JSON + markdown).
 GenerationService is kept as legacy fallback but no longer used here.
+
+If the user's question matches a citation-verification pattern
+(e.g. "Does Section 12 of the Rent Act say…"), this node internally
+delegates to the verify_node for a targeted fact-check pipeline.
 """
 
 from __future__ import annotations
 
 import logging
+import re
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -31,6 +36,7 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
+from app.agents.nodes.verify_node import verify_node
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +56,17 @@ _qa_chain = (
 
 @traceable(name="QuickQANode")
 async def quick_qa_node(state: AgentState) -> dict:
-    """Execute the single-pass RAG pipeline for fast legal lookups."""
+    """Execute the single-pass RAG pipeline for fast legal lookups.
+
+    If the question matches a citation-verification pattern, delegates
+    to ``verify_node`` as an internal sub-mode.
+    """
+
+    # ── Sub-mode: verify request detection ──
+    if _is_verify_request(state.question):
+        logger.info("Verify sub-mode triggered within quick_qa for: '%s'", state.question[:80])
+        return await verify_node(state)
+
 
     # ── Step 1: Retrieve from legal corpus ──
     legal_results: list[dict] = []
@@ -143,3 +159,21 @@ async def quick_qa_node(state: AgentState) -> dict:
         "markdown_content": markdown,
         "confidence": confidence,
     }
+
+
+# ── Helpers ──────────────────────────────────────────────────────
+
+
+def _is_verify_request(question: str) -> bool:
+    """Detect explicit citation-verification requests.
+
+    Triggers the verify sub-mode for questions like:
+    - "Verify that Section 12 of the Rent Act says..."
+    - "Is it true that the Penal Code Section 300 states..."
+    - "Confirm that tenants cannot be evicted under..."
+    """
+    text = question.lower()
+    return bool(
+        re.search(r"\bverify\b.*\b(section|act|clause|case)\b", text)
+        or re.search(r"\b(is it true|does .+ say|confirm that)\b", text)
+    )

@@ -25,6 +25,7 @@ import {
   uploadDocument,
 } from "@/lib/api";
 import type { AttachedDocument, UploadedDocument } from "@/types/documents";
+import type { QueryMode } from "@/types/QueryMode";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -63,6 +64,7 @@ export default function ResearchDashboard() {
   const [uploadedDocuments, setUploadedDocuments] = useState<
     UploadedDocument[]
   >([]);
+  const [selectedMode, setSelectedMode] = useState<QueryMode>("quick_qa");
 
   // Collapsible state for bot responses (keyed by message id)
   const [expandedSources, setExpandedSources] = useState<Set<string>>(
@@ -292,18 +294,10 @@ export default function ResearchDashboard() {
     setInputQuery("");
     setIsLoading(true);
 
-    // Build optional filters
-    let doc_type: string | null = null;
-    if (filterSource.acts && !filterSource.caseLaws) doc_type = "Act";
-    if (!filterSource.acts && filterSource.caseLaws) doc_type = "Case Law";
-    let start_year: number | null = null;
-    if (filterDate === "last5") start_year = new Date().getFullYear() - 5;
-
     try {
       const data = await sendLegalQuery({
         question: query,
-        doc_type,
-        start_year,
+        mode: selectedMode,
         matter_id: null,
         document_ids: attachedDocuments.map((doc) => doc.document_id),
       });
@@ -786,9 +780,11 @@ export default function ResearchDashboard() {
               value={inputQuery}
               isLoading={isLoading}
               documents={uploadedDocuments}
+              selectedMode={selectedMode}
               onChange={setInputQuery}
               onFileSelected={handleFileSelected}
               onRemoveDocument={handleRemoveDocument}
+              onModeChange={setSelectedMode}
               onSubmit={handleSend}
             />
           </div>

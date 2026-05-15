@@ -38,6 +38,7 @@ async def search_law(query: LegalQuery):
     # Build initial state from the request
     initial_state = AgentState(
         question=query.question,
+        mode=query.mode.value,
         document_ids=query.document_ids or [],
         matter_id=query.matter_id,
     )

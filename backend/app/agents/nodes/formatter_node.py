@@ -29,7 +29,6 @@ async def formatter_node(state: AgentState) -> dict:
         "confidence": state.route_confidence,
         "needs_clarification": state.needs_clarification,
         "clarification_question": state.clarification_question,
-        "routing_reason": state.routing_reason,
     }
 
     final = {
