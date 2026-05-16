@@ -7,7 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 # Resolve paths relative to the *backend* directory
-_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_BACKEND_DIR = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 
 
 class Settings(BaseSettings):
@@ -46,13 +48,12 @@ class Settings(BaseSettings):
     USER_CHILD_CHUNK_SIZE: int = 550
     USER_CHILD_CHUNK_OVERLAP: int = 120
 
-
     PARENT_CHUNK_SIZE: int = 2000
     PARENT_CHUNK_OVERLAP: int = 200
     CHILD_CHUNK_SIZE: int = 500
     CHILD_CHUNK_OVERLAP: int = 100
 
-    RETRIEVAL_CANDIDATES_K: int = 15  
+    RETRIEVAL_CANDIDATES_K: int = 15
     DENSE_WEIGHT: float = 0.6
     SPARSE_WEIGHT: float = 0.4
 
@@ -62,14 +63,14 @@ class Settings(BaseSettings):
     RELEVANCE_SCORE_THRESHOLD: float = 0.0
 
     GOOGLE_API_KEY: str = ""
-    LLM_MODEL_NAME: str = "gemini-3.1-flash-lite-preview"
+    LLM_MODEL_NAME: str = "gemini-3-flash-preview"
     LLM_TEMPERATURE: float = 0.1
     LLM_MAX_TOKENS: int = 2048
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(_BACKEND_DIR, ".env"),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
 

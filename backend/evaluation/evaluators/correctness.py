@@ -46,14 +46,22 @@ def correctness_evaluator(run, example):
 
     # Skip clarification tests — they don't produce substantive answers
     if category == "clarification":
-        return {"key": "correctness", "score": None, "comment": "Skipped for clarification"}
+        return {
+            "key": "correctness",
+            "score": None,
+            "comment": "Skipped for clarification",
+        }
 
     question = example.inputs.get("question", "")
     expected_answer = example.outputs.get("expected_answer", "")
     generated_answer = run.outputs.get("answer", "")
 
     if not expected_answer:
-        return {"key": "correctness", "score": None, "comment": "No ground truth provided"}
+        return {
+            "key": "correctness",
+            "score": None,
+            "comment": "No ground truth provided",
+        }
 
     if not generated_answer:
         return {"key": "correctness", "score": 0.0, "comment": "No answer generated"}
@@ -62,23 +70,30 @@ def correctness_evaluator(run, example):
 
     # Retry with exponential backoff for rate-limit (429) errors
     import time
+
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            result = chain.invoke({
-                "input": question,
-                "expected": expected_answer,
-                "output": generated_answer,
-            })
+            result = chain.invoke(
+                {
+                    "input": question,
+                    "expected": expected_answer,
+                    "output": generated_answer,
+                }
+            )
             score = float(result.content.strip())
             score = max(0.0, min(1.0, score))
             return {"key": "correctness", "score": score}
         except Exception as e:
             if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                wait = 15 * (2 ** attempt)  # 15s, 30s, 60s
+                wait = 15 * (2**attempt)  # 15s, 30s, 60s
                 time.sleep(wait)
                 continue
             # Non-rate-limit error — fail immediately
             return {"key": "correctness", "score": 0.0, "comment": f"LLM error: {e}"}
 
-    return {"key": "correctness", "score": 0.0, "comment": "Rate limit exhausted after retries"}
+    return {
+        "key": "correctness",
+        "score": 0.0,
+        "comment": "Rate limit exhausted after retries",
+    }

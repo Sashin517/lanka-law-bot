@@ -47,7 +47,6 @@ python -m evaluation.combine_benchmarks
 # Upload to LangSmith
 python -m evaluation.upload_dataset --json benchmarks/datasets/full_benchmark.json --name "sllb-v1"
 ```
-cd backend
 
 # Combine into full benchmark
 python -m evaluation.combine_benchmarks

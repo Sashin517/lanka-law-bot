@@ -78,10 +78,13 @@ async def grounding_node(
     if state.markdown_content:
         claims_text = state.markdown_content
     else:
-        claims_text = "\n".join(
-            f"- {c.statement} (cites: {', '.join(c.citation_ids)})"
-            for c in state.analysis
-        ) or "(No generated content)"
+        claims_text = (
+            "\n".join(
+                f"- {c.statement} (cites: {', '.join(c.citation_ids)})"
+                for c in state.analysis
+            )
+            or "(No generated content)"
+        )
 
     # ── Call the grounding judge LLM ──
     try:
@@ -89,7 +92,7 @@ async def grounding_node(
             {
                 "summary": state.summary,
                 "claims": claims_text,
-                "sources": state.context_str[:12000],  # Cap context to fit in window
+                "sources": state.context_str[:120000],  # Cap context to fit in window
             }
         )
 

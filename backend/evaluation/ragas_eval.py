@@ -62,6 +62,9 @@ async def collect_samples(benchmark: list[dict]) -> list[dict]:
 
         logger.info("[%d/%d] Processing: %s (mode=%s)", i + 1, len(benchmark), item["id"], mode)
 
+        # Throttle to respect Gemini free-tier rate limits (15 RPM max)
+        await asyncio.sleep(15)
+
         try:
             final_state = await run_pipeline(
                 question=question,
