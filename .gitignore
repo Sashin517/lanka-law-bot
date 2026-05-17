@@ -1,8 +1,8 @@
-# Next.js / Node
+# next, node
 frontend/node_modules/
 frontend/.next/
 
-# Python
+# python
 backend/__pycache__/
 __pycache__/
 *.py[cod]
@@ -10,10 +10,28 @@ __pycache__/
 backend/venv/
 backend/venvcls/
 
-
+# env var
 .env
 
-# Massive Data & Databases
+# venv
+.env/
+env/
+venv/
+.venv/
+
+# conda
+etc/
+
+# temp, backup
+tmp/
+temp/
+*.tmp
+*.bak
+*~
+*.swp
+*.swo
+
+# data, db
 backend/data/
 backend/database/
 
