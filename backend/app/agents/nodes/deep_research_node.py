@@ -79,7 +79,7 @@ async def deep_research_node(state: AgentState) -> dict:
     logger.info("Decomposed into %d sub-queries: %s", len(sub_queries), sub_queries)
 
     # ── Step 2: Parallel retrieval across all sub-queries ──
-    legal_results = await _parallel_legal_retrieval(sub_queries)
+    legal_results = await _parallel_legal_retrieval(sub_queries, state.ablation_config)
     logger.info("Parallel retrieval returned %d total results.", len(legal_results))
 
     # ── Step 3: User document retrieval (when document_ids present) ──
@@ -91,7 +91,7 @@ async def deep_research_node(state: AgentState) -> dict:
                 document_ids=state.document_ids,
                 matter_id=state.matter_id,
                 top_k=state.user_doc_top_k,
-                expand_parents=True,
+                expand_parents=state.ablation_config.get("expand_parents", True),
             )
         except Exception:
             logger.exception("User-document retrieval failed in deep_research.")
@@ -145,8 +145,9 @@ async def deep_research_node(state: AgentState) -> dict:
     markdown = raw.get("memo_markdown", "")
     sources_used = raw.get("sources_used", [])
 
-    valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
-    markdown = strip_invalid_anchors(markdown, valid_ids)
+    if not state.ablation_config.get("skip_verification"):
+        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        markdown = strip_invalid_anchors(markdown, valid_ids)
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
@@ -184,14 +185,15 @@ async def _decompose_query(question: str) -> list[str]:
     return [question]
 
 
-async def _parallel_legal_retrieval(sub_queries: list[str]) -> list[dict]:
+async def _parallel_legal_retrieval(sub_queries: list[str], ablation_config: dict) -> list[dict]:
     """Run retrieval for all sub-queries concurrently, then deduplicate."""
     tasks = [
         asyncio.to_thread(
             _retrieval.search,
             query=sq,
             top_k=5,
-            expand_parents=True,
+            expand_parents=ablation_config.get("expand_parents", True),
+            **ablation_config,
         )
         for sq in sub_queries
     ]

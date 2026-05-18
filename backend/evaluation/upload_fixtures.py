@@ -21,8 +21,8 @@ load_dotenv()
 
 from app.database.session import SessionLocal, init_db
 from app.models.document import IngestionJob, UserDocument
-from app.services.document_storage import DocumentStorage
-from app.services.ingestion_jobs import IngestionJobService
+from app.services.ingestion.document_storage import DocumentStorage
+from app.services.ingestion.ingestion_jobs import IngestionJobService
 from app.workers.document_ingestion_worker import process_document_ingestion
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
@@ -50,7 +50,12 @@ def ingest_fixture(fixture: dict, backend_dir: Path) -> str:
         # Store the markdown file directly (fixtures are .md)
         storage = DocumentStorage()
         matter_part = storage.safe_path_part(matter_id or "general")
-        target_dir = Path(storage.upload_root) / storage.safe_path_part(TENANT_ID) / matter_part / document_id
+        target_dir = (
+            Path(storage.upload_root)
+            / storage.safe_path_part(TENANT_ID)
+            / matter_part
+            / document_id
+        )
         target_dir.mkdir(parents=True, exist_ok=True)
         target_path = target_dir / "original.md"
 
@@ -59,6 +64,7 @@ def ingest_fixture(fixture: dict, backend_dir: Path) -> str:
         target_path.write_bytes(content)
 
         import hashlib
+
         file_hash = hashlib.sha256(content).hexdigest()
 
         # Create DB record
@@ -107,7 +113,9 @@ def ingest_fixture(fixture: dict, backend_dir: Path) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Upload fixture documents for review benchmarks")
+    parser = argparse.ArgumentParser(
+        description="Upload fixture documents for review benchmarks"
+    )
     parser.add_argument(
         "--benchmark",
         type=str,
@@ -130,7 +138,8 @@ def main():
         entries = json.load(f)
 
     fixture_entries = [
-        (i, e) for i, e in enumerate(entries)
+        (i, e)
+        for i, e in enumerate(entries)
         if e.get("requires_user_document") and e.get("document_fixture")
     ]
 

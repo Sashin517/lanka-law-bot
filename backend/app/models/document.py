@@ -72,7 +72,7 @@ class DocumentChunk(Base):
     parent_id: Mapped[str | None] = mapped_column(String(128), index=True, nullable=True)
     chunk_type: Mapped[str] = mapped_column(String(64), index=True)
     chunk_strategy: Mapped[str] = mapped_column(String(128))
-    qdrant_point_id: Mapped[str] = mapped_column(String(64), index=True)
+    vector_record_id: Mapped[str] = mapped_column(String(64), index=True)
     page_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
     page_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
     heading_path: Mapped[str | None] = mapped_column(Text, nullable=True)

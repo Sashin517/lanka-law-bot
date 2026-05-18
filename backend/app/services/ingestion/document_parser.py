@@ -41,7 +41,10 @@ class DocumentParser:
 
         try:
             from docling.document_converter import DocumentConverter, PdfFormatOption
-            from docling.datamodel.pipeline_options import PdfPipelineOptions, AcceleratorOptions
+            from docling.datamodel.pipeline_options import (
+                PdfPipelineOptions,
+                AcceleratorOptions,
+            )
             from docling.datamodel.base_models import InputFormat
         except ImportError as exc:
             raise RuntimeError(

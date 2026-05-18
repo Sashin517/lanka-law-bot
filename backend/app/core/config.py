@@ -22,7 +22,6 @@ class Settings(BaseSettings):
     ]
 
     BASE_DIR: str = _BACKEND_DIR
-    CHROMA_PATH: str = os.path.join(_BACKEND_DIR, "database", "chroma_db")
     DATA_PATH: str = os.path.join(_BACKEND_DIR, "data")
 
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
@@ -31,14 +30,17 @@ class Settings(BaseSettings):
     USER_MARKDOWN_DIR: str = os.path.join(_BACKEND_DIR, "storage", "processed_markdown")
     METADATA_DB_PATH: str = os.path.join(_BACKEND_DIR, "database", "metadata.sqlite3")
 
-    QDRANT_URL: str = ""
-    QDRANT_API_KEY: str = ""
-    QDRANT_COLLECTION_USER_DOCS: str = "user_documents"
+    PINECONE_API_KEY: str = ""
+    PINECONE_INDEX_HOST: str = ""
+    PINECONE_INDEX_NAME: str = "lawdex-index"
+    PINECONE_NAMESPACE: str = "user_documents"
 
-    VOYAGE_API_KEY: str = ""
-    VOYAGE_EMBEDDING_MODEL: str = "voyage-law-2"
-    VOYAGE_EMBEDDING_DIMENSION: int = 1024
-    VOYAGE_EMBEDDING_INPUT_TYPE: str = "document"
+    PINECONE_LEGAL_INDEX_HOST: str = ""
+    PINECONE_LEGAL_INDEX_NAME: str = "lawdex-legal-index"
+    PINECONE_LEGAL_NAMESPACE: str = "legal_corpus"
+
+    PINECONE_EMBEDDING_MODEL: str = "llama-text-embed-v2"
+    PINECONE_EMBEDDING_DIMENSION: int = 2048
 
     UPLOAD_MAX_MB: int = 50
     ALLOWED_UPLOAD_EXTENSIONS: List[str] = [".pdf", ".docx", ".txt", ".md"]
@@ -53,7 +55,7 @@ class Settings(BaseSettings):
     CHILD_CHUNK_SIZE: int = 500
     CHILD_CHUNK_OVERLAP: int = 100
 
-    RETRIEVAL_CANDIDATES_K: int = 15
+    RETRIEVAL_CANDIDATES_K: int = 30
     DENSE_WEIGHT: float = 0.6
     SPARSE_WEIGHT: float = 0.4
 

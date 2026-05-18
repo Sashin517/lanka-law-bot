@@ -2,7 +2,7 @@
 
 Pipeline:
   1. Guard: require document_ids (return clarification if absent)
-  2. Retrieve user document chunks from Qdrant
+  2. Retrieve user document chunks from Pinecone
   3. Cross-reference against legal corpus from ChromaDB
   4. Assemble dual-source context with [DOC-*] and [LAW-*] anchors
   5. Generate clause-by-clause risk report (hybrid JSON + markdown)
@@ -89,7 +89,7 @@ async def review_node(state: AgentState) -> dict:
             document_ids=state.document_ids,
             matter_id=state.matter_id,
             top_k=_REVIEW_USER_DOC_TOP_K,
-            expand_parents=True,
+            expand_parents=state.ablation_config.get("expand_parents", True),
         )
     except Exception:
         logger.exception("User-document retrieval failed in review_node.")
@@ -100,7 +100,8 @@ async def review_node(state: AgentState) -> dict:
         legal_results = _retrieval.search(
             query=state.question,
             top_k=state.legal_top_k,
-            expand_parents=True,
+            expand_parents=state.ablation_config.get("expand_parents", True),
+            **state.ablation_config,
         )
 
     # Handle empty retrieval
@@ -150,8 +151,9 @@ async def review_node(state: AgentState) -> dict:
     markdown = raw.get("report_markdown", "")
     sources_used = raw.get("sources_used", [])
 
-    valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
-    markdown = strip_invalid_anchors(markdown, valid_ids)
+    if not state.ablation_config.get("skip_verification"):
+        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        markdown = strip_invalid_anchors(markdown, valid_ids)
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)

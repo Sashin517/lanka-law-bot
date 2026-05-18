@@ -74,9 +74,10 @@ async def quick_qa_node(state: AgentState) -> dict:
         legal_results = _retrieval.search(
             query=state.question,
             top_k=state.legal_top_k,
-            expand_parents=True,
+            expand_parents=state.ablation_config.get("expand_parents", True),
             year_filter=state.year_filter,
             act_name_filter=state.act_name_filter,
+            **state.ablation_config,
         )
 
     # ── Step 2: Retrieve from user documents (if applicable) ──
@@ -88,7 +89,7 @@ async def quick_qa_node(state: AgentState) -> dict:
                 document_ids=state.document_ids,
                 matter_id=state.matter_id,
                 top_k=state.user_doc_top_k,
-                expand_parents=True,
+                expand_parents=state.ablation_config.get("expand_parents", True),
             )
         except Exception:
             logger.exception("User-document retrieval failed in quick_qa_node.")
@@ -141,8 +142,9 @@ async def quick_qa_node(state: AgentState) -> dict:
     sources_used = raw.get("sources_used", [])
 
     # Run verification: strips hallucinated anchors
-    valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
-    markdown = strip_invalid_anchors(markdown, valid_ids)
+    if not state.ablation_config.get("skip_verification"):
+        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        markdown = strip_invalid_anchors(markdown, valid_ids)
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)

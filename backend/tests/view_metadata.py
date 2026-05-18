@@ -4,8 +4,9 @@ from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
 def main():
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    CHROMA_PATH = os.path.join(BASE_DIR, "database", "chroma_db")
+    TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
+    BACKEND_DIR = os.path.dirname(TESTS_DIR)
+    CHROMA_PATH = os.path.join(BACKEND_DIR, "database", "chroma_db")
 
     if not os.path.exists(CHROMA_PATH):
         print(f"Error: Chroma database not found at {CHROMA_PATH}")

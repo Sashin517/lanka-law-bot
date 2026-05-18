@@ -10,9 +10,8 @@ from langchain_classic.retrievers.document_compressors.cross_encoder_rerank impo
 )
 
 from app.core.config import settings
-from app.services.retrieval_fusion import reciprocal_rank_fusion, retrieval_dedup_key
-from app.services.user_document_vector_store import UserDocumentVectorStore
-from app.services.voyage_embedding_service import VoyageEmbeddingService
+from app.services.retrieval.retrieval_fusion import reciprocal_rank_fusion, retrieval_dedup_key
+from app.services.retrieval.user_document_vector_store import UserDocumentVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -21,16 +20,15 @@ class UserDocumentRetrievalService:
     """
     Hybrid retrieval for uploaded user documents:
 
-    1. Dense search in Qdrant over child chunks
+    1. Dense search in Pinecone over child chunks
     2. Sparse BM25 search over selected document child chunks
     3. Reciprocal Rank Fusion
     4. Cross-encoder reranking
-    5. Parent chunk expansion from Qdrant
+    5. Parent chunk expansion from Pinecone
     """
 
     def __init__(self) -> None:
         self._vector_store = UserDocumentVectorStore()
-        self._embeddings = VoyageEmbeddingService()
         cross_encoder = HuggingFaceCrossEncoder(model_name=settings.RERANKER_MODEL)
         self._reranker = CrossEncoderReranker(
             model=cross_encoder,
@@ -109,9 +107,8 @@ class UserDocumentRetrievalService:
         matter_id: str | None,
     ) -> list[Document]:
         try:
-            query_vector = self._embeddings.embed_query(query)
             return self._vector_store.search_children(
-                query_vector=query_vector,
+                query=query,
                 document_ids=document_ids,
                 tenant_id=tenant_id,
                 user_id=user_id,

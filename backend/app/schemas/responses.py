@@ -16,6 +16,7 @@ class SourceReference(BaseModel):
     year: int = 0
     breadcrumb: str | None = None
     excerpt: str = ""
+    content: str = Field(default="", exclude=True)
     source_type: str | None = None
     document_id: str | None = None
     filename: str | None = None

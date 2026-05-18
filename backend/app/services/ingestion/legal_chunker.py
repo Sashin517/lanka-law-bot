@@ -273,8 +273,8 @@ class LegalDocumentChunker:
             chunk_type=chunk_type,  # type: ignore[arg-type]
             chunk_strategy=chunk_strategy,
             text_hash=text_hash,
-            embedding_model=settings.VOYAGE_EMBEDDING_MODEL,
-            embedding_dimension=settings.VOYAGE_EMBEDDING_DIMENSION,
+            embedding_model=settings.PINECONE_EMBEDDING_MODEL,
+            embedding_dimension=settings.PINECONE_EMBEDDING_DIMENSION,
             created_at=datetime.utcnow().isoformat(),
         )
         return LegalChunk(id=chunk_id, text=text, metadata=metadata)

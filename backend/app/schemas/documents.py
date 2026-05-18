@@ -61,6 +61,6 @@ class UserDocumentMetadata(BaseModel):
     chunk_type: Literal["parent", "child", "section_summary"]
     chunk_strategy: str
     text_hash: str
-    embedding_model: str = "voyage-law-2"
-    embedding_dimension: int = 1024
+    embedding_model: str = "llama-text-embed-v2"
+    embedding_dimension: int = 2048
     created_at: str

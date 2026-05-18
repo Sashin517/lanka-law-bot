@@ -78,8 +78,9 @@ async def verify_node(state: AgentState) -> dict:
     legal_results = _retrieval.search(
         query=search_query,
         top_k=5,
-        expand_parents=True,
+        expand_parents=state.ablation_config.get("expand_parents", True),
         act_name_filter=act_name,  # Narrow to specific act when detected
+        **state.ablation_config,
     )
 
     # Handle empty retrieval
@@ -130,8 +131,9 @@ async def verify_node(state: AgentState) -> dict:
     markdown = raw.get("verdict_markdown", "")
     sources_used = raw.get("sources_used", [])
 
-    valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
-    markdown = strip_invalid_anchors(markdown, valid_ids)
+    if not state.ablation_config.get("skip_verification"):
+        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        markdown = strip_invalid_anchors(markdown, valid_ids)
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)

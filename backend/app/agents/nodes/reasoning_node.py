@@ -71,7 +71,8 @@ async def reasoning_node(state: AgentState) -> dict:
         legal_results = _retrieval.search(
             query=state.question,
             top_k=_REASONING_TOP_K,
-            expand_parents=True,
+            expand_parents=state.ablation_config.get("expand_parents", True),
+            **state.ablation_config,
             # No entity filters — reasoning needs broad context
         )
 
@@ -84,7 +85,7 @@ async def reasoning_node(state: AgentState) -> dict:
                 document_ids=state.document_ids,
                 matter_id=state.matter_id,
                 top_k=state.user_doc_top_k,
-                expand_parents=True,
+                expand_parents=state.ablation_config.get("expand_parents", True),
             )
         except Exception:
             logger.exception("User-document retrieval failed in reasoning_node.")
@@ -136,8 +137,9 @@ async def reasoning_node(state: AgentState) -> dict:
     markdown = raw.get("analysis_markdown", "")
     sources_used = raw.get("sources_used", [])
 
-    valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
-    markdown = strip_invalid_anchors(markdown, valid_ids)
+    if not state.ablation_config.get("skip_verification"):
+        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        markdown = strip_invalid_anchors(markdown, valid_ids)
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)

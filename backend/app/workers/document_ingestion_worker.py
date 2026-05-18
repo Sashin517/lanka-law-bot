@@ -6,11 +6,10 @@ from datetime import datetime
 
 from app.database.session import SessionLocal, init_db
 from app.models.document import DocumentChunk, IngestionJob, UserDocument
-from app.services.document_parser import DocumentParser
-from app.services.document_storage import DocumentStorage
-from app.services.legal_chunker import ChunkingDocumentContext, LegalDocumentChunker
-from app.services.user_document_vector_store import UserDocumentVectorStore
-from app.services.voyage_embedding_service import VoyageEmbeddingService
+from app.services.ingestion.document_parser import DocumentParser
+from app.services.ingestion.document_storage import DocumentStorage
+from app.services.ingestion.legal_chunker import ChunkingDocumentContext, LegalDocumentChunker
+from app.services.retrieval.user_document_vector_store import UserDocumentVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -69,11 +68,12 @@ def process_document_ingestion(job_id: str) -> None:
         vector_store.ensure_collection()
         vector_store.delete_document(document.id, document.tenant_id)
 
-        db.query(DocumentChunk).filter(DocumentChunk.document_id == document.id).delete()
+        db.query(DocumentChunk).filter(
+            DocumentChunk.document_id == document.id
+        ).delete()
         db.commit()
 
-        embeddings = VoyageEmbeddingService().embed_documents([chunk.text for chunk in chunks])
-        point_ids = vector_store.upsert_chunks(chunks, embeddings)
+        point_ids = vector_store.upsert_chunks(chunks)
 
         for chunk, point_id in zip(chunks, point_ids):
             db.add(
@@ -83,7 +83,7 @@ def process_document_ingestion(job_id: str) -> None:
                     parent_id=chunk.metadata.parent_id,
                     chunk_type=chunk.metadata.chunk_type,
                     chunk_strategy=chunk.metadata.chunk_strategy,
-                    qdrant_point_id=point_id,
+                    vector_record_id=point_id,
                     page_start=chunk.metadata.page_start,
                     page_end=chunk.metadata.page_end,
                     heading_path=json.dumps(chunk.metadata.heading_path),
@@ -99,7 +99,9 @@ def process_document_ingestion(job_id: str) -> None:
         job.completed_at = datetime.utcnow()
         job.error_message = None
         db.commit()
-        logger.info("Completed ingestion for document=%s chunks=%d", document.id, len(chunks))
+        logger.info(
+            "Completed ingestion for document=%s chunks=%d", document.id, len(chunks)
+        )
     except Exception as exc:
         logger.exception("Document ingestion failed for job=%s", job_id)
         job = db.get(IngestionJob, job_id)

@@ -5,8 +5,6 @@ langchain-huggingface
 langchain-google-genai
 langgraph>=0.4.0
 langsmith
-chromadb
-langchain-chroma
 sentence-transformers
 simsimd>=5.9.2
 numpy==1.26.4
@@ -17,8 +15,7 @@ pydantic-settings
 python-dotenv
 rank-bm25
 docling
-qdrant-client
-voyageai
+pinecone>=7.0.0
 python-multipart
 aiofiles
 rq

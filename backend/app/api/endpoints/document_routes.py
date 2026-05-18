@@ -2,20 +2,28 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+)
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db, init_db
-from app.models.document import IngestionJob, UserDocument
+from app.models.document import DocumentChunk, IngestionJob, UserDocument
 from app.schemas.documents import (
     DeleteDocumentResponse,
     DocumentListItem,
     DocumentStatusResponse,
     UploadDocumentResponse,
 )
-from app.services.document_storage import DocumentStorage
-from app.services.ingestion_jobs import IngestionJobService
-from app.services.user_document_vector_store import UserDocumentVectorStore
+from app.services.ingestion.document_storage import DocumentStorage
+from app.services.ingestion.ingestion_jobs import IngestionJobService
+from app.services.retrieval.user_document_vector_store import UserDocumentVectorStore
 from app.workers.document_ingestion_worker import process_document_ingestion
 
 router = APIRouter()
@@ -127,9 +135,14 @@ def delete_document(
         UserDocumentVectorStore().delete_document(document.id, document.tenant_id)
     except Exception as exc:
         if document.status == "completed":
-            raise HTTPException(status_code=502, detail=f"Failed to delete Qdrant points: {exc}") from exc
+            raise HTTPException(
+                status_code=502, detail=f"Failed to delete Pinecone records: {exc}"
+            ) from exc
 
-    DocumentStorage().delete_document_files(document.stored_path, document.markdown_path)
+    DocumentStorage().delete_document_files(
+        document.stored_path, document.markdown_path
+    )
+    db.query(DocumentChunk).filter(DocumentChunk.document_id == document.id).delete()
     db.delete(document)
     db.commit()
     return DeleteDocumentResponse(document_id=document_id)

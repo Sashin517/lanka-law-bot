@@ -66,6 +66,7 @@ class AgentState(BaseModel):
     document_ids: list[str] = Field(default_factory=list)
     matter_id: str | None = None
     session_id: str = ""
+    ablation_config: dict = Field(default_factory=dict)
 
     @field_validator("mode")
     @classmethod
@@ -91,8 +92,8 @@ class AgentState(BaseModel):
     use_user_documents: bool = False
     legal_top_k: int = 5
     user_doc_top_k: int = 6
-    year_filter: int | None = None
-    act_name_filter: str | None = None
+    year_filter: list[int] | int | None = None
+    act_name_filter: list[str] | str | None = None
 
     # ── Retrieval results ──
     retrieved_sources: list[SourceChunk] = Field(default_factory=list)

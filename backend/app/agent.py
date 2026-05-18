@@ -6,11 +6,11 @@ from langsmith import traceable
 from pydantic import BaseModel
 
 from app.schemas.responses import ConfidenceLevel, LegalResponse, RouteMetadata
-from app.services.retrieval_service import get_retrieval_service
-from app.services.context_assembler import MultiSourceContextAssembler
-from app.services.generation_service import GenerationService
-from app.services.citation_verifier import CitationVerifier
-from app.services.user_document_retrieval_service import UserDocumentRetrievalService
+from app.services.retrieval.retrieval_service import get_retrieval_service
+from app.services.generation.context_assembler import MultiSourceContextAssembler
+from app.services.generation.generation_service import GenerationService
+from app.services.generation.citation_verifier import CitationVerifier
+from app.services.retrieval.user_document_retrieval_service import UserDocumentRetrievalService
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +190,9 @@ async def process_legal_query(
             user_document_results = []
 
     if retrieval_plan.use_user_documents and not user_document_results:
-        logger.warning("No user document retrieval results for query: '%s'", question[:80])
+        logger.warning(
+            "No user document retrieval results for query: '%s'", question[:80]
+        )
         return LegalResponse(
             summary=(
                 "No relevant uploaded document context was found for this query. "

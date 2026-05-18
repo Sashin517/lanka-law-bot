@@ -60,9 +60,9 @@ async def grounding_node(
     worker (retry), or to formatter with a fallback (max retries).
     """
 
-    # ── Skip grounding for empty / clarification responses ──
+    # ── Skip grounding for empty / clarification responses or when skip_verification is set ──
     has_content = state.markdown_content or state.summary
-    if not has_content or state.needs_clarification:
+    if not has_content or state.needs_clarification or state.ablation_config.get("skip_verification"):
         return Command(
             update={
                 "grounding": GroundingResult(

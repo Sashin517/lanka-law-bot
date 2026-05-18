@@ -49,7 +49,7 @@ _MODE_CONFIG: dict[str, ModeConfig] = {
         answer_mode="direct_answer",
         target_corpus="both",
         retrieval_depth="fast",
-        legal_top_k=5,
+        legal_top_k=8,
         user_doc_top_k=6,
     ),
     "deep_research": ModeConfig(
@@ -58,8 +58,8 @@ _MODE_CONFIG: dict[str, ModeConfig] = {
         answer_mode="research_memo",
         target_corpus="both",
         retrieval_depth="iterative",
-        legal_top_k=5,
-        user_doc_top_k=8,
+        legal_top_k=10,
+        user_doc_top_k=10,
     ),
     "drafting": ModeConfig(
         route="drafting",
@@ -67,7 +67,7 @@ _MODE_CONFIG: dict[str, ModeConfig] = {
         answer_mode="draft",
         target_corpus="templates",
         retrieval_depth="expanded",
-        legal_top_k=5,
+        legal_top_k=8,
         user_doc_top_k=8,
         requires_template=True,
     ),
@@ -87,8 +87,8 @@ _MODE_CONFIG: dict[str, ModeConfig] = {
         answer_mode="issue_analysis",
         target_corpus="both",
         retrieval_depth="expanded",
-        legal_top_k=5,
-        user_doc_top_k=8,
+        legal_top_k=10,
+        user_doc_top_k=10,
     ),
 }
 
@@ -176,14 +176,29 @@ async def router_node(
             "use_user_documents": retrieval["use_user_documents"],
             "legal_top_k": retrieval["legal_top_k"],
             "user_doc_top_k": retrieval["user_doc_top_k"],
-            "year_filter": retrieval["year_filter"],
-            "act_name_filter": retrieval["act_name_filter"],
+            "year_filter": retrieval.get("year_filters"),
+            "act_name_filter": retrieval.get("act_name_filters"),
         },
         goto=config.route,
     )
 
 
 # ── Retrieval plan builder ───────────────────────────────────────
+
+
+def _extract_entities_from_query(question: str) -> tuple[list[int], list[str]]:
+    import re
+
+    year_filters = [int(y) for y in re.findall(r"\b(?:18|19|20)\d{2}\b", question)]
+
+    act_name_filters = []
+    for match in re.finditer(
+        r"([A-Z][a-zA-Z\(\)]*(?:\s+(?:[A-Z][a-zA-Z\(\)]*|of|the|and))*\s+(?:Act|Ordinance))",
+        question,
+    ):
+        act_name_filters.append(match.group(1).strip())
+
+    return year_filters, act_name_filters
 
 
 def _build_retrieval_plan(state: AgentState, config: ModeConfig) -> dict:
@@ -193,6 +208,7 @@ def _build_retrieval_plan(state: AgentState, config: ModeConfig) -> dict:
     user documents are attached, document-summary detection).
     """
     has_documents = bool(state.document_ids)
+    year_filters, act_name_filters = _extract_entities_from_query(state.question)
 
     # Document-summary requests — user docs only, broader retrieval
     if has_documents and _is_document_summary_query(state.question):
@@ -201,8 +217,8 @@ def _build_retrieval_plan(state: AgentState, config: ModeConfig) -> dict:
             "use_user_documents": True,
             "legal_top_k": 0,
             "user_doc_top_k": 8,
-            "year_filter": None,
-            "act_name_filter": None,
+            "year_filters": None,
+            "act_name_filters": None,
         }
 
     # Review / Drafting with documents — search both corpora
@@ -212,8 +228,8 @@ def _build_retrieval_plan(state: AgentState, config: ModeConfig) -> dict:
             "use_user_documents": True,
             "legal_top_k": config.legal_top_k,
             "user_doc_top_k": config.user_doc_top_k,
-            "year_filter": None,
-            "act_name_filter": None,
+            "year_filters": year_filters,
+            "act_name_filters": act_name_filters,
         }
 
     # User documents explicitly targeted
@@ -223,8 +239,8 @@ def _build_retrieval_plan(state: AgentState, config: ModeConfig) -> dict:
             "use_user_documents": True,
             "legal_top_k": 0,
             "user_doc_top_k": config.user_doc_top_k,
-            "year_filter": None,
-            "act_name_filter": None,
+            "year_filters": None,
+            "act_name_filters": None,
         }
 
     # Deep research with documents — both corpora, no filters
@@ -234,8 +250,8 @@ def _build_retrieval_plan(state: AgentState, config: ModeConfig) -> dict:
             "use_user_documents": True,
             "legal_top_k": config.legal_top_k,
             "user_doc_top_k": config.user_doc_top_k,
-            "year_filter": None,
-            "act_name_filter": None,
+            "year_filters": year_filters,
+            "act_name_filters": act_name_filters,
         }
 
     # Default — legal corpus only (or with docs for reasoning)
@@ -244,8 +260,8 @@ def _build_retrieval_plan(state: AgentState, config: ModeConfig) -> dict:
         "use_user_documents": has_documents and config.route not in {"quick_qa"},
         "legal_top_k": config.legal_top_k,
         "user_doc_top_k": config.user_doc_top_k if has_documents else 0,
-        "year_filter": None,
-        "act_name_filter": None,
+        "year_filters": year_filters,
+        "act_name_filters": act_name_filters,
     }
 
 

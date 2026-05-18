@@ -11,10 +11,10 @@ from __future__ import annotations
 import logging
 from functools import lru_cache
 
-from app.services.retrieval_service import RetrievalService
-from app.services.context_assembler import MultiSourceContextAssembler
-from app.services.citation_verifier import CitationVerifier
-from app.services.user_document_retrieval_service import UserDocumentRetrievalService
+from app.services.retrieval.retrieval_service import RetrievalService
+from app.services.generation.context_assembler import MultiSourceContextAssembler
+from app.services.generation.citation_verifier import CitationVerifier
+from app.services.retrieval.user_document_retrieval_service import UserDocumentRetrievalService
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ citation_verifier = CitationVerifier()
 
 
 # ── Lazily loaded singleton (only when user documents are involved) ──
+
 
 @lru_cache(maxsize=1)
 def get_user_doc_retrieval() -> UserDocumentRetrievalService:

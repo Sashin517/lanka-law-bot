@@ -47,6 +47,7 @@ class ContextAssembler:
                 year=int(year) if isinstance(year, (int, float)) else 0,
                 breadcrumb=meta.get("breadcrumb"),
                 excerpt=child.page_content[:300],
+                content=content,
             )
 
         return "\n".join(context_parts), citation_map
@@ -116,6 +117,7 @@ class MultiSourceContextAssembler:
                 year=int(year) if isinstance(year, (int, float)) else 0,
                 breadcrumb=meta.get("breadcrumb"),
                 excerpt=child_text[:300],
+                content=content,
                 source_type="legal_authority",
             )
 
@@ -164,6 +166,7 @@ class MultiSourceContextAssembler:
                 year=0,
                 breadcrumb=heading or None,
                 excerpt=child_text[:300],
+                content=content,
                 source_type="user_document",
                 document_id=meta.get("document_id"),
                 filename=filename,

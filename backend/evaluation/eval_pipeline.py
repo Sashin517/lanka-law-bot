@@ -33,6 +33,7 @@ async def run_pipeline(
     mode: str = "quick_qa",
     document_ids: list[str] | None = None,
     matter_id: str | None = None,
+    ablation_config: dict | None = None,
 ) -> dict:
     """Run a single query through the compiled LangGraph.
 
@@ -50,6 +51,8 @@ async def run_pipeline(
         Attached user-document IDs, if any.
     matter_id : str | None
         Grouping key for user documents.
+    ablation_config : dict | None
+        Overrides for ablation studies.
 
     Returns
     -------
@@ -65,6 +68,7 @@ async def run_pipeline(
         mode=mode,
         document_ids=document_ids or [],
         matter_id=matter_id,
+        ablation_config=ablation_config or {},
     )
 
     final_state = await graph.ainvoke(initial_state.model_dump())

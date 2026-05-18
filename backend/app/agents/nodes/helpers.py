@@ -12,7 +12,7 @@ import logging
 
 from app.agents.state import SourceChunk
 from app.schemas.responses import CitedClaim, LegalResponse, SourceReference
-from app.services.citation_verifier import CitationVerifier
+from app.services.generation.citation_verifier import CitationVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ def to_source_chunks(
     return [
         SourceChunk(
             citation_id=ref.citation_id,
-            content=ref.excerpt,
+            content=ref.content or ref.excerpt,
             title=ref.title,
             section=ref.section,
             year=ref.year,

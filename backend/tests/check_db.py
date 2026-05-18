@@ -9,4 +9,6 @@ if not collections:
     print("The database has no collections.")
 else:
     for collection in collections:
-        print(f"Collection '{collection.name}' has {collection.count()} chunks of data.")
+        print(
+            f"Collection '{collection.name}' has {collection.count()} chunks of data."
+        )
