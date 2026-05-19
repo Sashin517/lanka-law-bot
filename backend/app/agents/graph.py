@@ -26,7 +26,6 @@ from app.agents.nodes.review_node import review_node
 from app.agents.nodes.verify_node import verify_node
 from app.agents.nodes.grounding_node import grounding_node
 from app.agents.nodes.formatter_node import formatter_node
-from app.agents.nodes.unsupported_node import unsupported_node
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +57,6 @@ def build_graph():
     g.add_node("verify", verify_node)
     g.add_node("grounding", grounding_node)
     g.add_node("formatter", formatter_node)
-    g.add_node("unsupported", unsupported_node)
 
     # ── Entry point ──
     g.add_edge(START, "router")
@@ -68,8 +66,6 @@ def build_graph():
     for worker in _WORKER_NODES:
         g.add_edge(worker, "grounding")
 
-    # ── Unsupported skips grounding entirely ──
-    g.add_edge("unsupported", "formatter")
 
     # ── Grounding uses Command for conditional routing ──
     # (goto="formatter" on pass, goto=current_agent on retry)

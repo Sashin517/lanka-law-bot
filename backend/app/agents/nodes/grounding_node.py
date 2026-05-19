@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 _grounding_llm = ChatGoogleGenerativeAI(
     model=settings.LLM_MODEL_NAME,
     google_api_key=settings.GOOGLE_API_KEY,
-    temperature=0.0,              # Deterministic for judging
+    temperature=0.0,  # Deterministic for judging
     max_output_tokens=1024,
 )
 _grounding_parser = JsonOutputParser()
@@ -43,7 +43,17 @@ _grounding_chain = _grounding_prompt | _grounding_llm | _grounding_parser
 @traceable(name="GroundingVerifier")
 async def grounding_node(
     state: AgentState,
-) -> Command[Literal["quick_qa", "deep_research", "reasoning", "drafting", "review", "verify", "formatter"]]:
+) -> Command[
+    Literal[
+        "quick_qa",
+        "deep_research",
+        "reasoning",
+        "drafting",
+        "review",
+        "verify",
+        "formatter",
+    ]
+]:
     """Judge whether the generated response is faithful to sources.
 
     Returns a ``Command`` that routes to formatter (pass), back to the
@@ -51,29 +61,37 @@ async def grounding_node(
     """
 
     # ── Skip grounding for empty / clarification responses ──
-    if not state.summary or state.needs_clarification:
+    has_content = state.markdown_content or state.summary
+    if not has_content or state.needs_clarification:
         return Command(
             update={
                 "grounding": GroundingResult(
-                    is_grounded=True, grounding_score=1.0,
+                    is_grounded=True,
+                    grounding_score=1.0,
                 ),
             },
             goto="formatter",
         )
 
-    # ── Build the claims string for the judge ──
-    claims_text = "\n".join(
-        f"- {c.statement} (cites: {', '.join(c.citation_ids)})"
-        for c in state.analysis
-    ) or "(No analysis claims)"
+    # ── Build the content string for the judge ──
+    # Prefer markdown_content (what the user sees), fall back to analysis[]
+    if state.markdown_content:
+        claims_text = state.markdown_content
+    else:
+        claims_text = "\n".join(
+            f"- {c.statement} (cites: {', '.join(c.citation_ids)})"
+            for c in state.analysis
+        ) or "(No generated content)"
 
     # ── Call the grounding judge LLM ──
     try:
-        raw: dict = await _grounding_chain.ainvoke({
-            "summary": state.summary,
-            "claims": claims_text,
-            "sources": state.context_str[:12000],  # Cap context to fit in window
-        })
+        raw: dict = await _grounding_chain.ainvoke(
+            {
+                "summary": state.summary,
+                "claims": claims_text,
+                "sources": state.context_str[:12000],  # Cap context to fit in window
+            }
+        )
 
         grounding = GroundingResult(
             is_grounded=raw.get("is_grounded", False),

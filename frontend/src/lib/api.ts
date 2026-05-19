@@ -1,4 +1,8 @@
-import type { DocumentStatusResponse, UploadDocumentResponse } from "@/types/documents";
+import type {
+  DocumentStatusResponse,
+  UploadDocumentResponse,
+} from "@/types/documents";
+import type { QueryMode } from "@/types/QueryMode";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -12,25 +16,26 @@ export interface SourceRef {
   excerpt: string;
 }
 
-export interface AnalysisClaim {
-  statement: string;
-  citations: string[];
-}
 
 export interface LegalQueryPayload {
   question: string;
+  mode?: QueryMode;
   document_ids?: string[];
   matter_id?: string | null;
-  doc_type?: string | null;
-  start_year?: number | null;
 }
 
 export interface LegalQueryResponse {
-  answer?: string;
-  analysis?: AnalysisClaim[];
+  answer?: string;                // Plain text fallback
+  markdown_content?: string;      // Rich markdown for rendering
   sources?: SourceRef[];
   confidence?: string;
   disclaimer?: string;
+  grounding_score?: number;
+  route?: {
+    route: string;
+    task_type: string;
+    answer_mode: string;
+  };
 }
 
 async function parseJsonOrThrow<T>(response: Response): Promise<T> {
@@ -42,7 +47,9 @@ async function parseJsonOrThrow<T>(response: Response): Promise<T> {
   return data as T;
 }
 
-export async function uploadDocument(file: File): Promise<UploadDocumentResponse> {
+export async function uploadDocument(
+  file: File,
+): Promise<UploadDocumentResponse> {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -57,7 +64,9 @@ export async function uploadDocument(file: File): Promise<UploadDocumentResponse
 export async function getDocumentStatus(
   documentId: string,
 ): Promise<DocumentStatusResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}/status`);
+  const response = await fetch(
+    `${API_BASE_URL}/api/documents/${documentId}/status`,
+  );
   return parseJsonOrThrow<DocumentStatusResponse>(response);
 }
 

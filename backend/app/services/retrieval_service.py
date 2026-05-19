@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 import langchain_community.utils.math as lc_math
 from langchain_community.retrievers import BM25Retriever
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
@@ -173,7 +173,9 @@ class RetrievalService:
         # 3. Post-filter by metadata (entity-aware, with fallback)
         if year_filter or act_name_filter:
             unique = self._post_filter_metadata(
-                unique, year_filter, act_name_filter,
+                unique,
+                year_filter,
+                act_name_filter,
             )
 
         # 4. Expand to parents
@@ -267,11 +269,7 @@ class RetrievalService:
             )
         return None
 
-    # ── Phase 4: Relevance score pruning ──────────────────────────
-
-    def _prune_low_relevance(
-        self, candidates: list[Document]
-    ) -> list[Document]:
+    def _prune_low_relevance(self, candidates: list[Document]) -> list[Document]:
         """Drop candidates whose cross-encoder score falls below the
         configured threshold.  If pruning would remove *every* result,
         keep at least the top candidate as a safety valve.
@@ -298,8 +296,6 @@ class RetrievalService:
 
         # Safety valve: never return an empty list
         return pruned if pruned else candidates[:1]
-
-    # ── Phase 3: Post-retrieval metadata filtering ────────────────
 
     @staticmethod
     def _post_filter_metadata(
@@ -355,3 +351,16 @@ class RetrievalService:
             len(candidates),
         )
         return candidates
+
+
+# --- Singleton factory (module-level) ---
+
+_instance: RetrievalService | None = None
+
+
+def get_retrieval_service() -> RetrievalService:
+    """Singleton factory for RetrievalService."""
+    global _instance
+    if _instance is None:
+        _instance = RetrievalService()
+    return _instance

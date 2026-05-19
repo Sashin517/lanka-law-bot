@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.output_parsers import JsonOutputParser
 
 from app.core.config import settings
 from app.services.intent_routing.fallback import build_fallback_route_plan
@@ -20,7 +21,9 @@ class SemanticIntentRouter:
     """LLM-first legal query router with deterministic fallback."""
 
     def __init__(self, llm: Any | None = None, enable_llm: bool | None = None) -> None:
-        self._enable_llm = settings.ROUTER_ENABLE_LLM if enable_llm is None else enable_llm
+        self._enable_llm = (
+            settings.ROUTER_ENABLE_LLM if enable_llm is None else enable_llm
+        )
         self._llm = llm
 
     async def classify(self, question: str) -> RouterResult:
@@ -67,15 +70,18 @@ class SemanticIntentRouter:
     def _message_text(message: Any) -> str:
         content = getattr(message, "content", message)
         if isinstance(content, list):
-            return "\n".join(str(part) for part in content)
+            parts = []
+            for part in content:
+                if isinstance(part, dict) and "text" in part:
+                    parts.append(part["text"])
+                else:
+                    parts.append(str(part))
+            return "\n".join(parts)
         return str(content)
 
     @staticmethod
     def _parse_json(text: str) -> dict:
-        cleaned = text.strip()
-        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
-        cleaned = re.sub(r"\s*```$", "", cleaned)
-        parsed = json.loads(cleaned)
+        parsed = JsonOutputParser().parse(text)
         if not isinstance(parsed, dict):
             raise ValueError("Router output must be a JSON object")
         return parsed

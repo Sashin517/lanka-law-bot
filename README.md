@@ -47,9 +47,12 @@ The Vector Database (`chroma_db`) is ignored by Git to keep the repository light
    - **Windows:** `venv\Scripts\activate`
    - **Mac/Linux:** `source venv/bin/activate`
 3. Start the FastAPI server:
+
    ```bash
+   uvicorn main:app
    uvicorn main:app --reload
    ```
+
    _The backend is now running on `http://127.0.0.1:8000`._
 
 ### Step 2: Start the Frontend (Next.js UI)
