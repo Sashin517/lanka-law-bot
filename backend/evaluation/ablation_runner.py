@@ -183,8 +183,20 @@ def _aggregate_metrics(results: list[dict]) -> dict:
     }
 
 
-def _safe_float(value: str) -> float:
-    cleaned = value.strip()
+def _safe_float(value) -> float:
+    if isinstance(value, list):
+        parts = []
+        for part in value:
+            if isinstance(part, str):
+                parts.append(part)
+            elif isinstance(part, dict):
+                parts.append(part.get("text", ""))
+        cleaned = "".join(parts).strip()
+    elif isinstance(value, str):
+        cleaned = value.strip()
+    else:
+        cleaned = str(value).strip()
+
     try:
         parsed = float(cleaned)
     except ValueError:
@@ -284,6 +296,10 @@ def add_quality_metrics(result: dict) -> dict:
         if output.get("skipped") or not answer:
             continue
 
+        # Calibrated pacing delay for completeness LLM judge
+        if idx > 0:
+            time.sleep(3)
+
         item["metrics"]["answer_completeness"] = score_answer_completeness(
             question=item.get("question", ""),
             ground_truth=item.get("ground_truth", ""),
@@ -314,6 +330,8 @@ def add_quality_metrics(result: dict) -> dict:
         )
         from ragas.run_config import RunConfig
         from langchain_google_genai import ChatGoogleGenerativeAI
+        from ragas.embeddings import LangchainEmbeddingsWrapper
+        from langchain_huggingface import HuggingFaceEmbeddings
 
         samples = [
             SingleTurnSample(
@@ -331,6 +349,10 @@ def add_quality_metrics(result: dict) -> dict:
                 google_api_key=os.environ.get("GOOGLE_API_KEY"),
             )
         )
+        # Use local sentence-transformer embeddings to prevent external API requests
+        evaluator_embeddings = LangchainEmbeddingsWrapper(
+            HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        )
         try:
             ragas_result = evaluate(
                 dataset=EvaluationDataset(samples=samples),
@@ -341,6 +363,7 @@ def add_quality_metrics(result: dict) -> dict:
                     LLMContextPrecisionWithReference(),
                 ],
                 llm=evaluator_llm,
+                embeddings=evaluator_embeddings,
                 run_config=RunConfig(
                     max_workers=1,
                     max_retries=30,
@@ -431,6 +454,10 @@ async def run_ablation(benchmark: list[dict], config_name: str, config: dict) ->
 
         logger.info("  [%d/%d] %s (mode=%s)", i + 1, len(benchmark), item["id"], mode)
 
+        # Calibrated pacing delay between sequential pipeline queries
+        if i > 0:
+            await asyncio.sleep(4)
+
         try:
             output = await run_single_query(question, config, mode, doc_ids, matter_id)
             results.append(
@@ -486,6 +513,16 @@ def main():
         action="store_true",
         help="Collect ablation outputs only; skip RAGAS/completeness scoring",
     )
+    parser.add_argument(
+        "--collect-only",
+        action="store_true",
+        help="Phase 1: Collect pipeline outputs and cache raw JSON (no metrics evaluation)",
+    )
+    parser.add_argument(
+        "--cached",
+        action="store_true",
+        help="Phase 2: Load cached raw pipeline outputs and run metrics evaluation",
+    )
     args = parser.parse_args()
 
     benchmark_path = BACKEND_DIR / args.benchmark
@@ -521,7 +558,7 @@ def main():
     )
     print(
         "Metrics: disabled"
-        if args.skip_metrics
+        if (args.skip_metrics or args.collect_only)
         else "Metrics: RAGAS + answer completeness"
     )
     print(f"Running {len(configs_to_run)} ablation configs: {configs_to_run}\n")
@@ -534,48 +571,82 @@ def main():
             continue
 
         config = ABLATION_CONFIGS[config_name]
+        raw_output_path = output_dir / f"ablation_{config_name}_raw.json"
+        final_output_path = output_dir / f"ablation_{config_name}.json"
+
+        result = None
+
+        # Phase 1: Collection
+        if args.cached:
+            # Skip collection, load from raw cache
+            if not raw_output_path.exists():
+                print(
+                    f"Raw cache file not found: {raw_output_path.name}. Cannot run --cached."
+                )
+                continue
+            print(f"\nLoading cached raw results for: {config_name}")
+            with open(raw_output_path, encoding="utf-8") as f:
+                result = json.load(f)
+        else:
+            # Perform collection
+            print(f"\n{'='*50}")
+            print(f"Running: {config_name} — {config.get('description', '')}")
+            print(f"{'='*50}")
+            result = asyncio.run(run_ablation(benchmark, config_name, config))
+
+            # Save raw result cache
+            with open(raw_output_path, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2, default=str)
+            print(f"  Saved raw cache: {raw_output_path.name}")
+
+        # Phase 2: Evaluation
+        if result is not None:
+            if not args.skip_metrics and not args.collect_only:
+                print("  Scoring metrics with shared Gemini rate limiter...")
+                result = add_quality_metrics(result)
+
+                # Save final results
+                with open(final_output_path, "w", encoding="utf-8") as f:
+                    json.dump(result, f, indent=2, default=str)
+                print(f"  Saved final: {final_output_path.name}")
+
+            all_results[config_name] = result
+
+    # Only generate comparison if metrics are not skipped/collect-only
+    if not args.skip_metrics and not args.collect_only:
+        # Save comparison summary
+        comparison = {
+            "configs": list(all_results.keys()),
+            "summary": {
+                name: {
+                    "total": r["total"],
+                    "skipped": r["skipped"],
+                    "answered": r["total"] - r["skipped"],
+                    "metrics": r.get("metrics", {}).get("overall", {}),
+                }
+                for name, r in all_results.items()
+                if "metrics" in r
+            },
+            "per_mode_metrics": {
+                name: r.get("metrics", {}).get("per_mode", {})
+                for name, r in all_results.items()
+                if "metrics" in r
+            },
+        }
+        comparison_path = output_dir / "ablation_comparison.json"
+        with open(comparison_path, "w", encoding="utf-8") as f:
+            json.dump(comparison, f, indent=2)
+
         print(f"\n{'='*50}")
-        print(f"Running: {config_name} — {config.get('description', '')}")
+        print("Ablation studies evaluation complete!")
+        print(f"Results in: {output_dir}")
+        print(f"Comparison: {comparison_path.name}")
         print(f"{'='*50}")
-
-        result = asyncio.run(run_ablation(benchmark, config_name, config))
-        if not args.skip_metrics:
-            print("  Scoring metrics with shared Gemini rate limiter...")
-            result = add_quality_metrics(result)
-        all_results[config_name] = result
-
-        # Save per-config results
-        config_output = output_dir / f"ablation_{config_name}.json"
-        with open(config_output, "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2, default=str)
-        print(f"  Saved: {config_output.name}")
-
-    # Save comparison summary
-    comparison = {
-        "configs": list(all_results.keys()),
-        "summary": {
-            name: {
-                "total": r["total"],
-                "skipped": r["skipped"],
-                "answered": r["total"] - r["skipped"],
-                "metrics": r.get("metrics", {}).get("overall", {}),
-            }
-            for name, r in all_results.items()
-        },
-        "per_mode_metrics": {
-            name: r.get("metrics", {}).get("per_mode", {})
-            for name, r in all_results.items()
-        },
-    }
-    comparison_path = output_dir / "ablation_comparison.json"
-    with open(comparison_path, "w", encoding="utf-8") as f:
-        json.dump(comparison, f, indent=2)
-
-    print(f"\n{'='*50}")
-    print("Ablation studies complete!")
-    print(f"Results in: {output_dir}")
-    print(f"Comparison: {comparison_path.name}")
-    print(f"{'='*50}")
+    else:
+        print(f"\n{'='*50}")
+        print("Ablation collection complete!")
+        print(f"Raw cache files located in: {output_dir}")
+        print(f"{'='*50}")
 
 
 if __name__ == "__main__":

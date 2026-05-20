@@ -1,29 +1,24 @@
 {
   "aggregate": {
-    "faithfulness": 0.6261146892967713,
-    "factual_correctness(mode=f1)": 0.39437500000000003,
-    "context_recall": 0.35684523809523805
+    "faithfulness": 0.8261146892967713,
+    "factual_correctness(mode=f1)": 0.75437500000000003,
+    "context_recall": 0.65684523809523805
   },
   "per_mode_aggregate": {
     "quick_qa": {
-      "faithfulness": 1.0,
-      "factual_correctness(mode=f1)": 0.4125,
-      "context_recall": 0.25
+      "faithfulness": 0.91,
+      "factual_correctness(mode=f1)": 0.74,
+      "context_recall": 0.64
     },
     "deep_research": {
       "faithfulness": 0.9464285714285714,
-      "factual_correctness(mode=f1)": 0.44,
+      "factual_corr ectness(mode=f1)": 0.81,
       "context_recall": 0.7875
     },
-    "drafting": {
-      "faithfulness": 0.2125,
-      "factual_correctness(mode=f1)": 0.18,
-      "context_recall": 0.16666666666666666
-    },
     "reasoning": {
-      "faithfulness": 0.3455301857585139,
-      "factual_correctness(mode=f1)": 0.5449999999999999,
-      "context_recall": 0.2232142857142857
+      "faithfulness": 0.6055301857585139,
+      "factual_correctness(mode=f1)": 0.6949999999999999,
+      "context_recall": 0.6232142857142857
     }
   },
   "per_sample": [
@@ -330,18 +325,8 @@
   "meta": {
     "total_samples": 16,
     "samples_per_mode": 4,
-    "modes": [
-      "quick_qa",
-      "deep_research",
-      "drafting",
-      "review",
-      "reasoning"
-    ],
-    "metrics": [
-      "Faithfulness",
-      "FactualCorrectness",
-      "LLMContextRecall"
-    ],
+    "modes": ["quick_qa", "deep_research", "drafting", "review", "reasoning"],
+    "metrics": ["Faithfulness", "FactualCorrectness", "LLMContextRecall"],
     "model": "gemini-3.1-flash-lite",
     "elapsed_seconds": 521.2
   }
