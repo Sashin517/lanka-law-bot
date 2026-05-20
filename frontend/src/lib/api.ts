@@ -14,6 +14,9 @@ export interface SourceRef {
   year: number;
   breadcrumb: string | null;
   excerpt: string;
+  content?: string;
+  source_type?: string;
+  filename?: string | null;
 }
 
 

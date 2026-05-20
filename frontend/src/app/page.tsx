@@ -23,22 +23,15 @@ import {
   getDocumentStatus,
   sendLegalQuery,
   uploadDocument,
+  type SourceRef,
 } from "@/lib/api";
+import { sourceCardId } from "@/lib/sources";
 import type { AttachedDocument, UploadedDocument } from "@/types/documents";
 import type { QueryMode } from "@/types/QueryMode";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
 /* ------------------------------------------------------------------ */
-
-interface SourceRef {
-  citation_id: string;
-  title: string;
-  section: string | null;
-  year: number;
-  breadcrumb: string | null;
-  excerpt: string;
-}
 
 interface ChatMessage {
   id: string;
@@ -339,6 +332,15 @@ export default function ResearchDashboard() {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
+    });
+  };
+
+  const scrollToSource = (messageId: string, citationId: string) => {
+    setExpandedSources((prev) => new Set(prev).add(messageId));
+    requestAnimationFrame(() => {
+      document
+        .getElementById(sourceCardId(messageId, citationId))
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
   };
 
@@ -657,7 +659,13 @@ export default function ResearchDashboard() {
                         {/* Main content — markdown or plain text */}
                         <div className="px-5 pb-3">
                           {msg.markdownContent ? (
-                            <MarkdownRenderer content={msg.markdownContent} />
+                            <MarkdownRenderer
+                              content={msg.markdownContent}
+                              sources={msg.sources}
+                              onViewInSources={(citationId) =>
+                                scrollToSource(msg.id, citationId)
+                              }
+                            />
                           ) : (
                             <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
                               {msg.content}
@@ -687,7 +695,8 @@ export default function ResearchDashboard() {
                                 {msg.sources.map((src) => (
                                   <div
                                     key={src.citation_id}
-                                    className="bg-slate-800/30 rounded-lg p-3 flex items-start justify-between gap-3"
+                                    id={sourceCardId(msg.id, src.citation_id)}
+                                    className="bg-slate-800/30 rounded-lg p-3 flex items-start justify-between gap-3 scroll-mt-4"
                                   >
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-2 mb-1">
