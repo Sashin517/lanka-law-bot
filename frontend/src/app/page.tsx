@@ -14,7 +14,9 @@ import {
   AlertTriangle,
   Info,
   FileText,
+  LogOut,
 } from "lucide-react";
+import Link from "next/link";
 
 import { ChatInputBar } from "@/components/ChatInputBar";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
@@ -28,7 +30,9 @@ import {
   type ImprovePromptResponse,
   type SourceRef,
 } from "@/lib/api";
+import { logOut } from "@/lib/firebase/auth";
 import { sourceCardId } from "@/lib/sources";
+import { useAuth } from "@/contexts/AuthProvider";
 import type { AttachedDocument, UploadedDocument } from "@/types/documents";
 import type { QueryMode } from "@/types/QueryMode";
 
@@ -39,8 +43,8 @@ import type { QueryMode } from "@/types/QueryMode";
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
-  content: string;                  // Plain text fallback
-  markdownContent?: string;         // Rich markdown from backend
+  content: string; // Plain text fallback
+  markdownContent?: string; // Rich markdown from backend
   attachedDocuments?: AttachedDocument[];
   sources?: SourceRef[];
   confidence?: string;
@@ -92,6 +96,10 @@ export default function ResearchDashboard() {
   const pollingTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(
     new Map(),
   );
+
+  const { user, loading: authLoading } = useAuth();
+
+  console.log(user);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -362,7 +370,6 @@ export default function ResearchDashboard() {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-
   const toggleSources = (id: string) => {
     setExpandedSources((prev) => {
       const next = new Set(prev);
@@ -440,9 +447,49 @@ export default function ResearchDashboard() {
             <span>Analyze</span>
           </button>
         </nav>
-        <div className="bg-[#2A3241] p-2 rounded-full cursor-pointer hover:bg-slate-600 transition">
-          <User size={20} className="text-slate-300" />
-        </div>
+
+        {authLoading ? (
+          <div className="h-10 w-10 rounded-full bg-[#2A3241] animate-pulse" />
+        ) : user ? (
+          <div className="flex items-center gap-3">
+            {user.photoURL ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.photoURL}
+                alt={user.displayName ?? "User avatar"}
+                className="h-9 w-9 rounded-full object-cover"
+              />
+            ) : (
+              <div className="bg-[#2A3241] p-2 rounded-full">
+                <User size={20} className="text-slate-300" />
+              </div>
+            )}
+            <div className="text-right">
+              <p className="text-sm text-white truncate max-w-[160px]">
+                {user.displayName || user.email}
+              </p>
+              {user.displayName && user.email && (
+                <p className="text-xs text-slate-400 truncate max-w-[160px]">
+                  {user.email}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => void logOut()}
+              className="text-xs text-slate-400 hover:text-white transition cursor-pointer hover:bg-slate-600 p-2 rounded-full border border-slate-700/50"
+            >
+              Log out <LogOut className="inline size-4" />
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/login"
+            className="bg-[#2A3241] p-2 rounded-full cursor-pointer hover:bg-slate-600 transition"
+          >
+            <User size={20} className="text-slate-300" />
+          </Link>
+        )}
       </header>
 
       {/* ── BODY: 3-column layout ── */}
