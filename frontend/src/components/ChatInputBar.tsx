@@ -1,7 +1,15 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { Plus, Send, Telescope, PenTool, FileSearch, Scale } from "lucide-react";
+import {
+  FileSearch,
+  PenTool,
+  Plus,
+  Scale,
+  Send,
+  Sparkles,
+  Telescope,
+} from "lucide-react";
 
 import { ChatAttachmentCard } from "@/components/ChatAttachmentCard";
 import type { UploadedDocument } from "@/types/documents";
@@ -19,6 +27,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 interface ChatInputBarProps {
   value: string;
   isLoading: boolean;
+  isImproving: boolean;
   documents: UploadedDocument[];
   selectedMode: QueryMode;
   onChange: (value: string) => void;
@@ -26,6 +35,7 @@ interface ChatInputBarProps {
   onRemoveDocument: (documentId: string) => void;
   onModeChange: (mode: QueryMode) => void;
   onSubmit: () => void;
+  onImprove: () => void;
 }
 
 const ACCEPTED_FILES =
@@ -34,6 +44,7 @@ const ACCEPTED_FILES =
 export function ChatInputBar({
   value,
   isLoading,
+  isImproving,
   documents,
   selectedMode,
   onChange,
@@ -41,6 +52,7 @@ export function ChatInputBar({
   onRemoveDocument,
   onModeChange,
   onSubmit,
+  onImprove,
 }: ChatInputBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -50,6 +62,12 @@ export function ChatInputBar({
   );
   const hasFailedDocument = documents.some((doc) => doc.status === "failed");
   const canSubmit = Boolean(value.trim()) && !isLoading && !hasPendingDocument && !hasFailedDocument;
+  const canImprove =
+    Boolean(value.trim()) &&
+    !isLoading &&
+    !isImproving &&
+    !hasPendingDocument &&
+    !hasFailedDocument;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -115,6 +133,17 @@ export function ChatInputBar({
         />
 
         <button
+          type="button"
+          disabled={!canImprove}
+          onClick={onImprove}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700/70 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Improve prompt"
+        >
+          <Sparkles size={14} aria-hidden="true" />
+          {isImproving ? "Improving..." : "Improve"}
+        </button>
+
+        <button
           type="submit"
           disabled={!canSubmit}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] text-[#161B28] transition hover:bg-[#C5A030] disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-400"
@@ -169,3 +198,5 @@ export function ChatInputBar({
     </form>
   );
 }
+
+

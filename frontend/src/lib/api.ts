@@ -27,6 +27,12 @@ export interface LegalQueryPayload {
   matter_id?: string | null;
 }
 
+export interface ImprovePromptPayload {
+  draft: string;
+  mode: QueryMode;
+  has_documents?: boolean;
+}
+
 export interface LegalQueryResponse {
   answer?: string;                // Plain text fallback
   markdown_content?: string;      // Rich markdown for rendering
@@ -39,6 +45,11 @@ export interface LegalQueryResponse {
     task_type: string;
     answer_mode: string;
   };
+}
+
+export interface ImprovePromptResponse {
+  improved_prompt: string;
+  intent_summary?: string | null;
 }
 
 async function parseJsonOrThrow<T>(response: Response): Promise<T> {
@@ -90,4 +101,16 @@ export async function sendLegalQuery(
   });
 
   return parseJsonOrThrow<LegalQueryResponse>(response);
+}
+
+export async function improvePrompt(
+  payload: ImprovePromptPayload,
+): Promise<ImprovePromptResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/prompt/improve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  return parseJsonOrThrow<ImprovePromptResponse>(response);
 }

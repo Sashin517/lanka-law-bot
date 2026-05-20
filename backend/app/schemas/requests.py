@@ -26,3 +26,11 @@ class LegalQuery(BaseModel):
     mode: QueryMode = QueryMode.QUICK_QA
     document_ids: list[str] = Field(default_factory=list)
     matter_id: str | None = None
+
+
+class ImprovePromptRequest(BaseModel):
+    """Request body for prompt refinement endpoint."""
+
+    draft: str = Field(min_length=1, max_length=4000)
+    mode: QueryMode = QueryMode.QUICK_QA
+    has_documents: bool = False

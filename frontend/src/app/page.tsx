@@ -18,11 +18,14 @@ import {
 
 import { ChatInputBar } from "@/components/ChatInputBar";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { PromptSuggestionPanel } from "@/components/PromptSuggestionPanel";
 import {
   deleteDocument,
   getDocumentStatus,
+  improvePrompt,
   sendLegalQuery,
   uploadDocument,
+  type ImprovePromptResponse,
   type SourceRef,
 } from "@/lib/api";
 import { sourceCardId } from "@/lib/sources";
@@ -58,6 +61,10 @@ export default function ResearchDashboard() {
     UploadedDocument[]
   >([]);
   const [selectedMode, setSelectedMode] = useState<QueryMode>("quick_qa");
+  const [isImproving, setIsImproving] = useState(false);
+  const [promptSuggestion, setPromptSuggestion] =
+    useState<ImprovePromptResponse | null>(null);
+  const [improveError, setImproveError] = useState<string | null>(null);
 
   // Collapsible state for bot responses (keyed by message id)
   const [expandedSources, setExpandedSources] = useState<Set<string>>(
@@ -285,6 +292,8 @@ export default function ResearchDashboard() {
     setMessages((prev) => [...prev, userMsg]);
     const query = inputQuery.trim();
     setInputQuery("");
+    setPromptSuggestion(null);
+    setImproveError(null);
     setIsLoading(true);
 
     try {
@@ -319,6 +328,33 @@ export default function ResearchDashboard() {
       ]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleImprove = async () => {
+    const draft = inputQuery.trim();
+    if (!draft || isLoading || isImproving) return;
+    if (uploadedDocuments.some((doc) => doc.status !== "completed")) return;
+
+    setIsImproving(true);
+    setImproveError(null);
+
+    try {
+      const result = await improvePrompt({
+        draft,
+        mode: selectedMode,
+        has_documents: uploadedDocuments.some((doc) => doc.status === "completed"),
+      });
+      setPromptSuggestion(result);
+    } catch (error) {
+      setPromptSuggestion(null);
+      setImproveError(
+        error instanceof Error
+          ? error.message
+          : "Unable to improve the prompt right now.",
+      );
+    } finally {
+      setIsImproving(false);
     }
   };
 
@@ -785,9 +821,26 @@ export default function ResearchDashboard() {
 
           {/* ── Input bar (bottom-pinned) ── */}
           <div className="shrink-0 border-t border-slate-700/40 bg-[#1E2636] px-6 py-4">
+            <PromptSuggestionPanel
+              suggestedPrompt={promptSuggestion?.improved_prompt ?? ""}
+              intentSummary={promptSuggestion?.intent_summary}
+              isLoading={isImproving}
+              error={improveError}
+              onUse={() => {
+                if (!promptSuggestion?.improved_prompt) return;
+                setInputQuery(promptSuggestion.improved_prompt);
+                setPromptSuggestion(null);
+                setImproveError(null);
+              }}
+              onDismiss={() => {
+                setPromptSuggestion(null);
+                setImproveError(null);
+              }}
+            />
             <ChatInputBar
               value={inputQuery}
               isLoading={isLoading}
+              isImproving={isImproving}
               documents={uploadedDocuments}
               selectedMode={selectedMode}
               onChange={setInputQuery}
@@ -795,6 +848,7 @@ export default function ResearchDashboard() {
               onRemoveDocument={handleRemoveDocument}
               onModeChange={setSelectedMode}
               onSubmit={handleSend}
+              onImprove={handleImprove}
             />
           </div>
         </main>

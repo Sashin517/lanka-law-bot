@@ -65,8 +65,9 @@ class Settings(BaseSettings):
     RELEVANCE_SCORE_THRESHOLD: float = 0.0
 
     GOOGLE_API_KEY: str = ""
-    LLM_MODEL_NAME: str = "gemini-3.1-flash-lite"
+    LLM_MODEL_NAME: str = "gemini-3.1-flash-lite-preview"
     LLM_TEMPERATURE: float = 0.1
+    PROMPT_IMPROVE_TEMPERATURE: float = 0.35
     LLM_MAX_TOKENS: int = 2048
 
     model_config = SettingsConfigDict(

@@ -49,3 +49,10 @@ class LegalResponse(BaseModel):
     confidence: str = ConfidenceLevel.MEDIUM
     route: RouteMetadata | None = None
     disclaimer: str = "This information is for research purposes only and does not constitute legal advice. Please consult a qualified legal professional for specific legal matters."
+
+
+class ImprovePromptResponse(BaseModel):
+    """Response payload for improved prompt suggestions."""
+
+    improved_prompt: str
+    intent_summary: str | None = None
