@@ -14,7 +14,7 @@ from app.schemas.responses import (
     LegalResponse,
     SourceReference,
 )
-from app.prompts.legal_rag import LEGAL_RAG_SYSTEM_PROMPT
+from app.agents.prompts.legal_rag import LEGAL_RAG_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
 

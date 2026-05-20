@@ -49,8 +49,8 @@ _MODE_CONFIG: dict[str, ModeConfig] = {
         answer_mode="direct_answer",
         target_corpus="both",
         retrieval_depth="fast",
-        legal_top_k=8,
-        user_doc_top_k=6,
+        legal_top_k=10,  
+        user_doc_top_k=10,
     ),
     "deep_research": ModeConfig(
         route="deep_research",
@@ -67,8 +67,8 @@ _MODE_CONFIG: dict[str, ModeConfig] = {
         answer_mode="draft",
         target_corpus="templates",
         retrieval_depth="expanded",
-        legal_top_k=8,
-        user_doc_top_k=8,
+        legal_top_k=10,
+        user_doc_top_k=10,
         requires_template=True,
     ),
     "review": ModeConfig(

@@ -60,8 +60,8 @@ class Settings(BaseSettings):
     SPARSE_WEIGHT: float = 0.4
 
     RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-    RERANKER_TOP_N: int = 5
-    USER_DOC_RERANKER_TOP_N: int = 8
+    RERANKER_TOP_N: int = 15
+    USER_DOC_RERANKER_TOP_N: int = 12
     RELEVANCE_SCORE_THRESHOLD: float = 0.0
 
     GOOGLE_API_KEY: str = ""

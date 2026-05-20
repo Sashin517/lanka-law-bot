@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
-import numpy as np
 import langchain_community.utils.math as lc_math
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
@@ -17,21 +15,12 @@ from langchain_classic.retrievers.document_compressors.cross_encoder_rerank impo
 from langchain_classic.retrievers.ensemble import EnsembleRetriever
 
 from app.core.config import settings
-from app.services.retrieval.legal_vector_store import LegalVectorStore, PineconeLegalRetriever
+from app.services.retrieval.legal_vector_store import (
+    LegalVectorStore,
+    PineconeLegalRetriever,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _patched_cosine_similarity(X: Any, Y: Any) -> np.ndarray:
-    X = np.array(X, dtype=np.float32)
-    Y = np.array(Y, dtype=np.float32)
-    X_norm = X / np.linalg.norm(X, axis=1, keepdims=True)
-    Y_norm = Y / np.linalg.norm(Y, axis=1, keepdims=True)
-    return np.dot(X_norm, Y_norm.T)
-
-
-lc_math.cosine_similarity = _patched_cosine_similarity
-
 
 class RetrievalService:
     """
@@ -48,14 +37,13 @@ class RetrievalService:
         logger.info("Initialising RetrievalService …")
 
         self._legal_store = LegalVectorStore()
-        
+
         # Load all child docs for BM25
         child_docs = self._legal_store.load_children_for_bm25(limit=50000)
 
         # --- Dense retriever ---
         self._dense_retriever = PineconeLegalRetriever(
-            store=self._legal_store,
-            k=settings.RETRIEVAL_CANDIDATES_K
+            store=self._legal_store, k=settings.RETRIEVAL_CANDIDATES_K
         )
 
         if child_docs:
@@ -94,11 +82,11 @@ class RetrievalService:
     def search(
         self,
         query: str,
-        top_k: int = 5,
+        top_k: int = 10,
         expand_parents: bool = True,
         year_filter: list[int] | int | None = None,
         act_name_filter: list[str] | str | None = None,
-        **kwargs
+        **kwargs,
     ) -> list[dict]:
         """
         Execute hybrid search → re-rank → deduplicate → parent expansion.
@@ -142,7 +130,11 @@ class RetrievalService:
         if not disable_reranking and self._reranked_retriever and candidates:
             try:
                 # Use the configured compressor directly to re-rank the candidates
-                candidates = self._reranked_retriever.base_compressor.compress_documents(candidates, query)
+                candidates = (
+                    self._reranked_retriever.base_compressor.compress_documents(
+                        candidates, query
+                    )
+                )
                 candidates = self._prune_low_relevance(candidates)
             except Exception:
                 logger.exception("Re-ranking failed. Falling back to base ranking.")
@@ -169,7 +161,11 @@ class RetrievalService:
         # 3. Post-filter by metadata (entity-aware, with fallback)
         if year_filter or act_name_filter:
             y_filters = [year_filter] if isinstance(year_filter, int) else year_filter
-            a_filters = [act_name_filter] if isinstance(act_name_filter, str) else act_name_filter
+            a_filters = (
+                [act_name_filter]
+                if isinstance(act_name_filter, str)
+                else act_name_filter
+            )
             unique = self._post_filter_metadata(
                 unique,
                 y_filters,
@@ -236,7 +232,7 @@ class RetrievalService:
     ) -> list[Document]:
         """Filter already-retrieved candidates by metadata constraints using soft-match logic.
 
-        If filtering would produce an empty result set, the original unfiltered list is returned 
+        If filtering would produce an empty result set, the original unfiltered list is returned
         as a safety fallback to prevent breaking the pipeline.
         """
         if not year_filters and not act_name_filters:
@@ -247,7 +243,7 @@ class RetrievalService:
 
         for doc in candidates:
             meta = doc.metadata or {}
-            
+
             # Year check
             year_match = True
             if year_filters:
@@ -256,7 +252,7 @@ class RetrievalService:
                     if int(doc_year) not in year_filters:
                         year_match = False
                 except (TypeError, ValueError):
-                    pass # Keep if no parseable year
+                    pass  # Keep if no parseable year
 
             # Title / Case Name check
             title_match = True
@@ -267,9 +263,13 @@ class RetrievalService:
                     if act_name.lower() in title:
                         title_match = True
                         break
-                    
+
                     # Softer match: check if significant words match
-                    words = [w.lower() for w in re.findall(r'\b\w{4,}\b', act_name) if w.lower() not in ("ordinance", "amendment")]
+                    words = [
+                        w.lower()
+                        for w in re.findall(r"\b\w{4,}\b", act_name)
+                        if w.lower() not in ("ordinance", "amendment")
+                    ]
                     if words and all(w in title for w in words):
                         title_match = True
                         break
@@ -277,9 +277,11 @@ class RetrievalService:
             # If either match holds, we keep the document. This is a soft filter.
             if year_match or title_match:
                 if year_filters and not act_name_filters:
-                    if year_match: filtered.append(doc)
+                    if year_match:
+                        filtered.append(doc)
                 elif act_name_filters and not year_filters:
-                    if title_match: filtered.append(doc)
+                    if title_match:
+                        filtered.append(doc)
                 else:
                     # Both provided. If EITHER matches, it's a good candidate.
                     if year_match or title_match:

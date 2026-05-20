@@ -54,7 +54,7 @@ _reasoning_chain = (
 )
 
 # Expanded top_k for reasoning — broader context than Quick QA
-_REASONING_TOP_K = 8
+_REASONING_TOP_K = 12 
 
 
 @traceable(name="ReasoningNode")
