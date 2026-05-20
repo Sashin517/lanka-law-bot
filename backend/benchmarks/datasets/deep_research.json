@@ -1,0 +1,441 @@
+[
+  {
+    "id": "SL-DR-UCTA-001",
+    "question": "How does the Unfair Contract Terms Act differentiate between contract terms that exclude liability for negligence resulting in death or personal injury, versus those excluding liability for other types of loss or damage, and what legal standard must the latter satisfy?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "How does the Unfair Contract Terms Act differentiate between contract terms that exclude liability for negligence resulting in death or personal injury, versus those excluding liability for other types of loss or damage, and what legal standard must the latter satisfy?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 3(1) of the Unfair Contract Terms Act No. 26 of 1997, any contract term or notice that purports to exclude or restrict liability for death or personal injury resulting from negligence is absolutely void and of no effect. However, under Section 3(2), a contract term or notice purporting to exclude or restrict liability for any other loss or damage resulting from negligence is not automatically void. Instead, it will only have legal effect in so far as such term or notice satisfies the 'requirement of reasonableness'.",
+    "expected_sources": [
+      {
+        "title": "Unfair Contract Terms Act, No. 26 of 1997",
+        "section": "Section 3(1) and 3(2)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 3(1)",
+      "Section 3(2)"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "unfair_contract_terms",
+      "negligence",
+      "liability",
+      "deep_research",
+      "multi_hop"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-DR-PFO-001",
+    "question": "Under the Prevention of Frauds Ordinance (as amended by Act No. 4 of 2024), what are the formal execution requirements for a transfer deed of immovable property, and how does the law accommodate a transferee who is a corporate body unable to be present?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Under the Prevention of Frauds Ordinance (as amended by Act No. 4 of 2024), what are the formal execution requirements for a transfer deed of immovable property, and how does the law accommodate a transferee who is a corporate body unable to be present?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 2(1) and 2(2) of the Prevention of Frauds Ordinance (as amended by Act No. 4 of 2024), a transfer deed for immovable property must be in writing, signed by every executant and the witnesses in the presence of a licensed notary public, all present at the same time and in the presence of one another. Crucially, both the transferor and transferee must affix their signatures and thumb impressions. If the transferee is a corporate body and its Board of Directors is unable to be present to execute the deed, the Board may authorize in writing any other person to sign and affix their thumb impression on the Board's behalf, provided that person complies with the simultaneous presence and attestation requirements of subsection (1).",
+    "expected_sources": [
+      {
+        "title": "Prevention of Frauds (Amendment) Act, No. 4 of 2024",
+        "section": "Section 2(1) and 2(2)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 2(1)",
+      "Section 2(2)"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "prevention_of_frauds",
+      "property_transfer",
+      "corporate_body",
+      "deep_research",
+      "multi_hop"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-DR-SGO-001",
+    "question": "Under the Sale of Goods Ordinance, how do the implied conditions for the quality or fitness of goods differ when a buyer relies on the seller's judgment for a specific purpose versus when the buyer simply purchases goods by description, and what exception applies if the buyer examines the goods?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Under the Sale of Goods Ordinance, how do the implied conditions for the quality or fitness of goods differ when a buyer relies on the seller's judgment for a specific purpose versus when the buyer simply purchases goods by description, and what exception applies if the buyer examines the goods?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 15 of the Sale of Goods Ordinance, the general rule is 'caveat emptor', but two main exceptions apply. Under Section 15(1), if the buyer expressly or impliedly makes known the particular purpose for the goods—showing reliance on the seller's skill and judgment—and the seller deals in such goods, there is an implied condition that the goods are reasonably fit for that purpose. Conversely, under Section 15(2), if goods are bought by description from a dealer, there is an implied condition that they must be of 'merchantable quality'. However, a key exception applies to Section 15(2): if the buyer has actually examined the goods, the implied condition of merchantable quality does not apply to defects that such an examination ought to have revealed.",
+    "expected_sources": [
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Section 15(1) and 15(2)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 15(1)",
+      "Section 15(2)"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "sale_of_goods",
+      "implied_conditions",
+      "merchantable_quality",
+      "deep_research",
+      "multi_hop"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-DR-CAA-001",
+    "question": "How does the Companies (Amendment) Act No. 12 of 2025 alter the legal status of existing bearer shares, and what are the specific obligations and penalties imposed on companies regarding the new 'beneficial ownership' disclosure?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "How does the Companies (Amendment) Act No. 12 of 2025 alter the legal status of existing bearer shares, and what are the specific obligations and penalties imposed on companies regarding the new 'beneficial ownership' disclosure?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The Companies (Amendment) Act No. 12 of 2025 strictly prohibits the issuance of bearer shares. For existing bearer shares, Section 51A mandates that holders must inform the company within 60 days of the Act's operation, provide their details, and convert them into registered shares; failure to comply results in the automatic nullification of the rights attached to those shares. Furthermore, new Sections 130A–130J introduce mandatory 'beneficial ownership' disclosures. Companies must identify natural persons holding 10% or more ownership or exercising effective control, maintain a register of these beneficial owners at their registered office, and submit the details to the Registrar. Non-compliance with these reporting and maintenance requirements constitutes an offence, rendering the company and responsible officers liable to a fine of up to Rs. 1 million, imprisonment for up to 10 years, or both.",
+    "expected_sources": [
+      {
+        "title": "Companies (Amendment) Act, No. 12 of 2025",
+        "section": "Section 51A and Sections 130A-130J",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 51A",
+      "Section 130A-130J"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "companies_act",
+      "beneficial_ownership",
+      "bearer_shares",
+      "deep_research",
+      "multi_hop"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-DR-001",
+    "question": "How does the court synthesize the application of a condition subsequent in a deed of transfer with the formal requirements of Section 2 of the Prevention of Frauds Ordinance when the vendee has not signed the deed?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "How does the court synthesize the application of a condition subsequent in a deed of transfer with the formal requirements of Section 2 of the Prevention of Frauds Ordinance when the vendee has not signed the deed?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The court held that when a property is transferred with a condition subsequent attached to it, the condition cannot be disengaged from the property[cite: 85]. Even if the vendee did not sign the deed, accepting the encumbered title and consideration implies an obligation to retransfer[cite: 99, 142]. The vendee cannot approbate and reprobate by using section 2 of the Prevention of Frauds Ordinance to avoid the obligation, as the provisions of the Ordinance cannot be used to effectuate a fraud[cite: 148, 149].",
+    "expected_sources": [
+      {
+        "title": "Gnanasambandam v. Bin Adaham and Another",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Frauds Ordinance",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Prevention of Frauds Ordinance Section 2"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "contract",
+      "property_transfer",
+      "prevention_of_frauds",
+      "multi_source"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-DR-002",
+    "question": "How do the computation rules under Section 8(1) of the Interpretation Ordinance interact with the two-year limitation period for tort actions prescribed by Section 9 of the Prescription Ordinance when the last day of the period falls on a weekend?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "How do the computation rules under Section 8(1) of the Interpretation Ordinance interact with the two-year limitation period for tort actions prescribed by Section 9 of the Prescription Ordinance when the last day of the period falls on a weekend?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Section 9 of the Prescription Ordinance requires an action to be filed within two years \"from\" the time the cause of action arose[cite: 231]. Applying interpretation rules, the word \"from\" means the computation of the two-year period commences after excluding the day on which the cause of action accrued[cite: 234]. Furthermore, under Section 8(1) of the Interpretation Ordinance, if the last day of the prescriptive period is a public holiday and the Court office is closed, the action is validly instituted if filed on the next working day[cite: 249, 251].",
+    "expected_sources": [
+      {
+        "title": "Raja Nanayakkara v. Mercy Jayasinghe",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prescription Ordinance",
+        "section": "Section 9",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Interpretation Ordinance",
+        "section": "Section 8(1)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Prescription Ordinance Section 9",
+      "Interpretation Ordinance Section 8(1)"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "prescription",
+      "interpretation",
+      "limitation_periods",
+      "multi_source"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-DR-003",
+    "question": "How do the requirements of Section 2 of the Prevention of Frauds Ordinance intersect with the licensing requirements of the Notaries Ordinance to determine the validity of a deed of transfer, and what is the effect on its registration?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "How do the requirements of Section 2 of the Prevention of Frauds Ordinance intersect with the licensing requirements of the Notaries Ordinance to determine the validity of a deed of transfer, and what is the effect on its registration?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 2 of the Prevention of Frauds Ordinance, a transfer of immovable property must be signed in the presence of a licensed notary and two witnesses present at the same time[cite: 364, 368]. If the attesting notary has ceased to practice and failed to obtain an annual license to officiate under Section 27(2) of the Notaries Ordinance, the deed is attested in violation of the Prevention of Frauds Ordinance[cite: 374, 424]. Consequently, such a deed is of no force or avail in law and is subject to an order cancelling its registration under Section 31 of the Registration of Documents Ordinance[cite: 303, 425].",
+    "expected_sources": [
+      {
+        "title": "Rohan de Soyza v. Jinendradasa",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Frauds Ordinance",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Notaries Ordinance",
+        "section": "Section 27(2)",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Registration of Documents Ordinance",
+        "section": "Section 31",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Prevention of Frauds Ordinance Section 2",
+      "Notaries Ordinance Section 27(2)",
+      "Registration of Documents Ordinance Section 31"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "high",
+    "tags": [
+      "prevention_of_frauds",
+      "notaries",
+      "registration",
+      "multi_source"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-DR-004",
+    "question": "Under Section 37 of the Sale of Goods Ordinance, what dual evidentiary burden must a seller discharge to hold a buyer liable for damages due to non-acceptance of delivery, particularly when goods are not physically in the agreed location?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Under Section 37 of the Sale of Goods Ordinance, what dual evidentiary burden must a seller discharge to hold a buyer liable for damages due to non-acceptance of delivery, particularly when goods are not physically in the agreed location?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 37 of the Sale of Goods Ordinance, the seller must establish two elements: that the seller was ready and willing to deliver the goods, and that the seller explicitly requested the buyer to take delivery[cite: 540]. If the goods are not actually available in the seller's store at the time of delivery, the seller cannot be legally deemed ready and willing to deliver[cite: 543]. Without proving both physical readiness to deliver and an active request made to the buyer, the seller's claim for damages for non-acceptance fails[cite: 542, 544].",
+    "expected_sources": [
+      {
+        "title": "Rawanna & Co. v. Arunachapillai",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Section 37",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Sale of Goods Ordinance Section 37"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "high",
+    "tags": [
+      "sale_of_goods",
+      "breach_of_contract",
+      "damages",
+      "multi_source"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-DR-005",
+    "question": "When assessing a buyer's failure to pay for prior instalment deliveries, what factors determine whether a seller is legally justified in withholding subsequent deliveries?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "When assessing a buyer's failure to pay for prior instalment deliveries, what factors determine whether a seller is legally justified in withholding subsequent deliveries?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "case_law",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The critical factor is not merely a failure to pay, but whether the circumstances demonstrate an intention by the buyer to repudiate the contract[cite: 625]. If the buyer's refusal to pay is conditional upon the seller accepting extra-contractual terms, such as demanding a guarantee against future loss, this constitutes a definite refusal to be bound by the contract[cite: 630, 631]. Such a repudiatory breach justifies the seller's refusal to make further deliveries[cite: 631].",
+    "expected_sources": [
+      {
+        "title": "Fernando et al. v. Mendis",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "contract",
+      "sale_of_goods",
+      "repudiation",
+      "multi_source"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-DR-006",
+    "question": "How is the definition of 'goods' under the Sale of Goods Ordinance 1896 interpreted in relation to Roman-Dutch law classifications, and what is the impact on unwritten contracts for the sale of incorporeal rights?",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "How is the definition of 'goods' under the Sale of Goods Ordinance 1896 interpreted in relation to Roman-Dutch law classifications, and what is the impact on unwritten contracts for the sale of incorporeal rights?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "While Roman-Dutch law deems certain incorporeal rights (like debts or actions) as movable property, the Sale of Goods Ordinance defines \"goods\" strictly as tangible or corporeal movables capable of delivery[cite: 684, 697, 711]. An incorporeal right, such as a government monopoly or \"arrack rent,\" does not constitute \"goods\" under the Ordinance[cite: 703, 709, 714]. Therefore, a contract for the sale of such a right is not governed by Section 4 of the Sale of Goods Ordinance and is valid and enforceable even if not made in writing[cite: 643, 732].",
+    "expected_sources": [
+      {
+        "title": "Croos v. De Soysa",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Sale of Goods Ordinance 1896",
+        "section": "Section 4",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Sale of Goods Ordinance Section 4"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "sale_of_goods",
+      "roman_dutch_law",
+      "incorporeal_rights",
+      "multi_source"
+    ],
+    "mode": "deep_research"
+  }
+]

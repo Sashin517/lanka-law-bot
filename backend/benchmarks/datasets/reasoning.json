@@ -1,0 +1,404 @@
+[
+  {
+    "id": "SL-RS-PFO-001",
+    "question": "Kamal verbally agrees to sell his commercial property to Nimal for Rs. 50 Million. Nimal pays a Rs. 5 Million advance, and they shake hands on the deal in front of several witnesses. A month later, Kamal changes his mind, refuses to transfer the property, and refuses to return the advance. Nimal wishes to sue Kamal to force the sale of the property. Based on the formal requirements of the law, what legal hurdles does Nimal face in enforcing this contract?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "Kamal verbally agrees to sell his commercial property to Nimal for Rs. 50 Million. Nimal pays a Rs. 5 Million advance, and they shake hands on the deal in front of several witnesses. A month later, Kamal changes his mind, refuses to transfer the property, and refuses to return the advance. Nimal wishes to sue Kamal to force the sale of the property. Based on the formal requirements of the law, what legal hurdles does Nimal face in enforcing this contract?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether a verbal agreement for the sale of immovable property is legally enforceable for specific performance.\n\nRule: Under Section 2 of the Prevention of Frauds Ordinance, no promise, bargain, contract, or agreement for establishing any security, interest, or encumbrance affecting land or other immovable property shall be of force or avail in law unless it is in writing and signed by the party making it (or by a person lawfully authorized) in the presence of a licensed notary public and two or more credible witnesses, and duly attested.\n\nApplication: The agreement between Kamal and Nimal for the sale of the commercial property was entirely verbal. Despite the payment of an advance and the presence of witnesses, the strict formal requirement of a notarial execution was not met. Therefore, the contract is statutorily void and of no force or avail in law.\n\nConclusion: Nimal cannot legally enforce the sale of the property (specific performance) because the verbal contract violates the Prevention of Frauds Ordinance. (Note: While Nimal may have a separate quasi-contractual claim in unjust enrichment to recover the advance, the contract of sale itself is unenforceable.)",
+    "expected_sources": [
+      {
+        "title": "Prevention of Frauds Ordinance",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 2"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "prevention_of_frauds",
+      "immovable_property",
+      "verbal_contract",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-RS-UCTA-001",
+    "question": "A consumer hires a logistics company to transport valuable fragile goods. The standard form contract provided by the company contains a clause stating: 'The company accepts absolute zero liability for any loss or damage to goods in transit, even if caused by the direct negligence of our employees.' The goods are destroyed because the driver negligently crashed the truck while texting. The company points to the contract clause to deny the claim. How should a court evaluate the validity of this exclusion clause?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A consumer hires a logistics company to transport valuable fragile goods. The standard form contract provided by the company contains a clause stating: 'The company accepts absolute zero liability for any loss or damage to goods in transit, even if caused by the direct negligence of our employees.' The goods are destroyed because the driver negligently crashed the truck while texting. The company points to the contract clause to deny the claim. How should a court evaluate the validity of this exclusion clause?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether a standard contract term excluding liability for property damage caused by negligence is legally valid and enforceable against a consumer.\n\nRule: Under Section 3(2) of the Unfair Contract Terms Act, No. 26 of 1997, a person cannot by reference to any contract term or to a notice given to persons generally or to particular persons exclude or restrict his liability for negligence resulting in loss or damage (other than death or personal injury) except in so far as the term or notice satisfies the 'requirement of reasonableness'. \n\nApplication: The logistics company is attempting to use a blanket exclusion clause in a standard form contract to avoid liability for property damage caused directly by their employee's negligence. The court will not automatically enforce this clause. Instead, the court must subject the clause to the 'requirement of reasonableness'. Given that it is a sweeping exemption in a standard form contract offered to a consumer, it places an unfair burden on the consumer and is highly likely to be deemed unreasonable.\n\nConclusion: The exclusion clause is not automatically void, but it will only be effective if it passes the reasonableness test. Under these facts, a court is highly likely to strike down the clause as unreasonable, thereby holding the logistics company liable for the negligently destroyed goods.",
+    "expected_sources": [
+      {
+        "title": "Unfair Contract Terms Act, No. 26 of 1997",
+        "section": "Section 3(2)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 3(2)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "unfair_contract_terms",
+      "negligence",
+      "exclusion_clause",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-RS-SGO-001",
+    "question": "A local farmer orders 100 meters of specialized irrigation hosing from an agricultural supply dealer, explicitly stating to the dealer that the hosing must be able to withstand high-pressure water pumps used in mountainous terrain. The dealer recommends and sells a specific brand. Upon installation, the hoses immediately burst under the high pressure. The dealer refuses a refund, claiming the goods were 'merchantable' as they work fine for standard low-pressure farming. What legal argument can the farmer make to return the goods and get a refund?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A local farmer orders 100 meters of specialized irrigation hosing from an agricultural supply dealer, explicitly stating to the dealer that the hosing must be able to withstand high-pressure water pumps used in mountainous terrain. The dealer recommends and sells a specific brand. Upon installation, the hoses immediately burst under the high pressure. The dealer refuses a refund, claiming the goods were 'merchantable' as they work fine for standard low-pressure farming. What legal argument can the farmer make to return the goods and get a refund?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether there is a breach of an implied condition of fitness for a particular purpose when goods are merchantable for general use but fail for the buyer's specifically communicated purpose.\n\nRule: Under Section 15(1) of the Sale of Goods Ordinance, where the buyer, expressly or by implication, makes known to the seller the particular purpose for which the goods are required, so as to show that the buyer relies on the seller's skill or judgment, and the goods are of a description which it is in the course of the seller's business to supply, there is an implied condition that the goods shall be reasonably fit for such purpose.\n\nApplication: The farmer expressly communicated the particular purpose (withstanding high-pressure water pumps in mountainous terrain) to the agricultural dealer. By asking for the dealer's recommendation, the farmer relied on the dealer's skill and judgment. The dealer supplied the hosing in the ordinary course of business. Although the hosing might be merchantable for standard farming (under Section 15(2)), it breached the specific implied condition of fitness for the communicated high-pressure purpose under Section 15(1).\n\nConclusion: The farmer can successfully argue that the dealer breached the implied condition of fitness for a particular purpose. Consequently, the farmer is legally entitled to reject the goods, treat the contract as repudiated, and claim a refund.",
+    "expected_sources": [
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Section 15(1)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 15(1)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "sale_of_goods",
+      "implied_conditions",
+      "fitness_for_purpose",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-RS-ETA-001",
+    "question": "Company A places a bulk order for raw materials by submitting an electronic form on Supplier B's website. Supplier B's 'automated message system' instantly processes the form and sends an email confirming the order and binding the supplier to a delivery date. The next day, human managers at Supplier B realize the market price has spiked and want to cancel the order, arguing that the contract is invalid because no human at Supplier B ever reviewed or accepted the order manually. Is Supplier B's argument legally sound?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "Company A places a bulk order for raw materials by submitting an electronic form on Supplier B's website. Supplier B's 'automated message system' instantly processes the form and sends an email confirming the order and binding the supplier to a delivery date. The next day, human managers at Supplier B realize the market price has spiked and want to cancel the order, arguing that the contract is invalid because no human at Supplier B ever reviewed or accepted the order manually. Is Supplier B's argument legally sound?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether a contract formed without human review by an automated message system is legally valid and binding.\n\nRule: Under Section 11 of the Electronic Transactions Act, No. 19 of 2006, a contract shall not be denied legal validity or enforceability on the sole ground that it is in electronic form. Furthermore, Section 17(d) explicitly states that a contract formed by the interaction of an automated message system and a natural person, or by the interaction of automated message systems, shall not be denied validity or enforceability solely on the ground that there was no review or intervention by a natural person of the final contract or of each of the actions carried out by the automated message system.\n\nApplication: Company A initiated the contract, and Supplier B's programmed automated system accepted it and issued confirmation. Supplier B is attempting to deny validity precisely because a human manager did not intervene or review the transaction. This argument is directly prohibited by Section 17(d).\n\nConclusion: Supplier B's argument is not legally sound. The contract was validly formed through the automated message system, and Supplier B is legally bound to fulfill the order despite the lack of human intervention at the moment of acceptance.",
+    "expected_sources": [
+      {
+        "title": "Electronic Transactions Act, No. 19 of 2006",
+        "section": "Section 11 and Section 17(d)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 11",
+      "Section 17(d)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "electronic_transactions",
+      "automated_system",
+      "contract_formation",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-RS-RDO-001",
+    "question": "On March 1st, Sunil sells a piece of land to Malik for valuable consideration and executes a valid notarial deed. Malik places the deed in his safe but forgets to register it at the Land Registry. Seeing an opportunity, Sunil fraudulently sells the exact same land to Nuwan on April 1st. Nuwan, who has no knowledge of the prior sale to Malik, pays full value and immediately registers his deed on April 2nd. Malik discovers this in May and claims the land belongs to him because he bought it first. Who has the superior legal title to the land?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "On March 1st, Sunil sells a piece of land to Malik for valuable consideration and executes a valid notarial deed. Malik places the deed in his safe but forgets to register it at the Land Registry. Seeing an opportunity, Sunil fraudulently sells the exact same land to Nuwan on April 1st. Nuwan, who has no knowledge of the prior sale to Malik, pays full value and immediately registers his deed on April 2nd. Malik discovers this in May and claims the land belongs to him because he bought it first. Who has the superior legal title to the land?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether a subsequent registered deed executed for valuable consideration defeats a prior unregistered deed concerning the same immovable property.\n\nRule: Under Section 7(1) of the Registration of Documents Ordinance, an instrument executed or made on or after January 1, 1864, shall, unless duly registered, be void as against all parties claiming an adverse interest thereto on valuable consideration by virtue of any subsequent instrument which is duly registered. Section 7(2) adds that fraud or collusion in obtaining such subsequent instrument or in securing the prior registration thereof shall defeat the priority of the person claiming thereunder.\n\nApplication: Malik holds the prior instrument (March 1st) but failed to register it. Nuwan holds a subsequent instrument (April 1st) for which he paid valuable consideration, and he duly registered it. Because Nuwan acted in good faith with no knowledge of the prior sale, there is no fraud or collusion on his part in obtaining his deed or securing its registration. Therefore, under Section 7(1), Malik's unregistered deed becomes void as against Nuwan's subsequently registered deed.\n\nConclusion: Nuwan holds the superior legal title. Malik's deed is void against Nuwan due to his failure to register it, leaving Malik to seek a personal remedy against Sunil for fraud.",
+    "expected_sources": [
+      {
+        "title": "Registration of Documents Ordinance",
+        "section": "Section 7(1) and Section 7(2)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 7(1)",
+      "Section 7(2)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "registration_of_documents",
+      "priority_of_deeds",
+      "land_law",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-RS-001",
+    "question": "A vendor agrees to sell a commercial property to a buyer but subsequently negotiates to sell it to a third party for a higher price. The original buyer seeks an interim injunction to prevent the sale to the third party pending a specific performance suit. Based on Roberts v. Ratnayake, what legal standards must the buyer satisfy to obtain this equitable relief?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A vendor agrees to sell a commercial property to a buyer but subsequently negotiates to sell it to a third party for a higher price. The original buyer seeks an interim injunction to prevent the sale to the third party pending a specific performance suit. Based on Roberts v. Ratnayake, what legal standards must the buyer satisfy to obtain this equitable relief?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "case_law",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Applying Roberts v. Ratnayake, the buyer must establish a prima facie case that there is a valid and enforceable contract for sale. Furthermore, the court will apply equitable principles, requiring the buyer to prove that damages would not be an adequate remedy and that the balance of convenience favors granting the injunction to maintain the status quo until the final determination of the specific performance action.",
+    "expected_sources": [
+      {
+        "title": "Roberts and Another v. Ratnayake and Others",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Roberts v. Ratnayake Judgment Principles"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "specific_performance",
+      "injunction",
+      "contract_breach",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-RS-002",
+    "question": "A seller of agricultural produce verbally demands that a buyer take delivery by Friday. However, on that Friday, the goods are securely locked in a warehouse in a different district, not at the agreed place of delivery. If the seller sues for damages for non-acceptance, how would the court evaluate the seller's claim under Rawanna & Co. v. Arunachapillai?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A seller of agricultural produce verbally demands that a buyer take delivery by Friday. However, on that Friday, the goods are securely locked in a warehouse in a different district, not at the agreed place of delivery. If the seller sues for damages for non-acceptance, how would the court evaluate the seller's claim under Rawanna & Co. v. Arunachapillai?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "case_law",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The court would likely dismiss the seller's claim. According to Rawanna & Co. v. Arunachapillai, to succeed in an action for non-acceptance under the Sale of Goods Ordinance, the seller must prove both that a request was made to the buyer to take delivery AND that the seller was physically 'ready and willing' to deliver. Since the goods were located in a different district and not at the agreed delivery location, the seller was not legally ready and willing to perform, rendering the claim invalid.",
+    "expected_sources": [
+      {
+        "title": "Rawanna & Co. v. Arunachapillai",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Rawanna & Co. v. Arunachapillai Judgment Principles"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "sale_of_goods",
+      "delivery",
+      "non_acceptance",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-RS-003",
+    "question": "A client’s cause of action for a tortious claim arose on October 10, 2022. The prescriptive period is exactly two years. October 10, 2024, falls on a declared public holiday when the court registry is closed. The client files the plaint on October 11, 2024. Has the action prescribed, according to the principles in Raja Nanayakkara v. Mercy Jayasinghe?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A client’s cause of action for a tortious claim arose on October 10, 2022. The prescriptive period is exactly two years. October 10, 2024, falls on a declared public holiday when the court registry is closed. The client files the plaint on October 11, 2024. Has the action prescribed, according to the principles in Raja Nanayakkara v. Mercy Jayasinghe?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "case_law",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "No, the action has not prescribed. Applying Raja Nanayakkara v. Mercy Jayasinghe, the computation of the prescriptive period excludes the day the cause of action accrued. Furthermore, interpreting this alongside the Interpretation Ordinance, if the final day of the prescriptive period falls on a public holiday when the court is closed, the period is extended, and filing on the immediate next working day (October 11) is deemed valid and within time.",
+    "expected_sources": [
+      {
+        "title": "Raja Nanayakkara v. Mercy Jayasinghe",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Raja Nanayakkara v. Mercy Jayasinghe Judgment Principles"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "prescription",
+      "computation_of_time",
+      "limitation",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-RS-004",
+    "question": "An importer discovers that the machinery shipped by a foreign supplier is entirely defective and breaches the underlying sales contract. The importer immediately instructs their issuing bank to dishonor the irrevocable Letter of Credit. Under Hatton National Bank v. Sellers Sports, is the bank legally justified in withholding payment to the seller?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "An importer discovers that the machinery shipped by a foreign supplier is entirely defective and breaches the underlying sales contract. The importer immediately instructs their issuing bank to dishonor the irrevocable Letter of Credit. Under Hatton National Bank v. Sellers Sports, is the bank legally justified in withholding payment to the seller?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "case_law",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Generally, no. According to Hatton National Bank v. Sellers Sports, a Letter of Credit operates on the 'autonomy principle,' meaning the credit contract is independent of the underlying sales contract. Banks deal in documents, not goods. Unless the importer can establish clear, proven fraud by the beneficiary (the fraud exception) regarding the documents themselves, the bank is obligated to honor the credit if the presented documents strictly comply with the LC terms, regardless of the defective machinery.",
+    "expected_sources": [
+      {
+        "title": "Hatton National Bank Limited v. Sellers Sports (Pvt) Ltd",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Hatton National Bank v. Sellers Sports Judgment Principles"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "letter_of_credit",
+      "autonomy_principle",
+      "banking",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-RS-005",
+    "question": "A purchaser enters into an agreement to buy a parcel of land. The vendor wrongfully repudiates the agreement. Instead of suing immediately, the purchaser waits six years before initiating an action for specific performance, during which time the land's value triples. Based on Samuel Gnanam v. Ismail Lebbe, how should the court rule on the purchaser's claim for specific performance?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A purchaser enters into an agreement to buy a parcel of land. The vendor wrongfully repudiates the agreement. Instead of suing immediately, the purchaser waits six years before initiating an action for specific performance, during which time the land's value triples. Based on Samuel Gnanam v. Ismail Lebbe, how should the court rule on the purchaser's claim for specific performance?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "case_law",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The court should deny the claim for specific performance. Under Samuel Gnanam v. Ismail Lebbe, specific performance is a discretionary, equitable remedy. A plaintiff must demonstrate that they have been consistently ready, willing, eager, and prompt to perform their obligations. The purchaser's unexplained delay of six years (laches), coupled with a drastic alteration in circumstances such as the tripled property value, defeats the equitable claim, though the purchaser might still seek damages for breach of contract.",
+    "expected_sources": [
+      {
+        "title": "Samuel Gnanam and Others v. Ismail Lebbe",
+        "section": "Judgment Analysis",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Samuel Gnanam v. Ismail Lebbe Judgment Principles"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "specific_performance",
+      "laches",
+      "equity",
+      "scenario",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  }
+]

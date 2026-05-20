@@ -1,0 +1,42 @@
+{
+  "configs": [
+    "full_pipeline",
+    "dense_only",
+    "sparse_only",
+    "no_reranking",
+    "no_parent_expansion",
+    "no_citation_verify"
+  ],
+  "summary": {
+    "full_pipeline": {
+      "total": 20,
+      "skipped": 0,
+      "answered": 20
+    },
+    "dense_only": {
+      "total": 20,
+      "skipped": 0,
+      "answered": 20
+    },
+    "sparse_only": {
+      "total": 20,
+      "skipped": 0,
+      "answered": 20
+    },
+    "no_reranking": {
+      "total": 20,
+      "skipped": 0,
+      "answered": 20
+    },
+    "no_parent_expansion": {
+      "total": 20,
+      "skipped": 16,
+      "answered": 4
+    },
+    "no_citation_verify": {
+      "total": 20,
+      "skipped": 0,
+      "answered": 20
+    }
+  }
+}

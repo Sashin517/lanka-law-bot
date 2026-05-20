@@ -4,11 +4,19 @@ frontend/.next/
 
 # Python
 backend/__pycache__/
+__pycache__/
+*.py[cod]
+*.pyc
 backend/venv/
+backend/venvcls/
+
+
 .env
 
 # Massive Data & Databases
 backend/data/
 backend/database/
+backend/storage/
 
-backend/temp_lk_legal_docs/
+backend/temp_lk_legal_docs/"__pycache__/" 
+"__pycache__/" 

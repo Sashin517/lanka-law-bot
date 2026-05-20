@@ -1,0 +1,16 @@
+# Services package backward-compatibility exports
+from app.services.retrieval.retrieval_service import RetrievalService, get_retrieval_service
+from app.services.retrieval.user_document_retrieval_service import UserDocumentRetrievalService
+from app.services.retrieval.user_document_vector_store import UserDocumentVectorStore
+from app.services.retrieval.legal_vector_store import LegalVectorStore, PineconeLegalRetriever
+from app.services.retrieval.voyage_embedding_service import VoyageEmbeddingService
+from app.services.retrieval.retrieval_fusion import reciprocal_rank_fusion, retrieval_dedup_key
+
+from app.services.ingestion.document_parser import DocumentParser, ParsedDocument
+from app.services.ingestion.document_storage import DocumentStorage, StoredFile
+from app.services.ingestion.legal_chunker import LegalDocumentChunker, ChunkingDocumentContext, LegalChunk, ChunkSet
+from app.services.ingestion.ingestion_jobs import IngestionJobService
+
+from app.services.generation.generation_service import GenerationService
+from app.services.generation.context_assembler import ContextAssembler, MultiSourceContextAssembler
+from app.services.generation.citation_verifier import CitationVerifier
