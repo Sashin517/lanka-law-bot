@@ -1,0 +1,95 @@
+[
+  {
+    "id": "SL-AC-001",
+    "question": "Can you check if the bank is justified in withholding payment under this Letter of Credit based on the Hatton National Bank v. Sellers Sports case?",
+    "category": "clarification",
+    "difficulty": "easy",
+    "request": {
+      "question": "Can you check if the bank is justified in withholding payment under this Letter of Credit based on the Hatton National Bank v. Sellers Sports case?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "review",
+    "expected_task_type": "review",
+    "expected_answer_mode": "review_report",
+    "expected_target_corpus": "user_document",
+    "expected_needs_clarification": true,
+    "requires_user_document": true,
+    "document_fixture": null,
+    "ground_truth_answer": "[CLARIFICATION_TEST] The system should ask the user to upload or provide the Letter of Credit or related correspondence they want reviewed against the Hatton National Bank v. Sellers Sports precedent.",
+    "expected_sources": [],
+    "relevant_sections": [],
+    "requires_multi_source": false,
+    "expected_grounding_min": 1.0,
+    "expected_confidence": "low",
+    "tags": [
+      "clarification",
+      "letter_of_credit",
+      "missing_document",
+      "banking"
+    ],
+    "mode": "review"
+  },
+  {
+    "id": "SL-CLAR-UCTA-001",
+    "question": "Does my company's standard sales contract violate the Unfair Contract Terms Act regarding negligence?",
+    "category": "clarification",
+    "difficulty": "easy",
+    "request": {
+      "question": "Does my company's standard sales contract violate the Unfair Contract Terms Act regarding negligence?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "review",
+    "expected_task_type": "review",
+    "expected_answer_mode": "review_report",
+    "expected_target_corpus": "user_document",
+    "expected_needs_clarification": true,
+    "requires_user_document": true,
+    "document_fixture": null,
+    "ground_truth_answer": "[CLARIFICATION_TEST] The system should ask the user to upload or attach the standard sales contract so that the liability exclusion clauses can be evaluated against the Unfair Contract Terms Act.",
+    "expected_sources": [],
+    "relevant_sections": [],
+    "requires_multi_source": false,
+    "expected_grounding_min": 1.0,
+    "expected_confidence": "low",
+    "tags": [
+      "review",
+      "clarification",
+      "missing_document",
+      "unfair_contract_terms"
+    ],
+    "mode": "review"
+  },
+  {
+    "id": "SL-CLAR-SGO-001",
+    "question": "I bought some industrial machinery from a seller and it broke down. Can I reject the goods and get my money back under the Sale of Goods Ordinance?",
+    "category": "clarification",
+    "difficulty": "medium",
+    "request": {
+      "question": "I bought some industrial machinery from a seller and it broke down. Can I reject the goods and get my money back under the Sale of Goods Ordinance?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": true,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[CLARIFICATION_TEST] The system should ask the user for more specific facts about the transaction, such as whether the buyer communicated a particular purpose for the machinery to the seller (Section 15(1)), whether the machinery was bought by description (Section 15(2)), and whether the buyer had examined the goods before purchase.",
+    "expected_sources": [],
+    "relevant_sections": [],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "low",
+    "tags": [
+      "reasoning",
+      "clarification",
+      "missing_facts",
+      "sale_of_goods"
+    ],
+    "mode": "reasoning"
+  }
+]
