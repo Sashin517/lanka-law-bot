@@ -67,6 +67,13 @@ class AgentState(BaseModel):
     matter_id: str | None = None
     session_id: str = ""
     ablation_config: dict = Field(default_factory=dict)
+    draft_document_ids: list[str] = Field(default_factory=list)
+    draft_documents: list[dict] = Field(default_factory=list)
+    document_specs: list[dict] = Field(default_factory=list)
+    agent_edit_instruction: str = ""
+    target_sections: list[str] = Field(default_factory=list)
+    track_changes: bool = True
+    context_snapshot_id: str | None = None
 
     @field_validator("mode")
     @classmethod
@@ -106,6 +113,12 @@ class AgentState(BaseModel):
     analysis: list[CitedClaim] = Field(default_factory=list)
     confidence: str = "medium"
     draft_content: str = ""
+    draft_title: str = ""
+    draft_document_type: str = ""
+    sources_used: list[str] = Field(default_factory=list)
+    requires_completion: bool = False
+    section_map: dict = Field(default_factory=dict)
+    change_summary: str = ""
 
     # ── Grounding ──
     grounding: GroundingResult = Field(default_factory=GroundingResult)

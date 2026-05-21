@@ -29,6 +29,7 @@ SessionLocal = sessionmaker(
 
 def init_db() -> None:
     from app.models import document  # noqa: F401
+    from app.models import draft  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     _apply_sqlite_compat_migrations()

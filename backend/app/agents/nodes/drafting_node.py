@@ -132,6 +132,11 @@ async def drafting_node(state: AgentState) -> dict:
     # ── Step 6: Verify citations via existing CitationVerifier ──
     markdown = raw.get("draft_markdown", "")
     sources_used = raw.get("sources_used", [])
+    title = raw.get("title") or _extract_title(markdown) or _title_from_template(template_key)
+    document_type = raw.get("document_type") or template_key
+    requires_completion = bool(raw.get("requires_completion", False))
+    section_map = raw.get("section_map") or _build_section_map(markdown)
+    change_summary = raw.get("change_summary") or f"Generated {title}."
 
     if not state.ablation_config.get("skip_verification"):
         valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
@@ -151,6 +156,23 @@ async def drafting_node(state: AgentState) -> dict:
         "summary": extract_first_paragraph(markdown),
         "markdown_content": markdown,
         "draft_content": markdown,          # Backward compat
+        "draft_title": title,
+        "draft_document_type": document_type,
+        "sources_used": sources_used,
+        "requires_completion": requires_completion,
+        "section_map": section_map,
+        "change_summary": change_summary,
+        "draft_documents": [
+            {
+                "title": title,
+                "document_type": document_type,
+                "draft_markdown": markdown,
+                "sources_used": sources_used,
+                "requires_completion": requires_completion,
+                "section_map": section_map,
+                "change_summary": change_summary,
+            }
+        ],
         "confidence": confidence,
     }
 
@@ -175,3 +197,38 @@ def _select_template(question: str, answer_mode: str) -> str:
 
     # Default to contract (most common drafting request)
     return "contract"
+
+
+def _extract_title(markdown: str) -> str:
+    for line in markdown.splitlines():
+        text = line.strip()
+        if text.startswith("# "):
+            return text[2:].strip()
+    return ""
+
+
+def _title_from_template(template_key: str) -> str:
+    return {
+        "contract": "Generated Contract",
+        "pleading": "Generated Pleading",
+        "notice": "Generated Notice",
+        "affidavit": "Generated Affidavit",
+    }.get(template_key, "Generated Legal Draft")
+
+
+def _build_section_map(markdown: str) -> dict:
+    section_map: dict[str, dict] = {}
+    for index, line in enumerate(markdown.splitlines(), start=1):
+        text = line.strip()
+        if not text.startswith("#"):
+            continue
+        marker, _, heading = text.partition(" ")
+        if not heading:
+            continue
+        section_id = "".join(ch.lower() if ch.isalnum() else "-" for ch in heading).strip("-")
+        section_map[section_id or f"section-{index}"] = {
+            "heading": heading.strip(),
+            "level": len(marker),
+            "line": index,
+        }
+    return section_map

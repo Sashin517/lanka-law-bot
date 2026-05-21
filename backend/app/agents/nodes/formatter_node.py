@@ -39,6 +39,14 @@ async def formatter_node(state: AgentState) -> dict:
         "confidence": state.confidence,
         "grounding_score": state.grounding.grounding_score,
         "disclaimer": state.disclaimer,
+        "draft_documents": state.draft_documents,
+        "draft_document": state.draft_documents[0] if state.draft_documents else None,
+        "draft_title": state.draft_title,
+        "draft_document_type": state.draft_document_type,
+        "sources_used": state.sources_used,
+        "requires_completion": state.requires_completion,
+        "section_map": state.section_map,
+        "change_summary": state.change_summary,
     }
 
     logger.info(

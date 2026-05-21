@@ -9,15 +9,23 @@ import logging
 from fastapi import APIRouter
 
 from app.schemas.requests import LegalQuery
-from app.agents.graph import build_graph
 from app.agents.state import AgentState
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Compile the graph once at module load
-_graph = build_graph()
+_graph = None
+
+
+def get_graph():
+    """Compile the graph lazily to avoid model initialization at API import time."""
+    global _graph
+    if _graph is None:
+        from app.agents.graph import build_graph
+
+        _graph = build_graph()
+    return _graph
 
 
 @router.get("/")
@@ -44,7 +52,7 @@ async def search_law(query: LegalQuery):
     )
 
     # Run the multi-agent graph
-    final_state = await _graph.ainvoke(initial_state.model_dump())
+    final_state = await get_graph().ainvoke(initial_state.model_dump())
 
     # The formatter node puts the API-ready dict in final_response
     if final_state.get("final_response"):
