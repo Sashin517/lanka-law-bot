@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables before any other imports so LangSmith picks them up
+load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +12,7 @@ from pydantic import BaseModel
 
 from app.api.api_routes import api_router
 from app.core.config import settings
+from app.database.session import init_db
 
 # Configure logging
 logging.basicConfig(
@@ -35,3 +40,8 @@ app.add_middleware(
 
 
 app.include_router(api_router)
+
+
+@app.on_event("startup")
+def startup() -> None:
+    init_db()

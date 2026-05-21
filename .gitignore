@@ -34,6 +34,7 @@ temp/
 # data, db
 backend/data/
 backend/database/
+backend/storage/
 
 backend/temp_lk_legal_docs/"__pycache__/" 
 "__pycache__/" 

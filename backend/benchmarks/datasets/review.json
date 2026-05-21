@@ -1,0 +1,215 @@
+[
+  {
+    "id": "SL-REV-PFO-001",
+    "question": "Review this draft agreement for the sale of a commercial property and identify any critical execution or formal validity risks under Sri Lankan law.",
+    "category": "review",
+    "difficulty": "hard",
+    "request": {
+      "question": "Review this draft agreement for the sale of a commercial property and identify any critical execution or formal validity risks under Sri Lankan law.",
+      "document_ids": [
+        "<uploaded_fixture_document_id>"
+      ],
+      "matter_id": "property-review-001"
+    },
+    "expected_route": "review",
+    "expected_task_type": "review",
+    "expected_answer_mode": "review_report",
+    "expected_target_corpus": "user_document",
+    "expected_needs_clarification": false,
+    "requires_user_document": true,
+    "document_fixture": {
+      "fixture_path": "benchmarks/fixtures/draft_commercial_property_sale.md",
+      "document_type": "agreement",
+      "matter_id": "property-review-001",
+      "title": "Draft Commercial Property Sale Agreement",
+      "expected_status": "completed"
+    },
+    "ground_truth_answer": "[REVIEW_TEST] The system should analyze the uploaded document and identify that the execution block only provides spaces for the buyer and seller signatures. It must flag this as a critical risk, explaining that under Section 2 of the Prevention of Frauds Ordinance, any agreement for the sale of immovable property is void and of no force in law unless signed in the presence of a licensed notary public and two or more credible witnesses, and duly attested.",
+    "expected_sources": [
+      {
+        "title": "Draft Commercial Property Sale Agreement",
+        "section": "Execution / Signature Clause",
+        "source_type": "user_document"
+      },
+      {
+        "title": "Prevention of Frauds Ordinance",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 2"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "review",
+      "property_sale",
+      "prevention_of_frauds",
+      "user_document",
+      "execution_risk"
+    ],
+    "mode": "review"
+  },
+  {
+    "id": "SL-REV-UCTA-001",
+    "question": "Review this standard form logistics service contract and identify clauses that are legally void or highly vulnerable regarding liability exclusions.",
+    "category": "review",
+    "difficulty": "medium",
+    "request": {
+      "question": "Review this standard form logistics service contract and identify clauses that are legally void or highly vulnerable regarding liability exclusions.",
+      "document_ids": [
+        "<uploaded_fixture_document_id>"
+      ],
+      "matter_id": "logistics-review-001"
+    },
+    "expected_route": "review",
+    "expected_task_type": "review",
+    "expected_answer_mode": "review_report",
+    "expected_target_corpus": "user_document",
+    "expected_needs_clarification": false,
+    "requires_user_document": true,
+    "document_fixture": {
+      "fixture_path": "benchmarks/fixtures/logistics_contract.md",
+      "document_type": "contract",
+      "matter_id": "logistics-review-001",
+      "title": "Logistics Services Standard Contract",
+      "expected_status": "completed"
+    },
+    "ground_truth_answer": "[REVIEW_TEST] The system should review the uploaded logistics contract and identify the limitation of liability clauses. It must specify that any clause attempting to exclude liability for death or personal injury resulting from negligence is absolutely void under Section 3(1) of the Unfair Contract Terms Act. Furthermore, it should note that any clause excluding liability for property damage caused by negligence is not automatically valid, but subject to the 'requirement of reasonableness' under Section 3(2) of the Act.",
+    "expected_sources": [
+      {
+        "title": "Logistics Services Standard Contract",
+        "section": "Limitation of Liability Clause",
+        "source_type": "user_document"
+      },
+      {
+        "title": "Unfair Contract Terms Act, No. 26 of 1997",
+        "section": "Section 3",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 3"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "review",
+      "liability_exclusion",
+      "unfair_contract_terms",
+      "user_document",
+      "risk_analysis"
+    ],
+    "mode": "review"
+  },
+  {
+    "id": "SL-REV-SGO-001",
+    "question": "Review this draft B2B supply agreement for industrial machinery and evaluate the risks for the buyer associated with the 'As-Is' and 'Waiver of Warranties' clauses.",
+    "category": "review",
+    "difficulty": "medium",
+    "request": {
+      "question": "Review this draft B2B supply agreement for industrial machinery and evaluate the risks for the buyer associated with the 'As-Is' and 'Waiver of Warranties' clauses.",
+      "document_ids": [
+        "<uploaded_fixture_document_id>"
+      ],
+      "matter_id": "supply-review-001"
+    },
+    "expected_route": "review",
+    "expected_task_type": "review",
+    "expected_answer_mode": "review_report",
+    "expected_target_corpus": "user_document",
+    "expected_needs_clarification": false,
+    "requires_user_document": true,
+    "document_fixture": {
+      "fixture_path": "benchmarks/fixtures/industrial_supply_agreement.md",
+      "document_type": "agreement",
+      "matter_id": "supply-review-001",
+      "title": "Industrial Machinery Supply Agreement",
+      "expected_status": "completed"
+    },
+    "ground_truth_answer": "[REVIEW_TEST] The system should locate the 'As-Is' and warranty waiver provisions in the document. It should advise the buyer that accepting these clauses severely limits their statutory protections under the Sale of Goods Ordinance. Specifically, it should warn that the buyer might lose the implied conditions that the goods correspond with their description (Section 14), are of merchantable quality (Section 15(2)), and are reasonably fit for the specific industrial purpose communicated to the seller (Section 15(1)).",
+    "expected_sources": [
+      {
+        "title": "Industrial Machinery Supply Agreement",
+        "section": "Waiver of Warranties Clause",
+        "source_type": "user_document"
+      },
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Sections 14 and 15",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 14",
+      "Section 15"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "review",
+      "supply_agreement",
+      "sale_of_goods",
+      "implied_conditions",
+      "user_document"
+    ],
+    "mode": "review"
+  },
+  {
+    "id": "SL-REV-CAA-001",
+    "question": "Review this electronics store's standard Terms of Sale and Warranty document and identify any conditions that violate statutory consumer rights regarding defective goods.",
+    "category": "review",
+    "difficulty": "medium",
+    "request": {
+      "question": "Review this electronics store's standard Terms of Sale and Warranty document and identify any conditions that violate statutory consumer rights regarding defective goods.",
+      "document_ids": [
+        "<uploaded_fixture_document_id>"
+      ],
+      "matter_id": "warranty-review-001"
+    },
+    "expected_route": "review",
+    "expected_task_type": "review",
+    "expected_answer_mode": "review_report",
+    "expected_target_corpus": "user_document",
+    "expected_needs_clarification": false,
+    "requires_user_document": true,
+    "document_fixture": {
+      "fixture_path": "benchmarks/fixtures/electronics_terms_of_sale.md",
+      "document_type": "policy",
+      "matter_id": "warranty-review-001",
+      "title": "Electronics Store Terms of Sale",
+      "expected_status": "completed"
+    },
+    "ground_truth_answer": "[REVIEW_TEST] The system should review the terms of sale and flag any 'strictly no returns or refunds' policies. It must explain that such absolute bans contravene consumer rights, noting that under Section 13 of the Consumer Affairs Authority Act, the Director-General has the power to inquire into consumer complaints regarding the sale of defective goods, and can order the trader to pay compensation or replace the goods, superseding restrictive store policies.",
+    "expected_sources": [
+      {
+        "title": "Electronics Store Terms of Sale",
+        "section": "Returns and Refund Policy",
+        "source_type": "user_document"
+      },
+      {
+        "title": "Consumer Affairs Authority Act, No. 9 of 2003",
+        "section": "Section 13",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 13"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.8,
+    "expected_confidence": "high",
+    "tags": [
+      "review",
+      "consumer_rights",
+      "consumer_affairs",
+      "defective_goods",
+      "user_document"
+    ],
+    "mode": "review"
+  }
+]

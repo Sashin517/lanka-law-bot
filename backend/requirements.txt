@@ -3,7 +3,8 @@ langchain-community>=0.4.1
 langchain-classic
 langchain-huggingface
 langchain-google-genai
-chromadb
+langgraph>=0.4.0
+langsmith
 sentence-transformers
 simsimd>=5.9.2
 numpy==1.26.4
@@ -13,3 +14,9 @@ pydantic
 pydantic-settings
 python-dotenv
 rank-bm25
+docling
+pinecone==9.0.0
+python-multipart
+aiofiles
+rq
+redis

@@ -16,6 +16,10 @@ class SourceReference(BaseModel):
     year: int = 0
     breadcrumb: str | None = None
     excerpt: str = ""
+    content: str = Field(default="", exclude=True)
+    source_type: str | None = None
+    document_id: str | None = None
+    filename: str | None = None
 
 
 class ConfidenceLevel(str, Enum):
@@ -35,7 +39,6 @@ class RouteMetadata(BaseModel):
     confidence: str
     needs_clarification: bool = False
     clarification_question: str | None = None
-    routing_reason: str = ""
 
 
 class LegalResponse(BaseModel):
@@ -46,3 +49,10 @@ class LegalResponse(BaseModel):
     confidence: str = ConfidenceLevel.MEDIUM
     route: RouteMetadata | None = None
     disclaimer: str = "This information is for research purposes only and does not constitute legal advice. Please consult a qualified legal professional for specific legal matters."
+
+
+class ImprovePromptResponse(BaseModel):
+    """Response payload for improved prompt suggestions."""
+
+    improved_prompt: str
+    intent_summary: str | None = None

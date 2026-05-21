@@ -46,10 +46,13 @@ The Vector Database (`chroma_db`) is ignored by Git to keep the repository light
 2. Activate your Python virtual environment (Ensure you are using Python 3.12):
    - **Windows:** `venv\Scripts\activate`
    - **Mac/Linux:** `source venv/bin/activate`
-3. Start the FastAPI server:
+3. Start the FastAPI server:  
+
    ```bash
+   uvicorn main:app
    uvicorn main:app --reload
    ```
+
    _The backend is now running on `http://127.0.0.1:8000`._
 
 ### Step 2: Start the Frontend (Next.js UI)
@@ -162,3 +165,5 @@ Open your web browser and navigate to **`http://localhost:3000`**. You can now t
 ## 📄 License
 
 Created by Prime Minds. All rights reserved.
+
+

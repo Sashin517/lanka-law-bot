@@ -1,0 +1,358 @@
+[
+  {
+    "id": "SL-DRAFT-CAA-001",
+    "question": "Draft a formal written complaint to the Consumer Affairs Authority on behalf of a consumer who purchased a defective refrigerator, citing the relevant provisions for the Authority to inquire into the matter.",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Draft a formal written complaint to the Consumer Affairs Authority on behalf of a consumer who purchased a defective refrigerator, citing the relevant provisions for the Authority to inquire into the matter.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce a structured formal complaint letter addressed to the Director-General of the Consumer Affairs Authority. The draft should include placeholders for consumer details, trader details, and purchase dates, and explicitly request an inquiry under Section 13 of the Consumer Affairs Authority Act No. 9 of 2003 regarding the sale of defective goods.",
+    "expected_sources": [
+      {
+        "title": "Consumer Affairs Authority Act, No. 9 of 2003",
+        "section": "Section 13",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 13"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "complaint",
+      "consumer_affairs",
+      "defective_goods"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-DRAFT-ETA-001",
+    "question": "Draft a boilerplate clause for a commercial supply agreement that explicitly recognizes the legal validity of electronic signatures and contracts formed via automated message systems, in accordance with the Electronic Transactions Act.",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Draft a boilerplate clause for a commercial supply agreement that explicitly recognizes the legal validity of electronic signatures and contracts formed via automated message systems, in accordance with the Electronic Transactions Act.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce a legally sound boilerplate clause in markdown. The clause should explicitly state that the parties agree to be bound by electronic signatures (referencing Section 7) and automated message systems (referencing Section 17), and confirm that no part of the contract shall be denied validity solely because it is in electronic form (referencing Section 3 of the Electronic Transactions Act No. 19 of 2006).",
+    "expected_sources": [
+      {
+        "title": "Electronic Transactions Act, No. 19 of 2006",
+        "section": "Sections 3, 7, and 17",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 3",
+      "Section 7",
+      "Section 17"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "clause",
+      "electronic_transactions",
+      "automated_systems"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-DRAFT-SGO-001",
+    "question": "Draft a formal notice of rejection to a seller, on behalf of a buyer, stating that the delivered goods do not correspond with the description and lack merchantable quality, citing the relevant sections of the Sale of Goods Ordinance.",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Draft a formal notice of rejection to a seller, on behalf of a buyer, stating that the delivered goods do not correspond with the description and lack merchantable quality, citing the relevant sections of the Sale of Goods Ordinance.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce a formal notice letter to the seller. It must include placeholders for the contract date, description of goods, and defect details. It should explicitly state the rejection of goods based on a breach of implied conditions relating to description and merchantable quality under Sections 14 and 15 of the Sale of Goods Ordinance, demanding a refund or replacement.",
+    "expected_sources": [
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Sections 14 and 15",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 14",
+      "Section 15"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "notice",
+      "sale_of_goods",
+      "rejection_of_goods"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-DRAFT-UCTA-001",
+    "question": "Draft a contractual clause attempting to limit liability for property damage caused by negligence, along with a proviso acknowledging that its enforceability is subject to the 'requirement of reasonableness' under the Unfair Contract Terms Act.",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Draft a contractual clause attempting to limit liability for property damage caused by negligence, along with a proviso acknowledging that its enforceability is subject to the 'requirement of reasonableness' under the Unfair Contract Terms Act.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce a draft limitation of liability clause. Crucially, the draft must explicitly state that it does NOT exclude or restrict liability for death or personal injury resulting from negligence (to comply with Section 3(1) of the Unfair Contract Terms Act No. 26 of 1997). It should then draft the limitation for other loss/damage, including a qualifying statement that the clause applies only to the extent it satisfies the 'requirement of reasonableness' under Section 3(2) of the Act.",
+    "expected_sources": [
+      {
+        "title": "Unfair Contract Terms Act, No. 26 of 1997",
+        "section": "Section 3",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 3"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "clause",
+      "unfair_contract_terms",
+      "limitation_of_liability"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-DRAFT-PFO-001",
+    "question": "Draft the notarial attestation clause required for a deed transferring immovable property, ensuring it complies with the specific witness and signature requirements under the Prevention of Frauds Ordinance.",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Draft the notarial attestation clause required for a deed transferring immovable property, ensuring it complies with the specific witness and signature requirements under the Prevention of Frauds Ordinance.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce a standard notarial attestation clause format in markdown. It must explicitly declare that the instrument was signed by the executant(s) and two or more credible witnesses, all being present at the same time and in the presence of one another and the licensed notary public, fulfilling the strict formal requirements of Section 2 of the Prevention of Frauds Ordinance.",
+    "expected_sources": [
+      {
+        "title": "Prevention of Frauds Ordinance",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 2"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "attestation",
+      "prevention_of_frauds",
+      "immovable_property"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-DF-001",
+    "question": "Draft an agreement for the assignment of an exclusive 'arrack rent' monopoly, structuring it as the sale of an incorporeal right based on the principles outlined in Croos v. De Soysa.",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Draft an agreement for the assignment of an exclusive 'arrack rent' monopoly, structuring it as the sale of an incorporeal right based on the principles outlined in Croos v. De Soysa.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce a structured agreement in markdown, use a contract-style template, include placeholders for party/monopoly details, and accurately reflect that this is a sale of an incorporeal right rather than 'goods'.",
+    "expected_sources": [],
+    "relevant_sections": [],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "contract",
+      "incorporeal_rights",
+      "sale"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-DF-002",
+    "question": "Draft the jurisdiction and limitation averment paragraphs for a plaint in a tort action, explicitly pleading that the action is not prescribed because the final day of the two-year period fell on a public holiday, applying the computation rules from Raja Nanayakkara v. Mercy Jayasinghe.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft the jurisdiction and limitation averment paragraphs for a plaint in a tort action, explicitly pleading that the action is not prescribed because the final day of the two-year period fell on a public holiday, applying the computation rules from Raja Nanayakkara v. Mercy Jayasinghe.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce structured plaint averments in markdown, use a pleading-style template, include placeholders for dates/court details, and clearly articulate the computation of time under the Interpretation Ordinance and Prescription Ordinance.",
+    "expected_sources": [],
+    "relevant_sections": [],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "pleading",
+      "plaint",
+      "prescription",
+      "limitation"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-DF-003",
+    "question": "Draft a letter of demand from a beneficiary (seller) to an issuing bank demanding immediate payment under an irrevocable Letter of Credit, asserting the autonomy principle from Hatton National Bank v. Sellers Sports after the bank wrongfully withheld payment due to the buyer's complaints about the shipped goods.",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Draft a letter of demand from a beneficiary (seller) to an issuing bank demanding immediate payment under an irrevocable Letter of Credit, asserting the autonomy principle from Hatton National Bank v. Sellers Sports after the bank wrongfully withheld payment due to the buyer's complaints about the shipped goods.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce a structured letter of demand in markdown, use a notice-style template, include placeholders for bank/LC details, and firmly assert the legal position that banks deal in documents, not goods.",
+    "expected_sources": [],
+    "relevant_sections": [],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "notice",
+      "letter_of_demand",
+      "letter_of_credit",
+      "banking"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-DF-004",
+    "question": "Draft an affidavit supporting an application to cancel the registration of a deed of transfer, averring that the attesting notary did not possess a valid annual license at the time of execution, rendering the deed void under the Prevention of Frauds Ordinance as held in Rohan de Soyza v. Jinendradasa.",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Draft an affidavit supporting an application to cancel the registration of a deed of transfer, averring that the attesting notary did not possess a valid annual license at the time of execution, rendering the deed void under the Prevention of Frauds Ordinance as held in Rohan de Soyza v. Jinendradasa.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce a structured affidavit in markdown, use an affidavit-style template, include placeholders for the deponent/deed/notary details, and clearly state the legal grounds for invalidity and cancellation of registration.",
+    "expected_sources": [],
+    "relevant_sections": [],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "affidavit",
+      "deed_cancellation",
+      "prevention_of_frauds"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-DF-005",
+    "question": "Draft an Answer (pleading) for a defendant vendor resisting a suit for specific performance of a land sale agreement, specifically pleading the defenses of laches and the plaintiff's failure to maintain continuous readiness and willingness, relying on the principles in Samuel Gnanam v. Ismail Lebbe.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft an Answer (pleading) for a defendant vendor resisting a suit for specific performance of a land sale agreement, specifically pleading the defenses of laches and the plaintiff's failure to maintain continuous readiness and willingness, relying on the principles in Samuel Gnanam v. Ismail Lebbe.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The system should produce a structured answer in markdown, use a pleading-style template, include placeholders for court/party details, and articulate equitable defenses of delay and lack of promptness.",
+    "expected_sources": [],
+    "relevant_sections": [],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.5,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "pleading",
+      "answer",
+      "specific_performance",
+      "laches"
+    ],
+    "mode": "drafting"
+  }
+]
