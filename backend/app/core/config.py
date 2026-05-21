@@ -2,18 +2,13 @@ from __future__ import annotations
 
 import os
 from typing import List
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
-# Resolve paths relative to the *backend* directory
 _BACKEND_DIR = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 
-
 class Settings(BaseSettings):
-
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -23,6 +18,10 @@ class Settings(BaseSettings):
 
     BASE_DIR: str = _BACKEND_DIR
     DATA_PATH: str = os.path.join(_BACKEND_DIR, "data")
+    
+    # --- CHROMA DB PATHS RESTORED ---
+    CHROMA_PATH: str = os.path.join(_BACKEND_DIR, "database", "chroma_db")
+    USER_CHROMA_PATH: str = os.path.join(_BACKEND_DIR, "database", "user_chroma_db")
 
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
@@ -30,24 +29,10 @@ class Settings(BaseSettings):
     USER_MARKDOWN_DIR: str = os.path.join(_BACKEND_DIR, "storage", "processed_markdown")
     METADATA_DB_PATH: str = os.path.join(_BACKEND_DIR, "database", "metadata.sqlite3")
 
-    PINECONE_API_KEY: str = ""
-    PINECONE_INDEX_HOST: str = ""
-    PINECONE_INDEX_NAME: str = "lawdex-index"
-    PINECONE_NAMESPACE: str = "user_documents"
-
-    PINECONE_LEGAL_INDEX_HOST: str = ""
-    PINECONE_LEGAL_INDEX_NAME: str = "lawdex-legal-index"
-    PINECONE_LEGAL_NAMESPACE: str = "legal_corpus"
-    PINECONE_LEGAL_BM25_INDEX_HOST: str = ""
-    PINECONE_LEGAL_BM25_INDEX_NAME: str = "lawdex-legal-bm25-index"
-    PINECONE_LEGAL_BM25_NAMESPACE: str = "legal_corpus"
-
-    PINECONE_EMBEDDING_MODEL: str = "llama-text-embed-v2"
-    PINECONE_EMBEDDING_DIMENSION: int = 2048
-
     UPLOAD_MAX_MB: int = 50
     ALLOWED_UPLOAD_EXTENSIONS: List[str] = [".pdf", ".docx", ".txt", ".md"]
     INGESTION_BATCH_SIZE: int = 64
+    
     USER_PARENT_CHUNK_SIZE: int = 2200
     USER_PARENT_CHUNK_OVERLAP: int = 250
     USER_CHILD_CHUNK_SIZE: int = 550
@@ -78,6 +63,5 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
-
 
 settings = Settings()
