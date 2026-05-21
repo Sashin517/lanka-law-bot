@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     PINECONE_LEGAL_INDEX_HOST: str = ""
     PINECONE_LEGAL_INDEX_NAME: str = "lawdex-legal-index"
     PINECONE_LEGAL_NAMESPACE: str = "legal_corpus"
+    PINECONE_LEGAL_BM25_INDEX_HOST: str = ""
+    PINECONE_LEGAL_BM25_INDEX_NAME: str = "lawdex-legal-bm25-index"
+    PINECONE_LEGAL_BM25_NAMESPACE: str = "legal_corpus"
 
     PINECONE_EMBEDDING_MODEL: str = "llama-text-embed-v2"
     PINECONE_EMBEDDING_DIMENSION: int = 2048

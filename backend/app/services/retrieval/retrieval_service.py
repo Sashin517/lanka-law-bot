@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import logging
 
-import langchain_community.utils.math as lc_math
-from langchain_community.retrievers import BM25Retriever
-from langchain_core.documents import Document
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+from langchain_core.documents import Document
 from langchain_classic.retrievers.contextual_compression import (
     ContextualCompressionRetriever,
 )
@@ -17,48 +15,49 @@ from langchain_classic.retrievers.ensemble import EnsembleRetriever
 from app.core.config import settings
 from app.services.retrieval.legal_vector_store import (
     LegalVectorStore,
+    PineconeLegalBM25Retriever,
     PineconeLegalRetriever,
 )
 
 logger = logging.getLogger(__name__)
+
 
 class RetrievalService:
     """
     Hybrid retrieval pipeline (Pinecone-backed):
 
     1. Dense search  (Pinecone lawdex-legal-index, children only)
-    2. Sparse search (BM25, children only)
+    2. Sparse search (Pinecone BM25 FTS, children only)
     3. Reciprocal Rank Fusion  (merge + deduplicate)
     4. Cross-Encoder Re-Ranking (precision scoring)
     5. Parent chunk expansion  (from Pinecone by chunk_id)
     """
 
     def __init__(self) -> None:
-        logger.info("Initialising RetrievalService …")
+        logger.info("Initialising RetrievalService ...")
 
         self._legal_store = LegalVectorStore()
-
-        # Load all child docs for BM25
-        child_docs = self._legal_store.load_children_for_bm25(limit=50000)
 
         # --- Dense retriever ---
         self._dense_retriever = PineconeLegalRetriever(
             store=self._legal_store, k=settings.RETRIEVAL_CANDIDATES_K
         )
 
-        if child_docs:
-            self._bm25_retriever = BM25Retriever.from_documents(
-                child_docs,
+        if settings.PINECONE_LEGAL_BM25_INDEX_HOST:
+            self._bm25_retriever = PineconeLegalBM25Retriever(
+                store=self._legal_store,
                 k=settings.RETRIEVAL_CANDIDATES_K,
             )
-            logger.info("BM25 index built from %d chunks.", len(child_docs))
-
             self._hybrid_retriever = EnsembleRetriever(
                 retrievers=[self._dense_retriever, self._bm25_retriever],
                 weights=[settings.DENSE_WEIGHT, settings.SPARSE_WEIGHT],
             )
+            logger.info("Pinecone BM25 FTS retriever enabled.")
         else:
-            logger.warning("No documents in DB — BM25 and hybrid retrieval disabled.")
+            logger.warning(
+                "PINECONE_LEGAL_BM25_INDEX_HOST is not configured; "
+                "BM25 and hybrid retrieval disabled."
+            )
             self._bm25_retriever = None
             self._hybrid_retriever = None
 
@@ -89,7 +88,7 @@ class RetrievalService:
         **kwargs,
     ) -> list[dict]:
         """
-        Execute hybrid search → re-rank → deduplicate → parent expansion.
+        Execute hybrid search -> re-rank -> deduplicate -> parent expansion.
 
         Parameters
         ----------
@@ -99,9 +98,9 @@ class RetrievalService:
             If set, prefer chunks whose ``title`` or ``case_name`` metadata contains this.
 
         Returns a list of dicts, each containing:
-            - ``child``    : Document  — the matched child chunk
-            - ``parent``   : Document | None — expanded parent context
-            - ``metadata`` : dict — full structured metadata
+            - ``child``    : Document  - the matched child chunk
+            - ``parent``   : Document | None - expanded parent context
+            - ``metadata`` : dict - full structured metadata
         """
         disable_bm25 = kwargs.get("disable_bm25", False)
         disable_dense = kwargs.get("disable_dense", False)
@@ -126,10 +125,10 @@ class RetrievalService:
             if base_retriever != self._dense_retriever:
                 candidates = self._dense_retriever.invoke(query)
 
-        # 3. Optionally Re-rank
+        # 3. Optionally re-rank
         if not disable_reranking and self._reranked_retriever and candidates:
             try:
-                # Use the configured compressor directly to re-rank the candidates
+                # Use the configured compressor directly to re-rank the candidates.
                 candidates = (
                     self._reranked_retriever.base_compressor.compress_documents(
                         candidates, query
@@ -139,7 +138,7 @@ class RetrievalService:
             except Exception:
                 logger.exception("Re-ranking failed. Falling back to base ranking.")
 
-        # 2. Deduplicate by chunk_id AND content fingerprint
+        # 4. Deduplicate by chunk_id and content fingerprint
         seen_ids: set[str] = set()
         seen_content: set[str] = set()
         unique: list[Document] = []
@@ -147,7 +146,6 @@ class RetrievalService:
             cid = doc.metadata.get("chunk_id", "")
             content_key = doc.page_content[:500].strip()
 
-            # Skip if we have already seen this chunk_id OR this content
             if cid and cid in seen_ids:
                 continue
             if content_key in seen_content:
@@ -158,7 +156,7 @@ class RetrievalService:
             seen_content.add(content_key)
             unique.append(doc)
 
-        # 3. Post-filter by metadata (entity-aware, with fallback)
+        # 5. Post-filter by metadata (entity-aware, with fallback)
         if year_filter or act_name_filter:
             y_filters = [year_filter] if isinstance(year_filter, int) else year_filter
             a_filters = (
@@ -172,7 +170,7 @@ class RetrievalService:
                 a_filters,
             )
 
-        # 4. Expand to parents
+        # 6. Expand to parents
         results: list[dict] = []
         for child in unique[:top_k]:
             parent = None
@@ -197,16 +195,14 @@ class RetrievalService:
         return results
 
     def _prune_low_relevance(self, candidates: list[Document]) -> list[Document]:
-        """Drop candidates whose cross-encoder score falls below the
-        configured threshold.  If pruning would remove *every* result,
-        keep at least the top candidate as a safety valve.
+        """Drop candidates whose cross-encoder score falls below the threshold.
 
-        Documents that lack a ``relevance_score`` (e.g. when the reranker
-        was bypassed) are always kept.
+        If pruning would remove every result, keep the top candidate as a
+        safety valve. Documents without ``relevance_score`` are always kept.
         """
         threshold = settings.RELEVANCE_SCORE_THRESHOLD
         if threshold <= 0:
-            return candidates  # pruning disabled
+            return candidates
 
         pruned: list[Document] = []
         for doc in candidates:
@@ -221,7 +217,6 @@ class RetrievalService:
                 continue
             pruned.append(doc)
 
-        # Safety valve: never return an empty list
         return pruned if pruned else candidates[:1]
 
     @staticmethod
@@ -230,10 +225,10 @@ class RetrievalService:
         year_filters: list[int] | None,
         act_name_filters: list[str] | None,
     ) -> list[Document]:
-        """Filter already-retrieved candidates by metadata constraints using soft-match logic.
+        """Filter already-retrieved candidates by metadata constraints.
 
-        If filtering would produce an empty result set, the original unfiltered list is returned
-        as a safety fallback to prevent breaking the pipeline.
+        If filtering would produce an empty result set, return the original
+        unfiltered list as a safety fallback.
         """
         if not year_filters and not act_name_filters:
             return candidates
@@ -283,7 +278,7 @@ class RetrievalService:
                     if title_match:
                         filtered.append(doc)
                 else:
-                    # Both provided. If EITHER matches, it's a good candidate.
+                    # Both provided. If either matches, it is a good candidate.
                     if year_match or title_match:
                         filtered.append(doc)
 
@@ -297,15 +292,12 @@ class RetrievalService:
             )
             return filtered
 
-        # Fallback: filters too restrictive — return everything
         logger.debug(
-            "Metadata filter matched 0/%d candidates — falling back to unfiltered.",
+            "Metadata filter matched 0/%d candidates; falling back to unfiltered.",
             len(candidates),
         )
         return candidates
 
-
-# --- Singleton factory (module-level) ---
 
 _instance: RetrievalService | None = None
 

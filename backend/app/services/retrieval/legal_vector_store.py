@@ -29,8 +29,15 @@ class LegalVectorStore:
 
         self._pc = Pinecone(api_key=settings.PINECONE_API_KEY)
         self._index = self._pc.Index(host=settings.PINECONE_LEGAL_INDEX_HOST)
+        self._bm25_index = (
+            self._pc.preview.index(host=settings.PINECONE_LEGAL_BM25_INDEX_HOST)
+            if settings.PINECONE_LEGAL_BM25_INDEX_HOST
+            else None
+        )
         self.collection = settings.PINECONE_LEGAL_INDEX_NAME
         self.namespace = settings.PINECONE_LEGAL_NAMESPACE
+        self.bm25_collection = settings.PINECONE_LEGAL_BM25_INDEX_NAME
+        self.bm25_namespace = settings.PINECONE_LEGAL_BM25_NAMESPACE
 
     def ensure_collection(self) -> None:
         """Verify the Pinecone index exists and is ready."""
@@ -57,6 +64,19 @@ class LegalVectorStore:
         metadata["point_id"] = hit.id
         return Document(page_content=text, metadata=metadata)
 
+    @staticmethod
+    def _bm25_match_to_document(match: Any) -> Document:
+        metadata = (
+            dict(match.to_dict())
+            if hasattr(match, "to_dict")
+            else dict(getattr(match, "_data", {}))
+        )
+        point_id = metadata.pop("_id", getattr(match, "id", ""))
+        metadata.pop("_score", None)
+        text = metadata.pop("text", "") or ""
+        metadata["point_id"] = point_id
+        return Document(page_content=text, metadata=metadata)
+
     def search_children(
         self,
         query: str,
@@ -78,6 +98,31 @@ class LegalVectorStore:
             self._hit_to_document(hit)
             for hit in (results.result.hits if results.result else [])
         ]
+
+    def search_children_bm25(
+        self,
+        query: str,
+        limit: int = 5,
+        metadata_filters: dict | None = None,
+    ) -> list[Document]:
+        """BM25 full-text search via Pinecone document search."""
+        if self._bm25_index is None:
+            raise RuntimeError(
+                "PINECONE_LEGAL_BM25_INDEX_HOST is required for Pinecone BM25 search."
+            )
+
+        filter_dict = {"chunk_type": {"$eq": "child"}}
+        if metadata_filters:
+            filter_dict.update(metadata_filters)
+
+        results = self._bm25_index.documents.search(
+            namespace=self.bm25_namespace,
+            top_k=limit,
+            score_by=[{"type": "text", "field": "text", "query": query}],
+            include_fields=["*"],
+            filter=filter_dict,
+        )
+        return [self._bm25_match_to_document(match) for match in results.matches]
 
     def load_children_for_bm25(self, limit: int = 50000) -> list[Document]:
         """Load child chunk documents for BM25 sparse search using fetch_by_metadata."""
@@ -142,5 +187,24 @@ class PineconeLegalRetriever(BaseRetriever):
     ) -> list[Document]:
         """Execute the dense search on Pinecone."""
         return self.store.search_children(
+            query=query, limit=self.k, metadata_filters=self.metadata_filters
+        )
+
+
+class PineconeLegalBM25Retriever(BaseRetriever):
+    """LangChain BaseRetriever wrapper around Pinecone BM25 FTS search."""
+
+    store: LegalVectorStore
+    k: int = 5
+    metadata_filters: dict | None = None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> list[Document]:
+        """Execute the BM25 full-text search on Pinecone."""
+        return self.store.search_children_bm25(
             query=query, limit=self.k, metadata_filters=self.metadata_filters
         )

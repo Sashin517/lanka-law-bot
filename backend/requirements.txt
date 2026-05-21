@@ -15,7 +15,7 @@ pydantic-settings
 python-dotenv
 rank-bm25
 docling
-pinecone>=7.0.0
+pinecone==9.0.0
 python-multipart
 aiofiles
 rq
