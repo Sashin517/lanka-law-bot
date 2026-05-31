@@ -25,6 +25,7 @@ from app.agents.shared import (
     citation_verifier as _verifier,
     get_user_doc_retrieval,
 )
+from app.services.retrieval.graph_retrieval_service import get_graph_retrieval_service
 from app.agents.prompts.drafting_prompt import DRAFTING_PROMPT
 from app.agents.templates import TEMPLATE_REGISTRY
 from app.agents.nodes.helpers import (
@@ -105,6 +106,15 @@ async def drafting_node(state: AgentState) -> dict:
         "Drafting context assembled: %d sources, %d chars.",
         len(citation_map), len(context_str),
     )
+
+    # ── Step 4.5: Graph RAG context injection ──
+    try:
+        graph_context = get_graph_retrieval_service().search(state.question)
+        if graph_context:
+            context_str += "\n\n" + graph_context
+            logger.info("Injected Graph RAG context into drafting.")
+    except Exception as e:
+        logger.error(f"Failed to inject Graph RAG context: {e}")
 
     # ── Step 5: Generate draft with template-injected prompt (hybrid JSON) ──
     prompt = ChatPromptTemplate.from_template(DRAFTING_PROMPT)

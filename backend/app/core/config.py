@@ -73,6 +73,10 @@ class Settings(BaseSettings):
     PROMPT_IMPROVE_TEMPERATURE: float = 0.35
     LLM_MAX_TOKENS: int = 2048
 
+    NEO4J_URI: str = "bolt://localhost:7687"
+    NEO4J_USERNAME: str = "neo4j"
+    NEO4J_PASSWORD: str = "password"
+
     model_config = SettingsConfigDict(
         env_file=os.path.join(_BACKEND_DIR, ".env"),
         env_file_encoding="utf-8",
