@@ -45,7 +45,12 @@ To run this application, you need to start both the Python backend server and th
    ```bash
    pip install -r requirements.txt
    ```
-4. Start the FastAPI server:  
+4. Configure Environment Variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Open `.env` and add your valid Google Gemini, Pinecone, and LangSmith API keys.
+5. Start the FastAPI server:  
    ```bash
    uvicorn main:app --reload
    ```
@@ -63,7 +68,12 @@ To run this application, you need to start both the Python backend server and th
    ```bash
    npm install
    ```
-3. Start the development server:
+3. Configure Environment Variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Open `.env` and add your Firebase project credentials.
+4. Start the development server:
    ```bash
    npm run dev
    ```
