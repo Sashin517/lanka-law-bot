@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useDraftStore } from "@/store/draftStore";
+
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -57,6 +60,7 @@ interface ChatMessage {
 /* ------------------------------------------------------------------ */
 
 export default function ResearchDashboard() {
+  const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -179,6 +183,20 @@ export default function ResearchDashboard() {
   const handleSend = async () => {
     if (!inputQuery.trim() || isLoading) return;
     if (uploadedDocuments.some((doc) => doc.status !== "completed")) return;
+
+    if (selectedMode === "drafting") {
+      const docIds = uploadedDocuments
+        .filter((doc) => doc.status === "completed")
+        .map((doc) => doc.document_id);
+      
+      // Trigger the backend call in the global store
+      useDraftStore.getState().startDraft(inputQuery.trim(), docIds);
+      
+      // Instantly switch pages to show the "Still Drafting..." UI
+      router.push("/draft");
+      return;
+    }
+
     const attachedDocuments = uploadedDocuments.filter((doc) => doc.status === "completed").map((doc) => ({ document_id: doc.document_id, filename: doc.filename, status: doc.status }));
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: inputQuery.trim(), attachedDocuments, timestamp: new Date() };
     setMessages((prev) => [...prev, userMsg]);

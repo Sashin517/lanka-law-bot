@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langsmith import traceable
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
@@ -26,11 +26,18 @@ class GenerationService:
             "Initialising GenerationService (model=%s) …", settings.LLM_MODEL_NAME
         )
 
-        self._llm = ChatGoogleGenerativeAI(
-            model=settings.LLM_MODEL_NAME,
-            google_api_key=settings.GOOGLE_API_KEY,
-            temperature=settings.LLM_TEMPERATURE,
-            max_output_tokens=settings.LLM_MAX_TOKENS,
+        self._llm = ChatOpenAI(
+            model_name=settings.LLM_MODEL_NAME,
+            openai_api_key=settings.OPENROUTER_API_KEY,
+            openai_api_base="https://openrouter.ai/api/v1",
+            temperature=settings.PROMPT_IMPROVE_TEMPERATURE,
+            max_tokens=settings.LLM_MAX_TOKENS,
+            model_kwargs={
+                "extra_headers": {
+                    "HTTP-Referer": "https://lankalawbot.com", 
+                    "X-Title": "LankaLawBot",
+                }
+            }
         )
         self._parser = JsonOutputParser()
         self._prompt = ChatPromptTemplate.from_template(LEGAL_RAG_SYSTEM_PROMPT)
