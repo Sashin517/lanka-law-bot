@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
@@ -41,31 +41,19 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Decomposition LLM — fast model for query splitting
-_decomp_llm = ChatGoogleGenerativeAI(
-    model=settings.LLM_MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=0.0,
-    max_output_tokens=512,
-)
-_decomp_chain = (
-    ChatPromptTemplate.from_template(DECOMPOSITION_PROMPT)
-    | _decomp_llm
-    | JsonOutputParser()
-)
+from app.core.config import invoke_with_fallback
 
-# Synthesis LLM — higher capability model for research memo generation
-_synthesis_llm = ChatGoogleGenerativeAI(
-    model=settings.LLM_MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=settings.LLM_TEMPERATURE,
-    max_output_tokens=settings.LLM_MAX_TOKENS,
-)
-_synthesis_chain = (
-    ChatPromptTemplate.from_template(DEEP_RESEARCH_PROMPT)
-    | _synthesis_llm
-    | JsonOutputParser()
-)
+_decomp_parser = JsonOutputParser()
+_decomp_prompt = ChatPromptTemplate.from_template(DECOMPOSITION_PROMPT)
 
+def _build_decomp_chain(llm):
+    return _decomp_prompt | llm | _decomp_parser
+
+_synthesis_parser = JsonOutputParser()
+_synthesis_prompt = ChatPromptTemplate.from_template(DEEP_RESEARCH_PROMPT)
+
+def _build_synthesis_chain(llm):
+    return _synthesis_prompt | llm | _synthesis_parser
 
 @traceable(name="DeepResearchNode")
 async def deep_research_node(state: AgentState) -> dict:
@@ -125,13 +113,16 @@ async def deep_research_node(state: AgentState) -> dict:
     # ── Step 5: Synthesize research memo (hybrid JSON) ──
     sub_query_text = "\n".join(f"- {sq}" for sq in sub_queries)
     try:
-        raw: dict = await _synthesis_chain.ainvoke({
-            "question": state.question,
-            "sub_queries": sub_query_text,
-            "context": context_str,
-        })
+        raw: dict = await invoke_with_fallback(
+            _build_synthesis_chain,
+            {
+                "question": state.question,
+                "sub_queries": sub_query_text,
+                "context": context_str,
+            },
+        )
     except Exception:
-        logger.exception("Research synthesis LLM call failed.")
+        logger.exception("Research synthesis LLM call failed — all models exhausted.")
         raw = {
             "memo_markdown": (
                 "The AI synthesis service is temporarily unavailable. "
@@ -173,9 +164,12 @@ async def deep_research_node(state: AgentState) -> dict:
 async def _decompose_query(question: str) -> list[str]:
     """Use LLM to split a complex question into 2-3 sub-queries."""
     try:
-        result = await _decomp_chain.ainvoke({"question": question})
+        result = await invoke_with_fallback(
+            _build_decomp_chain,
+            {"question": question},
+            temperature=0.0,
+        )
         sub_queries = result.get("sub_queries", [])
-        # Validate and cap at 3 sub-queries
         if isinstance(sub_queries, list) and sub_queries:
             return [str(q) for q in sub_queries[:3]]
     except Exception:

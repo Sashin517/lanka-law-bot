@@ -16,7 +16,8 @@ from __future__ import annotations
 
 import logging
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+# from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
@@ -41,17 +42,20 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Reasoning LLM — uses the main model for chain-of-thought capability
-_reasoning_llm = ChatGoogleGenerativeAI(
-    model=settings.LLM_MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=settings.LLM_TEMPERATURE,
-    max_output_tokens=settings.LLM_MAX_TOKENS,
-)
-_reasoning_chain = (
-    ChatPromptTemplate.from_template(REASONING_PROMPT)
-    | _reasoning_llm
-    | JsonOutputParser()
-)
+# _reasoning_llm = ChatGoogleGenerativeAI(
+#     model=settings.LLM_MODEL_NAME,
+#     google_api_key=settings.GOOGLE_API_KEY,
+#     temperature=settings.LLM_TEMPERATURE,
+#     max_output_tokens=settings.LLM_MAX_TOKENS,
+# )
+
+from app.core.config import invoke_with_fallback
+
+_reasoning_parser = JsonOutputParser()
+_reasoning_prompt = ChatPromptTemplate.from_template(REASONING_PROMPT)
+
+def _build_reasoning_chain(llm):
+    return _reasoning_prompt | llm | _reasoning_parser
 
 # Expanded top_k for reasoning — broader context than Quick QA
 _REASONING_TOP_K = 12 
@@ -80,15 +84,20 @@ async def reasoning_node(state: AgentState) -> dict:
     user_doc_results: list[dict] = []
     if state.use_user_documents and state.document_ids:
         try:
-            user_doc_results = get_user_doc_retrieval().search(
-                query=state.question,
-                document_ids=state.document_ids,
-                matter_id=state.matter_id,
-                top_k=state.user_doc_top_k,
-                expand_parents=state.ablation_config.get("expand_parents", True),
+            raw: dict = await invoke_with_fallback(
+                _build_reasoning_chain,
+                {"question": state.question, "context": context_str},
             )
         except Exception:
-            logger.exception("User-document retrieval failed in reasoning_node.")
+            logger.exception("Reasoning LLM generation failed — all models exhausted.")
+            raw = {
+                "analysis_markdown": (
+                    "The AI analysis service is temporarily unavailable. "
+                    "Please try again shortly."
+                ),
+                "confidence": "low",
+                "sources_used": [],
+            }
 
     # Handle empty retrieval
     if not legal_results and not user_doc_results:
