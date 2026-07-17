@@ -18,7 +18,7 @@ from neo4j import GraphDatabase
 
 from app.core.config import settings
 from app.services.retrieval.neo4j_graph_store import Neo4jGraphStore
-from app.services.retrieval.gemini_embedding_service import get_gemini_embedding_service
+from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
 from app.services.retrieval.retrieval_fusion import retrieval_dedup_key
 
 logger = logging.getLogger(__name__)
@@ -149,8 +149,8 @@ class Neo4jRetrievalService:
         Execute Hybrid Search (Vector + FTS + Cypher Graph Traversal),
         fuses via WRRF, reranks, deduplicates, and expands parents.
         """
-        # Embed query via Gemini
-        embed_service = get_gemini_embedding_service()
+        # Embed query via Jina
+        embed_service = get_jina_embedding_service()
         query_embedding = embed_service.embed_query(query)
 
         # 1. Vector Dense Search

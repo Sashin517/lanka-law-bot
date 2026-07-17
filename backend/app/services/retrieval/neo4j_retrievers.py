@@ -13,7 +13,7 @@ from langchain_core.retrievers import BaseRetriever
 
 from app.core.config import settings
 from app.services.retrieval.neo4j_graph_store import Neo4jGraphStore
-from app.services.retrieval.gemini_embedding_service import get_gemini_embedding_service
+from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +32,8 @@ class Neo4jVectorRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        """Embeds the query text using Gemini Embedding API and performs vector search in Neo4j."""
-        embed_service = get_gemini_embedding_service()
+        """Embeds the query text using Jina Embedding API and performs vector search in Neo4j."""
+        embed_service = get_jina_embedding_service()
         query_embedding = embed_service.embed_query(query)
         return self.store.vector_search(
             query_embedding=query_embedding,

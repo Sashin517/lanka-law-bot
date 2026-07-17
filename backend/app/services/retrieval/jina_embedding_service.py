@@ -3,6 +3,7 @@ Jina AI Embedding Service.
 Generates embeddings using Jina AI's cloud-hosted jina-embeddings-v4 model.
 Conforms to task-specific tasks for asymmetric search.
 """
+
 from __future__ import annotations
 
 import logging
@@ -16,46 +17,62 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
-class GeminiEmbeddingService:
+class JinaEmbeddingService:
     """Service to fetch text embeddings from Jina AI using jina-embeddings-v4."""
 
     def __init__(self) -> None:
         self._model = settings.NEO4J_EMBEDDING_MODEL  # "jina-embeddings-v4"
         self._dim = settings.NEO4J_EMBEDDING_DIMENSION  # 2048
 
-    def _embed_with_retry(self, input_texts: List[str], task: str, max_retries: int = 5) -> List[List[float]]:
+    def _embed_with_retry(
+        self, input_texts: List[str], task: str, max_retries: int = 5
+    ) -> List[List[float]]:
         # Get your Jina AI API key for free: https://jina.ai/?sui=apikey
         api_key = settings.JINA_API_KEY or os.environ.get("JINA_API_KEY", "")
         if not api_key:
-            logger.error("JINA_API_KEY is not set! Please set the JINA_API_KEY environment variable.")
+            logger.error(
+                "JINA_API_KEY is not set! Please set the JINA_API_KEY environment variable."
+            )
             return [[0.0] * self._dim for _ in range(len(input_texts))]
 
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
         }
         data = {
             "model": self._model,
             "input": input_texts,
             "task": task,
-            "dimensions": self._dim
+            "dimensions": self._dim,
         }
 
         backoff = 2.0
         for attempt in range(max_retries):
             try:
-                response = httpx.post("https://api.jina.ai/v1/embeddings", json=data, headers=headers, timeout=60.0)
+                response = httpx.post(
+                    "https://api.jina.ai/v1/embeddings",
+                    json=data,
+                    headers=headers,
+                    timeout=60.0,
+                )
                 if response.status_code == 200:
                     res_json = response.json()
                     sorted_data = sorted(res_json["data"], key=lambda x: x["index"])
                     return [item["embedding"] for item in sorted_data]
                 elif response.status_code == 429:
-                    logger.warning("Jina AI rate limit hit (429)! Retrying in %.2f seconds...", backoff)
+                    logger.warning(
+                        "Jina AI rate limit hit (429)! Retrying in %.2f seconds...",
+                        backoff,
+                    )
                     time.sleep(backoff)
                     backoff *= 2.0
                 else:
-                    logger.warning("Jina AI API returned error status %d: %s", response.status_code, response.text)
+                    logger.warning(
+                        "Jina AI API returned error status %d: %s",
+                        response.status_code,
+                        response.text,
+                    )
                     time.sleep(backoff)
                     backoff *= 2.0
             except Exception as e:
@@ -85,7 +102,9 @@ class GeminiEmbeddingService:
             batch_size = 16
             for i in range(0, len(texts), batch_size):
                 batch = texts[i : i + batch_size]
-                embeddings.extend(self._embed_with_retry(batch, task="retrieval.passage"))
+                embeddings.extend(
+                    self._embed_with_retry(batch, task="retrieval.passage")
+                )
             return embeddings
         except Exception as exc:
             logger.exception("Jina document embedding generation failed: %s", exc)
@@ -110,13 +129,12 @@ class GeminiEmbeddingService:
             return [[0.0] * self._dim for _ in range(len(docs))]
 
 
-_instance: Optional[GeminiEmbeddingService] = None
+_instance: Optional[JinaEmbeddingService] = None
 
 
-def get_gemini_embedding_service() -> GeminiEmbeddingService:
-    """Singleton getter for GeminiEmbeddingService (reimplemented with Jina AI)."""
+def get_jina_embedding_service() -> JinaEmbeddingService:
+    """Singleton getter for JinaEmbeddingService (reimplemented with Jina AI)."""
     global _instance
     if _instance is None:
-        _instance = GeminiEmbeddingService()
+        _instance = JinaEmbeddingService()
     return _instance
-

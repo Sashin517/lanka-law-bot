@@ -80,8 +80,8 @@ class UserDocumentVectorStore:
             chunk_metadatas.append(metadata)
 
         # Generate Jina embeddings
-        from app.services.retrieval.gemini_embedding_service import get_gemini_embedding_service
-        embed_service = get_gemini_embedding_service()
+        from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
+        embed_service = get_jina_embedding_service()
         vectors = embed_service.embed_documents(texts_to_embed)
 
         records: list[dict] = []
@@ -146,8 +146,8 @@ class UserDocumentVectorStore:
         )
 
         # Generate Jina embedding for the search query
-        from app.services.retrieval.gemini_embedding_service import get_gemini_embedding_service
-        embed_service = get_gemini_embedding_service()
+        from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
+        embed_service = get_jina_embedding_service()
         query_vector = embed_service.embed_query(query)
 
         results = self._index.query(

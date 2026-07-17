@@ -89,8 +89,8 @@ class LegalVectorStore:
             filter_dict.update(metadata_filters)
 
         # Generate Jina embedding for the search query
-        from app.services.retrieval.gemini_embedding_service import get_gemini_embedding_service
-        embed_service = get_gemini_embedding_service()
+        from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
+        embed_service = get_jina_embedding_service()
         query_vector = embed_service.embed_query(query)
 
         results = self._index.query(
