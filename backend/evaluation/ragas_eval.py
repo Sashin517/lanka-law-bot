@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 CACHE_DIR = BACKEND_DIR / "benchmarks" / "results" / "_ragas_cache"
 
-# ── Configuration ────────────────────────────────────────────────
+# Configuration
 
 # Stratified selection: 4 per mode × 5 modes = 20 total
 SAMPLES_PER_MODE = 4
@@ -64,9 +64,7 @@ COLLECTION_DELAY_S = 5  # Between pipeline calls during collection
 EVAL_DELAY_S = 4  # Between RAGAS evaluator calls (via RunConfig)
 
 
-# ── Stratified selection ─────────────────────────────────────────
-
-
+# Stratified selection 
 def select_stratified_subset(
     benchmark: list[dict],
     per_mode: int = SAMPLES_PER_MODE,
@@ -125,9 +123,7 @@ def select_stratified_subset(
     return selected
 
 
-# ── Collection phase ─────────────────────────────────────────────
-
-
+# Collection phase
 async def collect_samples(entries: list[dict]) -> list[dict]:
     """Run each entry through the LangGraph pipeline, capturing retrieval context.
 
@@ -216,9 +212,7 @@ async def collect_samples(entries: list[dict]) -> list[dict]:
     return samples
 
 
-# ── Cache management ─────────────────────────────────────────────
-
-
+# Cache management
 def save_cache(samples: list[dict], cache_path: Path) -> None:
     """Persist collected samples to disk."""
     cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -233,9 +227,7 @@ def load_cache(cache_path: Path) -> list[dict]:
         return json.load(f)
 
 
-# ── RAGAS evaluation ─────────────────────────────────────────────
-
-
+# RAGAS evaluation
 def run_ragas_evaluation(sample_dicts: list[dict], output_path: Path) -> None:
     """Run RAGAS metrics on collected samples.
 

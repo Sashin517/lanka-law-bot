@@ -49,7 +49,7 @@ _MODE_CONFIG: dict[str, ModeConfig] = {
         answer_mode="direct_answer",
         target_corpus="both",
         retrieval_depth="fast",
-        legal_top_k=10,  
+        legal_top_k=10,
         user_doc_top_k=10,
     ),
     "deep_research": ModeConfig(
@@ -186,17 +186,22 @@ async def router_node(
 # ── Retrieval plan builder ───────────────────────────────────────
 
 
-def _extract_entities_from_query(question: str) -> tuple[list[int], list[str]]:
+def _extract_entities_from_query(
+    question: str,
+) -> tuple[list[int] | None, list[str] | None]:
     import re
 
-    year_filters = [int(y) for y in re.findall(r"\b(?:18|19|20)\d{2}\b", question)]
+    years = [int(y) for y in re.findall(r"\b(?:18|19|20)\d{2}\b", question)]
+    year_filters = years if years else None
 
-    act_name_filters = []
+    acts = []
     for match in re.finditer(
         r"([A-Z][a-zA-Z\(\)]*(?:\s+(?:[A-Z][a-zA-Z\(\)]*|of|the|and))*\s+(?:Act|Ordinance))",
         question,
     ):
-        act_name_filters.append(match.group(1).strip())
+        acts.append(match.group(1).strip())
+
+    act_name_filters = acts if acts else None
 
     return year_filters, act_name_filters
 

@@ -83,20 +83,26 @@ class LegalVectorStore:
         limit: int = 5,
         metadata_filters: dict | None = None,
     ) -> list[Document]:
-        """Dense semantic search via Pinecone search_records."""
+        """Dense semantic search via Pinecone Index.query with client-side Jina API embeddings."""
         filter_dict = {"chunk_type": {"$eq": "child"}}
         if metadata_filters:
             filter_dict.update(metadata_filters)
 
-        results = self._index.search_records(
+        # Generate Jina embedding for the search query
+        from app.services.retrieval.gemini_embedding_service import get_gemini_embedding_service
+        embed_service = get_gemini_embedding_service()
+        query_vector = embed_service.embed_query(query)
+
+        results = self._index.query(
             namespace=self.namespace,
-            inputs={"text": query},
+            vector=query_vector,
             top_k=limit,
             filter=filter_dict,
+            include_metadata=True,
         )
         return [
-            self._hit_to_document(hit)
-            for hit in (results.result.hits if results.result else [])
+            self._query_match_to_document(match)
+            for match in (results.matches or [])
         ]
 
     def search_children_bm25(
@@ -157,20 +163,31 @@ class LegalVectorStore:
         return documents[:limit]
 
     def fetch_parent(self, parent_id: str) -> Document | None:
-        """Fetch parent chunk by chunk_id using a dummy dense search with exact metadata filter."""
+        """Fetch parent chunk by chunk_id using a standard query with exact metadata filter."""
         query_filter = {
             "chunk_type": {"$eq": "parent"},
             "chunk_id": {"$eq": parent_id},
         }
-        results = self._index.search_records(
+        
+        # Query using a zero vector for a metadata-only exact match filter
+        zero_vector = [0.0] * settings.PINECONE_EMBEDDING_DIMENSION
+        results = self._index.query(
             namespace=self.namespace,
-            inputs={"text": "dummy query to fetch parent by id"},
+            vector=zero_vector,
             top_k=1,
             filter=query_filter,
+            include_metadata=True,
         )
-        hits = results.result.hits if results.result else []
-        return self._hit_to_document(hits[0]) if hits else None
+        matches = results.matches or []
+        return self._query_match_to_document(matches[0]) if matches else None
 
+    @staticmethod
+    def _query_match_to_document(match: Any) -> Document:
+        """Convert a standard Pinecone query match to a LangChain Document."""
+        metadata = dict(match.metadata or {})
+        text = metadata.pop("text", "") or ""
+        metadata["point_id"] = match.id
+        return Document(page_content=text, metadata=metadata)
 
 class PineconeLegalRetriever(BaseRetriever):
     """LangChain BaseRetriever wrapper around LegalVectorStore dense search."""

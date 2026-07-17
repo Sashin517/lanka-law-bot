@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_core.documents import Document
@@ -302,9 +303,14 @@ class RetrievalService:
 _instance: RetrievalService | None = None
 
 
-def get_retrieval_service() -> RetrievalService:
-    """Singleton factory for RetrievalService."""
+def get_retrieval_service() -> Any:
+    """Singleton factory for RetrievalService, routing dynamically by configuration."""
     global _instance
+    backend = getattr(settings, "RETRIEVAL_BACKEND", "pinecone").lower()
+    if backend == "neo4j":
+        from app.services.retrieval.neo4j_retrieval_service import get_neo4j_retrieval_service
+        return get_neo4j_retrieval_service()
+    
     if _instance is None:
         _instance = RetrievalService()
     return _instance

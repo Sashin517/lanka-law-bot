@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     PINECONE_LEGAL_BM25_INDEX_NAME: str = "lawdex-legal-bm25-index"
     PINECONE_LEGAL_BM25_NAMESPACE: str = "legal_corpus"
 
-    PINECONE_EMBEDDING_MODEL: str = "llama-text-embed-v2"
+    PINECONE_EMBEDDING_MODEL: str = "jina-embeddings-v4"
     PINECONE_EMBEDDING_DIMENSION: int = 2048
 
     UPLOAD_MAX_MB: int = 50
@@ -68,10 +68,31 @@ class Settings(BaseSettings):
     RELEVANCE_SCORE_THRESHOLD: float = 0.0
 
     GOOGLE_API_KEY: str = ""
+    JINA_API_KEY: str = ""
     LLM_MODEL_NAME: str = "gemini-3.1-flash-lite-preview"
     LLM_TEMPERATURE: float = 0.1
     PROMPT_IMPROVE_TEMPERATURE: float = 0.35
     LLM_MAX_TOKENS: int = 2048
+
+    # === Neo4j Settings ===
+    RETRIEVAL_BACKEND: str = "pinecone"  # "pinecone" | "neo4j" | "both"
+    NEO4J_URI: str = "bolt://localhost:7687"
+    NEO4J_USER: str = "neo4j"
+    NEO4J_PASSWORD: str = ""
+    NEO4J_DATABASE: str = "neo4j"
+
+    NEO4J_EMBEDDING_MODEL: str = "jina-embeddings-v4"
+    NEO4J_EMBEDDING_DIMENSION: int = 2048
+    NEO4J_VECTOR_INDEX_NAME: str = "chunk-embeddings"
+    NEO4J_FULLTEXT_INDEX_NAME: str = "chunk-fulltext"
+
+    NEO4J_VECTOR_CANDIDATES_K: int = 30
+    NEO4J_FTS_CANDIDATES_K: int = 30
+    NEO4J_GRAPH_TRAVERSAL_LIMIT: int = 15
+    NEO4J_VECTOR_WEIGHT: float = 0.4
+    NEO4J_FTS_WEIGHT: float = 0.3
+    NEO4J_GRAPH_WEIGHT: float = 0.3
+    NEO4J_BATCH_SIZE: int = 100
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(_BACKEND_DIR, ".env"),
