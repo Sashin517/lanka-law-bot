@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
@@ -41,15 +41,13 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Review LLM — uses main model for cross-referencing capability
-_review_llm = ChatGoogleGenerativeAI(
-    model=settings.LLM_MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=settings.LLM_TEMPERATURE,
-    max_output_tokens=settings.LLM_MAX_TOKENS,
-)
-_review_chain = (
-    ChatPromptTemplate.from_template(REVIEW_PROMPT) | _review_llm | JsonOutputParser()
-)
+from app.core.config import invoke_with_fallback
+
+_review_parser = JsonOutputParser()
+_review_prompt = ChatPromptTemplate.from_template(REVIEW_PROMPT)
+
+def _build_review_chain(llm):
+    return _review_prompt | llm | _review_parser
 
 # Broader user-doc retrieval for thorough review
 _REVIEW_USER_DOC_TOP_K = 8
@@ -131,12 +129,12 @@ async def review_node(state: AgentState) -> dict:
 
     # ── Step 4: Generate risk report (hybrid JSON) ──
     try:
-        raw: dict = await _review_chain.ainvoke({
-            "question": state.question,
-            "context": context_str,
-        })
+        raw: dict = await invoke_with_fallback(
+            _build_review_chain,
+            {"question": state.question, "context": context_str},
+        )
     except Exception:
-        logger.exception("Review LLM generation failed.")
+        logger.exception("Review LLM generation failed — all models exhausted.")
         raw = {
             "report_markdown": (
                 "The AI review service is temporarily unavailable. "

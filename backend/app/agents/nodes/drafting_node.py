@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
@@ -40,12 +40,8 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Drafting LLM — uses main model for structured generation capability
-_drafting_llm = ChatGoogleGenerativeAI(
-    model=settings.LLM_MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=settings.LLM_TEMPERATURE,
-    max_output_tokens=settings.LLM_MAX_TOKENS,
-)
+from app.core.config import invoke_with_fallback
+
 _drafting_parser = JsonOutputParser()
 
 # Document-type detection patterns for template selection
@@ -117,18 +113,22 @@ async def drafting_node(state: AgentState) -> dict:
         logger.error(f"Failed to inject Graph RAG context: {e}")
 
     # ── Step 5: Generate draft with template-injected prompt (hybrid JSON) ──
-    prompt = ChatPromptTemplate.from_template(DRAFTING_PROMPT)
-    chain = prompt | _drafting_llm | _drafting_parser
+    _drafting_prompt = ChatPromptTemplate.from_template(DRAFTING_PROMPT)
+
+    def _build_drafting_chain(llm):
+        return _drafting_prompt | llm | _drafting_parser
 
     try:
-        raw: dict = await chain.ainvoke({
-            "question": state.question,
-            "template": template_text,
-            "context": context_str
-            or "(No source documents available — use template structure only.)",
-        })
+        raw: dict = await invoke_with_fallback(
+            _build_drafting_chain,
+            {
+                "question": state.question,
+                "template": template_text,
+                "context": context_str or "(No source documents available — use template structure only.)",
+            },
+        )
     except Exception:
-        logger.exception("Drafting LLM generation failed.")
+        logger.exception("Drafting LLM generation failed — all models exhausted.")
         raw = {
             "draft_markdown": (
                 "The AI drafting service is temporarily unavailable. "

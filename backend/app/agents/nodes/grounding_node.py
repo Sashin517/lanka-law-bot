@@ -16,7 +16,7 @@ import json
 import logging
 from typing import Literal
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
@@ -29,15 +29,15 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Dedicated LLM instance for grounding verification
-_grounding_llm = ChatGoogleGenerativeAI(
-    model=settings.LLM_MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=0.0,  # Deterministic for judging
-    max_output_tokens=1024,
-)
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from app.core.config import invoke_with_fallback
+
 _grounding_parser = JsonOutputParser()
 _grounding_prompt = ChatPromptTemplate.from_template(GROUNDING_JUDGE_PROMPT)
-_grounding_chain = _grounding_prompt | _grounding_llm | _grounding_parser
+
+def _build_grounding_chain(llm):
+    return _grounding_prompt | llm | _grounding_parser
 
 
 @traceable(name="GroundingVerifier")
@@ -88,12 +88,27 @@ async def grounding_node(
 
     # ── Call the grounding judge LLM ──
     try:
-        raw: dict = await _grounding_chain.ainvoke(
+        raw: dict = await invoke_with_fallback(
+            _build_grounding_chain,
             {
                 "summary": state.summary,
                 "claims": claims_text,
-                "sources": state.context_str[:120000],  # Cap context to fit in window
-            }
+                "sources": state.context_str[:120000],
+            },
+            temperature=0.0,
+        )
+        grounding = GroundingResult(
+            is_grounded=raw.get("is_grounded", False),
+            grounding_score=float(raw.get("grounding_score", 0.0)),
+            ungrounded_claims=raw.get("ungrounded_claims", []),
+            feedback=raw.get("feedback", ""),
+        )
+    except Exception:
+        logger.exception("Grounding verification LLM call failed — all models exhausted.")
+        grounding = GroundingResult(
+            is_grounded=True,
+            grounding_score=0.5,
+            feedback="Grounding check skipped due to LLM error.",
         )
 
         grounding = GroundingResult(

@@ -18,7 +18,8 @@ from __future__ import annotations
 import logging
 import re
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+# from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
@@ -42,15 +43,19 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Verify LLM — deterministic for fact-checking
-_verify_llm = ChatGoogleGenerativeAI(
-    model=settings.LLM_MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=0.0,  # Deterministic for fact-checking
-    max_output_tokens=settings.LLM_MAX_TOKENS,
-)
-_verify_chain = (
-    ChatPromptTemplate.from_template(VERIFY_PROMPT) | _verify_llm | JsonOutputParser()
-)
+# _verify_llm = ChatGoogleGenerativeAI(
+#     model=settings.LLM_MODEL_NAME,
+#     google_api_key=settings.GOOGLE_API_KEY,
+#     temperature=0.0,  # Deterministic for fact-checking
+#     max_output_tokens=settings.LLM_MAX_TOKENS,
+# )
+from app.core.config import invoke_with_fallback
+
+_verify_parser = JsonOutputParser()
+_verify_prompt = ChatPromptTemplate.from_template(VERIFY_PROMPT)
+
+def _build_verify_chain(llm):
+    return _verify_prompt | llm | _verify_parser
 
 
 @traceable(name="VerifyNode")
@@ -111,12 +116,13 @@ async def verify_node(state: AgentState) -> dict:
 
     # ── Step 4: Compare claim against sources (hybrid JSON) ──
     try:
-        raw: dict = await _verify_chain.ainvoke({
-            "question": state.question,
-            "context": context_str,
-        })
+        raw: dict = await invoke_with_fallback(
+            _build_verify_chain,
+            {"question": state.question, "context": context_str},
+            temperature=0.0,
+        )
     except Exception:
-        logger.exception("Verify LLM generation failed.")
+        logger.exception("Verify LLM generation failed — all models exhausted.")
         raw = {
             "verdict_markdown": (
                 "The verification service is temporarily unavailable. "

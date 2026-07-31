@@ -15,7 +15,8 @@ from __future__ import annotations
 import logging
 import re
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+# from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
@@ -41,17 +42,20 @@ from app.agents.nodes.verify_node import verify_node
 logger = logging.getLogger(__name__)
 
 # QA LLM chain — hybrid JSON output
-_qa_llm = ChatGoogleGenerativeAI(
-    model=settings.LLM_MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=settings.LLM_TEMPERATURE,
-    max_output_tokens=settings.LLM_MAX_TOKENS,
-)
-_qa_chain = (
-    ChatPromptTemplate.from_template(QUICK_QA_PROMPT)
-    | _qa_llm
-    | JsonOutputParser()
-)
+# _qa_llm = ChatGoogleGenerativeAI(
+#     model=settings.LLM_MODEL_NAME,
+#     google_api_key=settings.GOOGLE_API_KEY,
+#     temperature=settings.LLM_TEMPERATURE,
+#     max_output_tokens=settings.LLM_MAX_TOKENS,
+# )
+
+from app.core.config import invoke_with_fallback
+
+_qa_parser = JsonOutputParser()
+_qa_prompt = ChatPromptTemplate.from_template(QUICK_QA_PROMPT)
+
+def _build_qa_chain(llm):
+    return _qa_prompt | llm | _qa_parser
 
 
 @traceable(name="QuickQANode")
@@ -122,12 +126,12 @@ async def quick_qa_node(state: AgentState) -> dict:
 
     # ── Step 4: Generate LLM response (hybrid JSON) ──
     try:
-        raw: dict = await _qa_chain.ainvoke({
-            "question": state.question,
-            "context": context_str,
-        })
+        raw: dict = await invoke_with_fallback(
+            _build_qa_chain,
+            {"question": state.question, "context": context_str},
+        )
     except Exception:
-        logger.exception("QA LLM generation failed.")
+        logger.exception("QA LLM generation failed — all models exhausted.")
         raw = {
             "answer_markdown": (
                 "The AI service is temporarily unavailable. "

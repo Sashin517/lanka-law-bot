@@ -16,7 +16,6 @@ import type { UploadedDocument } from "@/types/documents";
 import type { QueryMode } from "@/types/QueryMode";
 import { QUERY_MODES } from "@/types/QueryMode";
 
-/** Map icon string names to Lucide components. */
 const ICON_MAP: Record<string, React.ElementType> = {
   Telescope,
   PenTool,
@@ -62,30 +61,27 @@ export function ChatInputBar({
   );
   const hasFailedDocument = documents.some((doc) => doc.status === "failed");
   const canSubmit = Boolean(value.trim()) && !isLoading && !hasPendingDocument && !hasFailedDocument;
-  const canImprove =
-    Boolean(value.trim()) &&
-    !isLoading &&
-    !isImproving &&
-    !hasPendingDocument &&
-    !hasFailedDocument;
+  const canImprove = Boolean(value.trim()) && !isLoading && !isImproving && !hasPendingDocument && !hasFailedDocument;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (canSubmit) {
-      onSubmit();
-    }
+    if (canSubmit) onSubmit();
   };
 
   const toggleMode = (mode: QueryMode) => {
-    // Toggle: if already selected, revert to quick_qa (default)
     onModeChange(selectedMode === mode ? "quick_qa" : mode);
   };
 
   return (
     <form
       onSubmit={submit}
-      className="mx-auto flex max-w-3xl flex-col rounded-[28px] border border-slate-600/40 bg-[#202020] px-4 py-3 shadow-lg"
+      /* ── Design system tokens ──
+         bg-background: global app token (was hardcoded #202020)
+         border-light-blue/20: system border (was border-slate-600/40)
+         rounded-2xl matches the card radius language of login/signup    */
+      className="mx-auto flex max-w-3xl flex-col rounded-2xl border border-light-blue/20 bg-background px-4 py-3 shadow-lg focus-within:border-light-blue/40 transition-colors"
     >
+      {/* Attached document cards */}
       {documents.length > 0 && (
         <div className="mb-3 flex flex-col gap-2">
           {documents.map((doc) => (
@@ -98,7 +94,9 @@ export function ChatInputBar({
         </div>
       )}
 
+      {/* Main input row */}
       <div className="flex items-center gap-3">
+        {/* Hidden file input */}
         <input
           key={fileInputKey}
           ref={inputRef}
@@ -111,50 +109,60 @@ export function ChatInputBar({
             setFileInputKey((prev) => prev + 1);
           }}
         />
+
+        {/* Attach button
+            hover:bg-light-blue/10 — consistent hover token */}
         <button
           type="button"
           aria-label="Attach document"
           onClick={() => inputRef.current?.click()}
           disabled={isLoading}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-200 transition hover:bg-slate-700/70 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:text-slate-200 hover:bg-light-blue/10 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Plus size={26} strokeWidth={1.8} />
+          <Plus size={22} strokeWidth={1.8} aria-hidden="true" />
         </button>
 
+        {/* Text input */}
         <input
           type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={
-            hasPendingDocument ? "Document is still processing..." : "Ask anything"
-          }
+          placeholder={hasPendingDocument ? "Document is processing…" : "Ask anything about Sri Lankan law…"}
           disabled={isLoading}
-          className="min-w-0 flex-1 bg-transparent py-2 text-base text-white placeholder:text-slate-400 focus:outline-none disabled:opacity-50"
+          className="min-w-0 flex-1 bg-transparent py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none disabled:opacity-50"
         />
 
+        {/* Improve prompt button
+            border-light-blue/30: system border token */}
         <button
           type="button"
           disabled={!canImprove}
           onClick={onImprove}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700/70 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Improve prompt"
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-light-blue/30 px-3 py-2 text-xs font-medium text-slate-300 hover:text-slate-100 hover:bg-light-blue/10 hover:border-light-blue/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Improve prompt with AI"
         >
-          <Sparkles size={14} aria-hidden="true" />
-          {isImproving ? "Improving..." : "Improve"}
+          <Sparkles size={13} aria-hidden="true" />
+          {isImproving ? "Improving…" : "Improve"}
         </button>
 
+        {/* Send button
+            bg-yellow text-dark-blue: primary CTA (matches login button)
+            disabled: bg-light-blue/20 muted state */}
         <button
           type="submit"
           disabled={!canSubmit}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] text-[#161B28] transition hover:bg-[#C5A030] disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-400"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow text-dark-blue hover:bg-yellow/90 active:scale-95 transition-all disabled:cursor-not-allowed disabled:bg-light-blue/20 disabled:text-slate-500 shadow-sm"
           aria-label="Send message"
         >
-          <Send size={17} />
+          <Send size={16} aria-hidden="true" />
         </button>
       </div>
 
-      {/* ── Mode selector buttons ── */}
-      <div className="mt-2 flex items-center gap-1.5 px-1">
+      {/* ── Mode selector ──
+          Active: yellow accent bg + yellow text + yellow ring (system CTA)
+          Inactive: slate-500 text, light-blue hover
+          Consistent with the tab-style nav in the header               */}
+      <div className="mt-2.5 flex items-center gap-1.5 px-1 flex-wrap">
         {QUERY_MODES.map((mode) => {
           const Icon = ICON_MAP[mode.icon];
           const isActive = selectedMode === mode.value;
@@ -164,33 +172,35 @@ export function ChatInputBar({
               type="button"
               onClick={() => toggleMode(mode.value)}
               disabled={isLoading}
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150
-                ${
-                  isActive
-                    ? "bg-[#D4AF37]/20 text-[#D4AF37] ring-1 ring-[#D4AF37]/40"
-                    : "text-slate-400 hover:bg-slate-700/50 hover:text-slate-200"
+              className={`
+                flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150
+                ${isActive
+                  ? "bg-yellow/15 text-yellow ring-1 ring-yellow/30 border border-yellow/20"
+                  : "text-slate-500 hover:bg-light-blue/10 hover:text-slate-300 border border-transparent"
                 }
-                disabled:cursor-not-allowed disabled:opacity-50`}
+                disabled:cursor-not-allowed disabled:opacity-50
+              `}
               aria-pressed={isActive}
               aria-label={`${mode.label} mode`}
             >
-              {Icon && <Icon size={14} />}
+              {Icon && <Icon size={13} aria-hidden="true" />}
               <span>{mode.label}</span>
             </button>
           );
         })}
       </div>
 
+      {/* Status hints */}
       {(hasPendingDocument || hasFailedDocument) && (
-        <div className="mt-2 px-12 text-xs">
+        <div className="mt-2 px-1 text-xs">
           {hasPendingDocument && (
-            <span className="text-slate-400">
-              Wait until the document is ready before sending the query.
+            <span className="text-slate-500">
+              Waiting for document to finish processing…
             </span>
           )}
           {hasFailedDocument && (
-            <span className="text-red-300">
-              Remove failed documents before sending.
+            <span className="text-red-400">
+              Remove the failed document before sending.
             </span>
           )}
         </div>
@@ -198,5 +208,3 @@ export function ChatInputBar({
     </form>
   );
 }
-
-
