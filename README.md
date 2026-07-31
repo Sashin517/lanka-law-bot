@@ -129,7 +129,6 @@ Open your web browser and navigate to `http://localhost:3000`. You can now submi
 - **Backend:** Python 3.12, FastAPI, Uvicorn, Pydantic
 - **AI & Machine Learning:** LangChain, LangGraph, HuggingFace, Google Gemini
 - **Databases:** Pinecone / ChromaDB (Vector Storage), Neo4j (Graph Storage)
-- **Infrastructure:** Docker
 
 ---
 
@@ -144,18 +143,3 @@ Open your web browser and navigate to `http://localhost:3000`. You can now submi
 ### Issue: Backend startup hangs indefinitely
 **Solution:** The backend automatically pulls the Neo4j Docker image on its first run. Depending on your internet speed, this may take several minutes. Ensure Docker is running.
 
----
-
-## Future Enhancements
-
-1. **Cloud Deployment**
-   - Host the Next.js frontend on Vercel.
-   - Deploy the FastAPI backend and databases on a secure cloud VPS for continuous accessibility.
-2. **Expanded Graph Extraction**
-   - Enhance the graph ingestion pipeline to map deeper, section-level relationships within case law and statutory amendments.
-
----
-
-## License
-
-Created by Prime Minds. All rights reserved.
