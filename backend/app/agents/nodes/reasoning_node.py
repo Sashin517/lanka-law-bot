@@ -29,6 +29,7 @@ from app.agents.shared import (
     citation_verifier as _verifier,
     get_user_doc_retrieval,
 )
+from app.services.retrieval.graph_retrieval_service import get_graph_retrieval_service
 from app.agents.prompts.reasoning_prompt import REASONING_PROMPT
 from app.agents.nodes.helpers import (
     extract_first_paragraph,
@@ -124,6 +125,15 @@ async def reasoning_node(state: AgentState) -> dict:
         "Reasoning context assembled: %d sources, %d chars.",
         len(citation_map), len(context_str),
     )
+
+    # ── Step 3.5: Graph RAG context injection ──
+    try:
+        graph_context = get_graph_retrieval_service().search(state.question)
+        if graph_context:
+            context_str += "\n\n" + graph_context
+            logger.info("Injected Graph RAG context into reasoning.")
+    except Exception as e:
+        logger.error(f"Failed to inject Graph RAG context: {e}")
 
     # ── Step 4: Generate IRAC analysis (hybrid JSON) ──
     try:

@@ -1,41 +1,36 @@
 # LankaLawBot - Generative AI Legal Assistant
 
-## 🎯 Overview
+## Overview
 
-A Generative AI Agentic Framework for Personalized Legal Drafting and Case Intelligence within the Sri Lankan Jurisdiction. Built with a modern Next.js frontend, a lightning-fast FastAPI backend, and powered by LangChain, HuggingFace, and ChromaDB for secure, local Retrieval-Augmented Generation (RAG).
+A Generative AI Agentic Framework for Personalized Legal Drafting and Case Intelligence within the Sri Lankan Jurisdiction. Built with a modern Next.js frontend, a FastAPI backend, and powered by LangGraph, LangChain, HuggingFace, Pinecone, and Neo4j for secure, multi-agent Retrieval-Augmented Generation (RAG) and Graph RAG.
 
-## 📦 Project Architecture
+## Project Architecture
 
-### 1. **Frontend (`/frontend`)**
-
-- `src/app/page.tsx` - Main interactive chat UI built with React and Tailwind CSS.
+### 1. Frontend (`/frontend`)
+- `src/app/page.tsx` - Main interactive chat interface built with React and Tailwind CSS.
 - `package.json` - Node dependencies (Next.js, React).
 
-### 2. **Backend (`/backend`)**
+### 2. Backend (`/backend`)
+- `main.py` - FastAPI server handling CORS, API routing, and automated database orchestration.
+- `app/agents/` - LangGraph multi-agent architecture including Reasoning and Drafting nodes.
+- `app/services/retrieval/` - Hybrid retrieval pipelines integrating Pinecone (Vector/BM25) and Neo4j (Graph RAG).
+- `requirements.txt` - Python dependencies (LangChain, FastAPI, Neo4j, etc.).
 
-- `main.py` - FastAPI server handling CORS and API routing.
-- `src/agent.py` - Core RAG logic connecting the query to the vector database.
-- `requirements.txt` - Python dependencies (LangChain, ChromaDB, FastAPI, etc.).
-
-### 3. **Data & Storage**
-
-- `database/chroma_db/` - Local vector database containing embedded Sri Lankan legal acts.
-- `data/` - Raw, cleanly named JSON legal documents (e.g., `Year_1995_Act_21.json`).
+### 3. Data & Storage
+- **Vector Database (Pinecone / ChromaDB):** Stores embedded Sri Lankan legal acts for semantic and keyword retrieval.
+- **Graph Database (Neo4j):** Stores relational legal data (e.g., amendments, citations, repeals) for complex reasoning and context injection.
+- `data/` - Raw, cleanly named JSON legal documents.
 
 ---
 
-## 🚀 How to Run Locally
+## How to Run Locally
 
-To run this application, you need to start both the Python backend server and the Next.js frontend server simultaneously in two separate terminal windows.
+To run this application, you need to start both the Python backend server and the Next.js frontend server. The backend will automatically orchestrate the Graph database setup using Docker.
 
-### 🗄️ Database Setup
-
-The Vector Database (`chroma_db`) is ignored by Git to keep the repository lightweight. To run this project locally, you must download the pre-built database.
-
-1. Download the `chroma_db.zip` file from our shared team drive: [Download file](https://drive.google.com/drive/folders/1y-I_gl9o1FnFu3rA2kLYzOMS9pakjz6O?usp=drive_link)
-2. Extract the zip file.
-3. Place the extracted `chroma_db` folder directly inside the `backend/database/` directory.
-4. Your folder structure should look like this: `backend/database/chroma_db/`
+### Prerequisites
+- Python 3.12
+- Node.js
+- Docker (Required for the automated Neo4j graph database)
 
 ### Step 1: Start the Backend (FastAPI + AI Engine)
 
@@ -43,127 +38,124 @@ The Vector Database (`chroma_db`) is ignored by Git to keep the repository light
    ```bash
    cd backend
    ```
-2. Activate your Python virtual environment (Ensure you are using Python 3.12):
+2. Activate your Python virtual environment:
    - **Windows:** `venv\Scripts\activate`
    - **Mac/Linux:** `source venv/bin/activate`
-3. Start the FastAPI server:  
-
+3. Install dependencies:
    ```bash
-   uvicorn main:app
+   pip install -r requirements.txt
+   ```
+4. Configure Environment Variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Open `.env` and add your valid Google Gemini, Pinecone, and LangSmith API keys.
+5. Start the FastAPI server:  
+   ```bash
    uvicorn main:app --reload
    ```
-
-   _The backend is now running on `http://127.0.0.1:8000`._
+   *Note: Upon startup, the backend will automatically use Docker to download and run a Neo4j instance, and idempotently populate the graph database with legal relationships.*
+   
+   The backend will run on `http://127.0.0.1:8000`.
 
 ### Step 2: Start the Frontend (Next.js UI)
 
-1. Open a **second** new terminal window and navigate to the frontend folder:
+1. Open a second terminal window and navigate to the frontend folder:
    ```bash
    cd frontend
    ```
-2. Install dependencies (only needed the very first time):
+2. Install dependencies (only needed the first time):
    ```bash
    npm install
    ```
-3. Start the development server:
+3. Configure Environment Variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Open `.env` and add your Firebase project credentials.
+4. Start the development server:
    ```bash
    npm run dev
    ```
-   _The frontend is now running on `http://localhost:3000`._
+   The frontend will run on `http://localhost:3000`.
 
 ### Step 3: Access the Application
 
-Open your web browser and navigate to **`http://localhost:3000`**. You can now type a legal query and the UI will communicate directly with your local AI backend.
+Open your web browser and navigate to `http://localhost:3000`. You can now submit legal queries and interact with the AI assistant.
 
 ---
 
-## 🔄 Complete User Flow
+## Complete User Flow
 
-### 1. **Query Input**
+### 1. Query Input
+- The user navigates to the web interface.
+- Enters a natural language legal question or a request for a drafted document.
 
-- User navigates to the web interface.
-- Enters a natural language legal question (e.g., _"What are the rules regarding tenancy termination?"_).
+### 2. Multi-Agent Routing (LangGraph)
+- Next.js sends a secure request to the FastAPI backend.
+- The router agent analyzes the intent and routes the query to the appropriate worker agent (e.g., Reasoning Agent or Drafting Agent).
 
-### 2. **API Communication**
+### 3. Hybrid RAG & Graph RAG Retrieval
+- **Semantic & Sparse Search:** The query is converted into vectors and searched against the vector database (Pinecone/ChromaDB) to retrieve the most semantically relevant legal chunks and exact keyword matches (BM25).
+- **Relational Graph Search:** Simultaneously, entities are extracted from the query and queried against Neo4j to find relational context (e.g., if Act A was amended by Act B).
+- The combined context is verified and assembled.
 
-- Next.js sends a secure `POST` request containing the query to the FastAPI backend (`/api/search`).
-- CORS middleware ensures secure cross-origin communication between port 3000 and port 8000.
-
-### 3. **Semantic Search (RAG)**
-
-- The FastAPI server passes the query to the LangChain agent.
-- `all-MiniLM-L6-v2` converts the user's text into mathematical vectors.
-- ChromaDB performs a similarity search against the local vector database of Sri Lankan law.
-
-### 4. **Response Delivery**
-
-- The most relevant legal chunks are retrieved.
-- The source document metadata (e.g., `Year_1999_Act_...`) and context are streamed back to the Next.js frontend.
-- The UI gracefully animates the response into view for the user.
+### 4. Response Generation & Delivery
+- The assigned agent generates a highly accurate, legally grounded response or drafted document.
+- Source document metadata and contextual citations are streamed back to the Next.js frontend for transparent referencing.
 
 ---
 
-## 🎨 Key Features
+## Key Features
 
-### ✅ Local & Private AI Processing
+### Agentic Workflow (LangGraph)
+- Utilizes specialized autonomous agents to handle different legal tasks, such as deep legal reasoning (IRAC analysis) and template-aware legal drafting.
 
-- Uses HuggingFace open-source embeddings running entirely on your local machine.
-- No legal queries are sent to external paid APIs (like OpenAI), ensuring data privacy and zero recurring costs.
+### Advanced Retrieval Augmented Generation (RAG)
+- **Hybrid Search:** Combines dense vector embeddings with sparse BM25 keyword matching for maximum retrieval accuracy.
+- **Graph RAG:** Leverages Neo4j to trace explicit relationships between legal documents, preventing the AI from referencing outdated or repealed laws.
 
-### ✅ Semantic Vector Search
+### Local & Private AI Processing Capabilities
+- Capable of using local HuggingFace embeddings, ensuring data privacy and reducing reliance on external APIs.
 
-- Goes beyond basic keyword matching. The AI understands the _meaning_ of the question and finds relevant laws even if exact vocabulary isn't used.
-
-### ✅ Meaningful Citations
-
-- Custom data processing pipeline ensures raw data is parsed and formatted so the AI can provide exact references to the Year and Act Number.
-
-### ✅ Modern, Responsive UI
-
-- Built with Tailwind CSS.
-- Features loading states, clean typography, and a mobile-responsive design for practitioners on the go.
+### Meaningful Citations
+- A custom data processing pipeline ensures raw data is parsed and formatted so the AI can provide exact references to the Year and Act Number.
 
 ---
 
-## 🔧 Tech Stack Reference
+## Tech Stack Reference
 
 - **Frontend:** Next.js 14, React, Tailwind CSS, TypeScript
 - **Backend:** Python 3.12, FastAPI, Uvicorn, Pydantic
-- **AI & Machine Learning:** LangChain, HuggingFace (`all-MiniLM-L6-v2`), Sentence-Transformers, Numpy
-- **Database:** ChromaDB (Local SQLite Vector Storage)
+- **AI & Machine Learning:** LangChain, LangGraph, HuggingFace, Google Gemini
+- **Databases:** Pinecone / ChromaDB (Vector Storage), Neo4j (Graph Storage)
+- **Infrastructure:** Docker
 
 ---
 
-## 🚨 Common Issues & Solutions
+## Common Issues & Solutions
 
 ### Issue: "Could not connect to the LankaLawBot backend"
+**Solution:** Ensure your FastAPI server is running in a separate terminal. Check that CORS is properly configured in `main.py` to allow `http://localhost:3000`.
 
-**Solution**: Ensure your FastAPI server is running in a separate terminal. Check that CORS is properly configured in `main.py` to allow `http://localhost:3000`.
+### Issue: "ModuleNotFoundError: No module named 'langchain_neo4j'"
+**Solution:** Ensure you have activated your virtual environment and installed the latest backend requirements (`pip install -r requirements.txt`).
 
-### Issue: "metadata-generation-failed" during `pip install`
-
-**Solution**: This happens when using Python 3.13 due to missing C++ compilers for Numpy. Ensure your virtual environment is explicitly built using **Python 3.12**.
-
-### Issue: FastAPI returns "No results found"
-
-**Solution**: Verify that your `database/chroma_db` folder contains the compiled database files and is located in the correct directory relative to `agent.py`.
+### Issue: Backend startup hangs indefinitely
+**Solution:** The backend automatically pulls the Neo4j Docker image on its first run. Depending on your internet speed, this may take several minutes. Ensure Docker is running.
 
 ---
 
-## 📈 Future Enhancements
+## Future Enhancements
 
-1. **LLM Generation Layer**
-   - Integrate a local LLM (like Llama 3 or Mistral) to summarize the retrieved legal chunks into human-readable advice, rather than just returning the raw text.
-2. **Cloud Deployment**
+1. **Cloud Deployment**
    - Host the Next.js frontend on Vercel.
-   - Deploy the FastAPI backend and ChromaDB on a DigitalOcean VPS for 24/7 accessibility.
-3. **Drafting Capabilities**
-   - Add features allowing the bot to generate boilerplate legal templates based on the retrieved acts.
+   - Deploy the FastAPI backend and databases on a secure cloud VPS for continuous accessibility.
+2. **Expanded Graph Extraction**
+   - Enhance the graph ingestion pipeline to map deeper, section-level relationships within case law and statutory amendments.
 
 ---
 
-## 📄 License
+## License
 
 Created by Prime Minds. All rights reserved.
-
-
