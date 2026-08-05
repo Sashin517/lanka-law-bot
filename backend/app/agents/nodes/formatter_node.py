@@ -2,7 +2,8 @@
 
 This is the last node before END.  It converts the internal
 ``AgentState`` fields into the JSON structure the frontend expects,
-including route metadata, markdown content, sources, and grounding info.
+including route metadata, markdown content, sources, grounding info,
+and the execution trace for multi-agent pipeline observability.
 """
 
 from __future__ import annotations
@@ -31,6 +32,24 @@ async def formatter_node(state: AgentState) -> dict:
         "clarification_question": state.clarification_question,
     }
 
+    # ── Execution trace (Phase 7 — frontend observability) ──
+    plan = state.execution_plan
+    steps_executed = min(state.current_step_index + 1, len(plan.steps))
+    execution_trace = {
+        "plan_type": plan.plan_type,
+        "steps_executed": [
+            {
+                "agent": step.agent,
+                "purpose": step.purpose,
+            }
+            for step in plan.steps[:steps_executed]
+        ],
+        "total_steps": len(plan.steps),
+        "planning_reasoning": plan.reasoning,
+        "completed_agents": list(state.completed_agents),
+        "planning_seconds": state.planning_seconds,
+    }
+
     final = {
         "route": route_dict,
         "answer": state.summary,                     # Plain text fallback
@@ -39,14 +58,18 @@ async def formatter_node(state: AgentState) -> dict:
         "confidence": state.confidence,
         "grounding_score": state.grounding.grounding_score,
         "disclaimer": state.disclaimer,
+        "execution_trace": execution_trace,
     }
 
     logger.info(
-        "Response formatted: %d sources, confidence=%s, grounding=%.2f, markdown=%d chars.",
+        "Response formatted: %d sources, confidence=%s, grounding=%.2f, "
+        "markdown=%d chars, plan_type=%s, steps=%d.",
         len(state.retrieved_sources),
         state.confidence,
         state.grounding.grounding_score,
         len(state.markdown_content),
+        plan.plan_type,
+        steps_executed,
     )
 
     return {"final_response": final}

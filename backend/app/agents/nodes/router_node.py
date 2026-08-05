@@ -1,25 +1,35 @@
-"""Router node — deterministic mode-based dispatch.
+"""Supervisor router node — hybrid O(1) + LLM-planned dispatch.
 
 The user selects a mode via frontend buttons (Deep Research, Draft,
-Review, Reasoning) or implicitly defaults to Quick QA.  The router
-reads ``state.mode``, looks up the static configuration, builds a
-retrieval plan, and dispatches to the correct worker node via
-``Command(goto=…)``.
+Review, Reasoning) or implicitly defaults to Quick QA.  The supervisor
+reads ``state.mode`` and assesses query complexity:
 
-No LLM call — O(1) dictionary lookup, 0 ms latency, 100% accuracy.
+- **Fast-path** (O(1)): Simple queries → deterministic dict lookup,
+  zero LLM calls, instant dispatch to the matching worker.
+- **Planned-path**: Complex queries → LLM planner generates a
+  multi-step ``ExecutionPlan``, dispatches to the first step.
+
+This dual-path design ensures Quick QA has zero added latency while
+complex drafting/research queries get intelligent multi-agent planning.
 """
 
 from __future__ import annotations
 
 import logging
 import re
+import time
 from dataclasses import dataclass
 from typing import Literal
 
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 from langsmith import traceable
 from langgraph.types import Command
 
-from app.agents.state import AgentState
+from app.agents.state import AgentState, ExecutionPlan, PlanStep
+from app.agents.prompts.planning_prompt import PLANNING_PROMPT
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -95,11 +105,137 @@ _MODE_CONFIG: dict[str, ModeConfig] = {
 # Default fallback for safety
 _DEFAULT_MODE = "quick_qa"
 
+# Valid agent names for plan step validation
+_VALID_AGENTS = frozenset({
+    "quick_qa", "deep_research", "reasoning", "drafting", "review", "verify",
+})
 
-# ── Router node ──────────────────────────────────────────────────
+
+# ── Planning LLM (lightweight, deterministic) ────────────────────
+
+_planning_llm = ChatGoogleGenerativeAI(
+    model=settings.LLM_MODEL_NAME,
+    google_api_key=settings.GOOGLE_API_KEY,
+    temperature=0.0,
+    max_output_tokens=512,
+)
+_planning_chain = (
+    ChatPromptTemplate.from_template(PLANNING_PROMPT)
+    | _planning_llm
+    | JsonOutputParser()
+)
 
 
-@traceable(name="RouterNode", metadata={"routing_method": "explicit_mode"})
+# ── Complexity assessment ────────────────────────────────────────
+
+
+def _assess_complexity(state: AgentState) -> str:
+    """Heuristic complexity assessment — O(1), no LLM call.
+
+    Returns
+    -------
+    str
+        ``"fast_path"``      — simple query, skip planning entirely.
+        ``"needs_planning"`` — complex query, invoke LLM planner.
+    """
+    # Ablation override: force fast-path dispatch (no planning)
+    if state.ablation_config.get("force_fast_path"):
+        return "fast_path"
+
+    mode = state.mode
+    question = state.question.lower()
+
+    # Rule 1: Explicit quick_qa mode → always fast-path
+    if mode == "quick_qa":
+        return "fast_path"
+
+    # Rule 2: Review and verify are self-contained → fast-path
+    if mode in ("review", "verify"):
+        return "fast_path"
+
+    # Rule 3: Drafting — check for complexity signals
+    if mode == "drafting":
+        complexity_signals = (
+            "research", "analyze", "analyse", "compare", "considering",
+            "based on", "according to", "legal implications",
+            "comprehensive", "detailed analysis", "risk assessment",
+            "multiple", "all relevant", "thorough",
+        )
+        if any(signal in question for signal in complexity_signals):
+            return "needs_planning"
+        return "fast_path"
+
+    # Rule 4: Deep research → benefits from planning
+    if mode == "deep_research":
+        return "needs_planning"
+
+    # Rule 5: Reasoning → may need research first
+    if mode == "reasoning":
+        return "needs_planning"
+
+    return "fast_path"
+
+
+# ── Plan generation ──────────────────────────────────────────────
+
+
+async def _generate_plan(
+    state: AgentState,
+    config: ModeConfig,
+) -> ExecutionPlan:
+    """Use LLM to generate a multi-step execution plan.
+
+    Falls back to a single-step fast-path plan on any failure.
+    """
+    try:
+        raw: dict = await _planning_chain.ainvoke({
+            "mode": state.mode,
+            "question": state.question,
+            "has_documents": str(bool(state.document_ids)),
+        })
+
+        steps = [
+            PlanStep(
+                agent=s["agent"],
+                purpose=s.get("purpose", ""),
+                depends_on=s.get("depends_on", []),
+                config_overrides=s.get("config_overrides", {}),
+            )
+            for s in raw.get("steps", [])
+            if isinstance(s, dict) and s.get("agent") in _VALID_AGENTS
+        ]
+
+        if not steps:
+            logger.warning("Planner returned no valid steps; falling back.")
+            return _fallback_plan(config, state.mode)
+
+        # Cap at 3 steps for safety and latency control
+        return ExecutionPlan(
+            plan_type="planned",
+            steps=steps[:3],
+            reasoning=raw.get("reasoning", ""),
+            estimated_complexity=raw.get("estimated_complexity", "medium"),
+        )
+
+    except Exception:
+        logger.exception("LLM planning failed; falling back to fast-path.")
+        return _fallback_plan(config, state.mode)
+
+
+def _fallback_plan(config: ModeConfig, mode: str) -> ExecutionPlan:
+    """Create a single-step fast-path plan as a safe fallback."""
+    return ExecutionPlan(
+        plan_type="fast_path",
+        steps=[PlanStep(agent=config.route, purpose=f"Fallback for {mode}")],
+        reasoning="Falling back to direct dispatch.",
+        estimated_complexity="low",
+    )
+
+
+# ── Supervisor router node ───────────────────────────────────────
+
+
+@traceable(name="SupervisorRouter", metadata={"routing_method": "hybrid"})
 async def router_node(
     state: AgentState,
 ) -> Command[
@@ -113,10 +249,11 @@ async def router_node(
         "formatter",
     ]
 ]:
-    """Deterministic dispatch based on user-selected mode.
+    """Supervisor router — dual-path: fast-path O(1) or LLM-planned.
 
-    Reads ``state.mode`` → looks up ``_MODE_CONFIG`` → builds retrieval
-    plan → dispatches to the matching worker node via ``Command(goto=…)``.
+    1. Assess complexity (heuristic, O(1))
+    2. Fast-path: deterministic dispatch (same as before)
+    3. Planned-path: LLM generates ExecutionPlan → dispatch to first agent
     """
 
     mode = state.mode or _DEFAULT_MODE
@@ -130,7 +267,7 @@ async def router_node(
     has_documents = bool(state.document_ids)
 
     logger.info(
-        "mode_dispatch: mode=%s route=%s has_docs=%s question_len=%d",
+        "supervisor_dispatch: mode=%s route=%s has_docs=%s question_len=%d",
         mode,
         config.route,
         has_documents,
@@ -161,25 +298,71 @@ async def router_node(
     # ── Build retrieval plan ──
     retrieval = _build_retrieval_plan(state, config)
 
-    # ── Dispatch to worker ──
+    # ── Assess complexity ──
+    path = _assess_complexity(state)
+
+    # ── Common routing metadata ──
+    base_update = {
+        "route": config.route,
+        "task_type": config.task_type,
+        "answer_mode": config.answer_mode,
+        "target_corpus": config.target_corpus,
+        "route_confidence": "high",
+        "use_legal_corpus": retrieval["use_legal_corpus"],
+        "use_user_documents": retrieval["use_user_documents"],
+        "legal_top_k": retrieval["legal_top_k"],
+        "user_doc_top_k": retrieval["user_doc_top_k"],
+        "year_filter": retrieval.get("year_filters"),
+        "act_name_filter": retrieval.get("act_name_filters"),
+    }
+
+    if path == "fast_path":
+        # ── FAST PATH: O(1) dispatch — same as current behavior ──
+        logger.info("Fast-path dispatch → %s", config.route)
+        return Command(
+            update={
+                **base_update,
+                "routing_reason": f"User selected '{mode}' mode (fast-path).",
+                "current_agent": config.route,
+                "planning_seconds": 0.0,
+                "execution_plan": ExecutionPlan(
+                    plan_type="fast_path",
+                    steps=[PlanStep(agent=config.route, purpose=f"Direct {mode}")],
+                    reasoning=f"Fast-path dispatch for {mode} mode.",
+                    estimated_complexity="low",
+                ),
+            },
+            goto=config.route,
+        )
+
+    # ── PLANNED PATH: LLM generates multi-step plan ──
+    logger.info("Generating execution plan for complex '%s' query.", mode)
+    plan_start = time.monotonic()
+    plan = await _generate_plan(state, config)
+    planning_seconds = time.monotonic() - plan_start
+    first_agent = plan.steps[0].agent
+
+    logger.info(
+        "Execution plan: type=%s steps=%s first_agent=%s planning_time=%.2fs",
+        plan.plan_type,
+        [s.agent for s in plan.steps],
+        first_agent,
+        planning_seconds,
+    )
+
     return Command(
         update={
-            "route": config.route,
-            "task_type": config.task_type,
-            "answer_mode": config.answer_mode,
-            "target_corpus": config.target_corpus,
-            "route_confidence": "high",
-            "routing_reason": f"User selected '{mode}' mode.",
-            "current_agent": config.route,
-            # Retrieval plan fields consumed by workers
-            "use_legal_corpus": retrieval["use_legal_corpus"],
-            "use_user_documents": retrieval["use_user_documents"],
-            "legal_top_k": retrieval["legal_top_k"],
-            "user_doc_top_k": retrieval["user_doc_top_k"],
-            "year_filter": retrieval.get("year_filters"),
-            "act_name_filter": retrieval.get("act_name_filters"),
+            **base_update,
+            "routing_reason": (
+                f"Planned multi-step execution for '{mode}' mode: "
+                f"{plan.reasoning}"
+            ),
+            "current_agent": first_agent,
+            "current_step_index": 0,
+            "execution_plan": plan,
+            "planning_seconds": planning_seconds,
         },
-        goto=config.route,
+        goto=first_agent,
     )
 
 
@@ -189,8 +372,6 @@ async def router_node(
 def _extract_entities_from_query(
     question: str,
 ) -> tuple[list[int] | None, list[str] | None]:
-    import re
-
     years = [int(y) for y in re.findall(r"\b(?:18|19|20)\d{2}\b", question)]
     year_filters = years if years else None
 

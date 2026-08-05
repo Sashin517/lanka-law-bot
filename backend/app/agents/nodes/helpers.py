@@ -17,7 +17,19 @@ from app.services.generation.citation_verifier import CitationVerifier
 logger = logging.getLogger(__name__)
 
 # Matches citation anchors like [LAW-1], [DOC-2], [LAW-12]
-_ANCHOR_RE = re.compile(r"\[(?:LAW|DOC)-\d+\]")
+_ANCHOR_RE = re.compile(r"\[(?:LAW|DOC)-\d+\]", re.IGNORECASE)
+_UNBRACKETED_ANCHOR_RE = re.compile(r"\b(?:LAW|DOC)-\d+\b", re.IGNORECASE)
+
+
+def normalize_anchor(anchor: str) -> str:
+    """Normalize anchor strings like 'LAW-1', '[LAW-1]', 'law-1' to '[LAW-1]'."""
+    if not anchor:
+        return ""
+    anchor_str = str(anchor).strip().upper()
+    if not anchor_str.startswith("["):
+        anchor_str = f"[{anchor_str}]"
+    return anchor_str
+
 
 
 def extract_first_paragraph(markdown: str) -> str:
@@ -41,55 +53,112 @@ def build_and_verify_sources(
     sources_used: list[str],
     citation_map: dict[str, SourceReference],
     verifier: CitationVerifier,
+    markdown_content: str = "",
 ) -> set[str]:
-    """Run the existing CitationVerifier on sources_used, return valid IDs.
+    """Run CitationVerifier on sources_used AND text citations, return valid IDs.
 
-    Builds a temporary LegalResponse with one CitedClaim per anchor
-    so the verifier can strip hallucinated ones in the standard way.
+    Extracts citation anchors from both the JSON `sources_used` list and the
+    raw `markdown_content`. Normalizes all anchors so bracketed and unbracketed
+    variants (e.g. 'LAW-1' vs '[LAW-1]') are handled uniformly.
     """
-    # Build a LegalResponse with the LLM-claimed anchors as analysis items
+    candidates: set[str] = set()
+    for s in sources_used:
+        if isinstance(s, str) and s.strip():
+            candidates.add(normalize_anchor(s))
+
+    if markdown_content:
+        for match in _ANCHOR_RE.findall(markdown_content):
+            candidates.add(normalize_anchor(match))
+        for match in _UNBRACKETED_ANCHOR_RE.findall(markdown_content):
+            candidates.add(normalize_anchor(match))
+
+    valid_map_ids: dict[str, str] = {}
+    for key in citation_map.keys():
+        valid_map_ids[normalize_anchor(key)] = key
+
+    normalized_sources: list[SourceReference] = []
+    for ref in citation_map.values():
+        ref_copy = ref.model_copy() if hasattr(ref, "model_copy") else ref.copy()
+        ref_copy.citation_id = normalize_anchor(ref.citation_id)
+        normalized_sources.append(ref_copy)
+
+
     claims = [
         CitedClaim(statement=f"Cited {anchor}", citation_ids=[anchor])
-        for anchor in sources_used
+        for anchor in candidates
     ]
     temp_response = LegalResponse(
         summary="",
         analysis=claims,
-        sources=list(citation_map.values()),
+        sources=normalized_sources,
         confidence="medium",
     )
 
-    # Run the existing verifier — strips invalid anchors, logs warnings
     verified = verifier.verify(temp_response)
 
-    # Collect the surviving anchor IDs
     valid_ids: set[str] = set()
     for claim in verified.analysis:
-        valid_ids.update(claim.citation_ids)
+        for cid in claim.citation_ids:
+            norm = normalize_anchor(cid)
+            valid_ids.add(norm)
+            if norm in valid_map_ids:
+                valid_ids.add(valid_map_ids[norm])
 
     return valid_ids
 
 
 def strip_invalid_anchors(markdown: str, valid_ids: set[str]) -> str:
-    """Remove hallucinated citation anchors from markdown text.
+    """Remove hallucinated citation anchors from markdown text cleanly.
 
-    Any [LAW-X] or [DOC-X] not in valid_ids is stripped so the user
-    never sees a non-existent reference.
+    Any [LAW-X] or [DOC-X] not in valid_ids is stripped.
+    After stripping anchors, cleans up orphaned markdown formatting
+    (e.g., empty bold tags ****, empty parentheses (), trailing commas).
     """
-    stripped = 0
+    if not markdown:
+        return markdown
 
-    def _replace(match: re.Match) -> str:
-        nonlocal stripped
+    normalized_valid = {normalize_anchor(v) for v in valid_ids}
+    stripped_count = 0
+
+    def _replace_bracketed(match: re.Match) -> str:
+        nonlocal stripped_count
         anchor = match.group(0)
-        if anchor in valid_ids:
+        if normalize_anchor(anchor) in normalized_valid:
             return anchor
-        stripped += 1
+        stripped_count += 1
         return ""
 
-    cleaned = _ANCHOR_RE.sub(_replace, markdown)
+    cleaned = _ANCHOR_RE.sub(_replace_bracketed, markdown)
 
-    if stripped > 0:
-        logger.info("Stripped %d hallucinated anchors from markdown.", stripped)
+    def _replace_unbracketed(match: re.Match) -> str:
+        nonlocal stripped_count
+        anchor = match.group(0)
+        norm = normalize_anchor(anchor)
+        if norm in normalized_valid:
+            return anchor
+        stripped_count += 1
+        return ""
+
+    cleaned = _UNBRACKETED_ANCHOR_RE.sub(_replace_unbracketed, cleaned)
+
+    if stripped_count > 0:
+        logger.info("Stripped %d hallucinated anchors from markdown.", stripped_count)
+
+        # Clean up orphaned markdown formatting artifacts
+        cleaned = re.sub(r"\*{2,}\s*\*{2,}", "", cleaned)
+        cleaned = re.sub(r"\*{2,}\s*,\s*\*{2,}", "", cleaned)
+        cleaned = re.sub(r"_{2,}\s*_{2,}", "", cleaned)
+
+        # Empty brackets or parentheses left behind: (), ( ), [], [ ]
+        cleaned = re.sub(r"\(\s*\)", "", cleaned)
+        cleaned = re.sub(r"\[\s*\]", "", cleaned)
+
+        # Clean up dangling commas and spacing around punctuation
+        cleaned = re.sub(r"\s+,\s+", ", ", cleaned)
+        cleaned = re.sub(r",\s*,+", ",", cleaned)
+        cleaned = re.sub(r",\s*\.", ".", cleaned)
+        cleaned = re.sub(r"\s+\.", ".", cleaned)
+        cleaned = re.sub(r"\s+\)", ")", cleaned)
 
     return cleaned
 
@@ -113,3 +182,4 @@ def to_source_chunks(
         )
         for ref in citation_map.values()
     ]
+

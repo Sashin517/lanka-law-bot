@@ -50,6 +50,50 @@ class GroundingResult(BaseModel):
     feedback: str = ""  # Correction hints for retry
 
 
+# ── Inter-Agent Communication ────────────────────────────────────
+
+
+class AgentMessage(BaseModel):
+    """A message emitted by one agent for downstream consumption.
+
+    This is the fundamental unit of inter-agent communication.
+    Each agent appends messages to the bus; downstream agents
+    filter by sender/type to read what they need.
+    """
+
+    sender: str = ""
+    msg_type: str = ""
+    content: str = ""
+    metadata: dict = Field(default_factory=dict)
+    timestamp: float = 0.0
+
+
+class PlanStep(BaseModel):
+    """A single step in the supervisor's execution plan.
+
+    The plan executor iterates through these in order,
+    invoking the named agent and passing accumulated context.
+    """
+
+    agent: str = ""
+    purpose: str = ""
+    depends_on: list[str] = Field(default_factory=list)
+    config_overrides: dict = Field(default_factory=dict)
+
+
+class ExecutionPlan(BaseModel):
+    """The supervisor's execution plan for a query.
+
+    Contains the ordered list of agent steps and the
+    planning rationale.
+    """
+
+    plan_type: str = "fast_path"
+    steps: list[PlanStep] = Field(default_factory=list)
+    reasoning: str = ""
+    estimated_complexity: str = "low"
+
+
 # ── Main agent state ──────────────────────────────────────────────
 
 
@@ -123,3 +167,17 @@ class AgentState(BaseModel):
     # ── Control flow ──
     current_agent: str = ""
     error: str | None = None
+
+    # ── Execution Plan (set by supervisor) ──
+    execution_plan: ExecutionPlan = Field(default_factory=ExecutionPlan)
+    current_step_index: int = 0
+    planning_seconds: float = 0.0
+
+    # ── Inter-Agent Message Bus ──
+    agent_messages: list[AgentMessage] = Field(default_factory=list)
+
+    # ── Shared Working Memory ──
+    working_memory: dict = Field(default_factory=dict)
+
+    # ── Plan execution tracking ──
+    completed_agents: list[str] = Field(default_factory=list)

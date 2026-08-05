@@ -38,6 +38,8 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
+from app.agents.message_bus import emit_message
+from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +80,8 @@ async def verify_node(state: AgentState) -> dict:
     legal_results = _retrieval.search(
         query=search_query,
         top_k=5,
-        expand_parents=state.ablation_config.get("expand_parents", True),
         act_name_filter=act_name,  # Narrow to specific act when detected
-        **state.ablation_config,
+        **retrieval_search_kwargs(state.ablation_config),
     )
 
     # Handle empty retrieval
@@ -106,15 +107,27 @@ async def verify_node(state: AgentState) -> dict:
     )
     logger.info(
         "Verify context assembled: %d sources, %d chars.",
-        len(citation_map), len(context_str),
+        len(citation_map),
+        len(context_str),
     )
 
     # ── Step 4: Compare claim against sources (hybrid JSON) ──
+    question_for_llm = state.question
+    grounding_feedback = state.working_memory.get("grounding_feedback")
+    if grounding_feedback:
+        logger.info("Retrying verify with grounding feedback: %s", grounding_feedback)
+        question_for_llm += (
+            f"\n\n[RETRY NOTICE: Grounding feedback on previous attempt: {grounding_feedback}. "
+            f"Ensure every statement is strictly backed by the sources below.]"
+        )
+
     try:
-        raw: dict = await _verify_chain.ainvoke({
-            "question": state.question,
-            "context": context_str,
-        })
+        raw: dict = await _verify_chain.ainvoke(
+            {
+                "question": question_for_llm,
+                "context": context_str,
+            }
+        )
     except Exception:
         logger.exception("Verify LLM generation failed.")
         raw = {
@@ -132,24 +145,34 @@ async def verify_node(state: AgentState) -> dict:
     sources_used = raw.get("sources_used", [])
 
     if not state.ablation_config.get("skip_verification"):
-        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        valid_ids = build_and_verify_sources(
+            sources_used, citation_map, _verifier, markdown_content=markdown
+        )
         markdown = strip_invalid_anchors(markdown, valid_ids)
+
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
 
     logger.info(
         "Verification complete: %d sources, verdict=%s.",
-        len(sources), raw.get("verdict", "unknown"),
+        len(sources),
+        raw.get("verdict", "unknown"),
     )
 
-    return {
-        "retrieved_sources": sources,
-        "context_str": context_str,
-        "summary": extract_first_paragraph(markdown),
-        "markdown_content": markdown,
-        "confidence": confidence,
-    }
+    return emit_message(
+        state=state,
+        state_update={
+            "retrieved_sources": sources,
+            "context_str": context_str,
+            "summary": extract_first_paragraph(markdown),
+            "markdown_content": markdown,
+            "confidence": confidence,
+        },
+        sender="verify",
+        msg_type="verification_result",
+        content=markdown,
+    )
 
 
 # ── Helpers ───────────────────────────────────────────────────────
@@ -167,7 +190,8 @@ def _extract_citation_target(question: str) -> tuple[str | None, str | None]:
     # Pattern: "Section X of the [Act Name]"
     match = re.search(
         r"(section\s+\d+[a-zA-Z]?)\s+of\s+(?:the\s+)?(.+?)(?:\s+(?:says?|states?|provides?|mentions?)|\s*$)",
-        text, re.IGNORECASE,
+        text,
+        re.IGNORECASE,
     )
     if match:
         return match.group(2).strip().rstrip(".,"), match.group(1).strip()
@@ -175,13 +199,18 @@ def _extract_citation_target(question: str) -> tuple[str | None, str | None]:
     # Pattern: "[Act Name] Section X"
     match = re.search(
         r"(?:the\s+)?(.+?)\s+(section\s+\d+[a-zA-Z]?)",
-        text, re.IGNORECASE,
+        text,
+        re.IGNORECASE,
     )
     if match:
         candidate = match.group(1).strip()
         # Filter out common false positives
         if len(candidate.split()) <= 6 and candidate.lower() not in {
-            "does", "verify", "confirm", "is", "check",
+            "does",
+            "verify",
+            "confirm",
+            "is",
+            "check",
         }:
             return candidate.rstrip(".,"), match.group(2).strip()
 

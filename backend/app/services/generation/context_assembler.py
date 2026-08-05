@@ -26,16 +26,17 @@ class ContextAssembler:
             content = parent.page_content if parent else child.page_content
 
             # Build the header block that tells the LLM where this source is from
-            title = meta.get("title", "Unknown Act")
-            reference = meta.get("breadcrumb") or meta.get("source", "N/A")
-            year = meta.get("year", "N/A")
-            section = meta.get("section", "N/A")
+            title = self._legal_title(meta)
+            reference = self._legal_reference(meta)
+            year = self._legal_year(meta)
+            section = meta.get("section") or meta.get("section_label") or "N/A"
+            pages = self._page_label(meta)
 
             header = (
                 f"--- Source {anchor} ---\n"
                 f"Document: {title}\n"
                 f"Reference: {reference}\n"
-                f"Year: {year} | Section: {section}\n"
+                f"Year: {year} | Section: {section} | Pages: {pages}\n"
             )
             context_parts.append(f"{header}\n{content}\n")
 
@@ -48,9 +49,32 @@ class ContextAssembler:
                 breadcrumb=meta.get("breadcrumb"),
                 excerpt=child.page_content[:300],
                 content=content,
+                page_start=meta.get("page_start"),
+                page_end=meta.get("page_end"),
+                source_uri=meta.get("source_uri"),
+                court=meta.get("court"),
+                reporter_citation=meta.get("reporter_citation"),
+                docket_number=meta.get("docket_number"),
+                authoritative=meta.get("authoritative"),
             )
 
         return "\n".join(context_parts), citation_map
+
+    @staticmethod
+    def _legal_title(meta: dict) -> str:
+        return MultiSourceContextAssembler._legal_title(meta)
+
+    @staticmethod
+    def _legal_reference(meta: dict) -> str:
+        return MultiSourceContextAssembler._legal_reference(meta)
+
+    @staticmethod
+    def _legal_year(meta: dict) -> int | str:
+        return MultiSourceContextAssembler._legal_year(meta)
+
+    @staticmethod
+    def _page_label(meta: dict) -> str:
+        return MultiSourceContextAssembler._page_label(meta)
 
 
 class MultiSourceContextAssembler:
@@ -88,10 +112,11 @@ class MultiSourceContextAssembler:
             meta: dict = result["metadata"]
             content = self._result_content(result)
 
-            title = meta.get("title", "Unknown Act")
-            reference = meta.get("breadcrumb") or meta.get("source", "N/A")
-            year = meta.get("year", "N/A")
-            section = meta.get("section", "N/A")
+            title = self._legal_title(meta)
+            reference = self._legal_reference(meta)
+            year = self._legal_year(meta)
+            section = meta.get("section") or meta.get("section_label") or "N/A"
+            pages = self._page_label(meta)
             doc_type = meta.get("doc_type") or meta.get("document_type") or "legal_authority"
 
             context_parts.append(
@@ -101,7 +126,7 @@ class MultiSourceContextAssembler:
                         f"Document: {title}",
                         f"Authority Type: {doc_type}",
                         f"Reference: {reference}",
-                        f"Year: {year} | Section: {section}",
+                        f"Year: {year} | Section: {section} | Pages: {pages}",
                         "Text:",
                         content,
                     ]
@@ -119,6 +144,14 @@ class MultiSourceContextAssembler:
                 excerpt=child_text[:300],
                 content=content,
                 source_type="legal_authority",
+                filename=meta.get("source_filename"),
+                page_start=meta.get("page_start"),
+                page_end=meta.get("page_end"),
+                source_uri=meta.get("source_uri"),
+                court=meta.get("court"),
+                reporter_citation=meta.get("reporter_citation"),
+                docket_number=meta.get("docket_number"),
+                authoritative=meta.get("authoritative"),
             )
 
         return "\n\n".join(context_parts), citation_map
@@ -179,3 +212,34 @@ class MultiSourceContextAssembler:
         parent: Document | None = result.get("parent")
         child: Document = result["child"]
         return parent.page_content if parent else child.page_content
+
+    @staticmethod
+    def _legal_title(meta: dict) -> str:
+        return str(
+            meta.get("title")
+            or meta.get("case_name")
+            or meta.get("source_filename")
+            or "Unknown legal source"
+        )
+
+    @staticmethod
+    def _legal_reference(meta: dict) -> str:
+        return str(
+            meta.get("reporter_citation")
+            or meta.get("docket_number")
+            or meta.get("citation")
+            or meta.get("breadcrumb")
+            or "N/A"
+        )
+
+    @staticmethod
+    def _legal_year(meta: dict) -> int | str:
+        return meta.get("year") or meta.get("work_year") or meta.get("version_year") or "N/A"
+
+    @staticmethod
+    def _page_label(meta: dict) -> str:
+        start = meta.get("page_start")
+        end = meta.get("page_end")
+        if start is None:
+            return "N/A"
+        return str(start) if end in (None, start) else f"{start}-{end}"

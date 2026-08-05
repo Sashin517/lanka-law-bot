@@ -17,6 +17,13 @@ export interface SourceRef {
   content?: string;
   source_type?: string;
   filename?: string | null;
+  page_start?: number | null;
+  page_end?: number | null;
+  source_uri?: string | null;
+  court?: string | null;
+  reporter_citation?: string | null;
+  docket_number?: string | null;
+  authoritative?: boolean | null;
 }
 
 
@@ -33,6 +40,19 @@ export interface ImprovePromptPayload {
   has_documents?: boolean;
 }
 
+export interface ExecutionStepTrace {
+  agent: string;
+  purpose: string;
+}
+
+export interface ExecutionTrace {
+  plan_type: "fast_path" | "planned";
+  steps_executed: ExecutionStepTrace[];
+  total_steps: number;
+  planning_reasoning: string;
+  completed_agents: string[];
+}
+
 export interface LegalQueryResponse {
   answer?: string;                // Plain text fallback
   markdown_content?: string;      // Rich markdown for rendering
@@ -45,6 +65,7 @@ export interface LegalQueryResponse {
     task_type: string;
     answer_mode: string;
   };
+  execution_trace?: ExecutionTrace;
 }
 
 export interface ImprovePromptResponse {

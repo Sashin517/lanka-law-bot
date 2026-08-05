@@ -36,7 +36,9 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
+from app.agents.message_bus import emit_message
 from app.agents.nodes.verify_node import verify_node
+from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +50,7 @@ _qa_llm = ChatGoogleGenerativeAI(
     max_output_tokens=settings.LLM_MAX_TOKENS,
 )
 _qa_chain = (
-    ChatPromptTemplate.from_template(QUICK_QA_PROMPT)
-    | _qa_llm
-    | JsonOutputParser()
+    ChatPromptTemplate.from_template(QUICK_QA_PROMPT) | _qa_llm | JsonOutputParser()
 )
 
 
@@ -64,9 +64,10 @@ async def quick_qa_node(state: AgentState) -> dict:
 
     # ── Sub-mode: verify request detection ──
     if _is_verify_request(state.question):
-        logger.info("Verify sub-mode triggered within quick_qa for: '%s'", state.question[:80])
+        logger.info(
+            "Verify sub-mode triggered within quick_qa for: '%s'", state.question[:80]
+        )
         return await verify_node(state)
-
 
     # ── Step 1: Retrieve from legal corpus ──
     legal_results: list[dict] = []
@@ -74,10 +75,9 @@ async def quick_qa_node(state: AgentState) -> dict:
         legal_results = _retrieval.search(
             query=state.question,
             top_k=state.legal_top_k,
-            expand_parents=state.ablation_config.get("expand_parents", True),
             year_filter=state.year_filter,
             act_name_filter=state.act_name_filter,
-            **state.ablation_config,
+            **retrieval_search_kwargs(state.ablation_config),
         )
 
     # ── Step 2: Retrieve from user documents (if applicable) ──
@@ -117,15 +117,27 @@ async def quick_qa_node(state: AgentState) -> dict:
     )
     logger.info(
         "QA context assembled: %d sources, %d chars.",
-        len(citation_map), len(context_str),
+        len(citation_map),
+        len(context_str),
     )
 
     # ── Step 4: Generate LLM response (hybrid JSON) ──
+    question_for_llm = state.question
+    grounding_feedback = state.working_memory.get("grounding_feedback")
+    if grounding_feedback:
+        logger.info("Retrying quick_qa with grounding feedback: %s", grounding_feedback)
+        question_for_llm += (
+            f"\n\n[RETRY NOTICE: Previous answer contained ungrounded claims: {grounding_feedback}. "
+            f"Ensure every statement is strictly backed by the sources below.]"
+        )
+
     try:
-        raw: dict = await _qa_chain.ainvoke({
-            "question": state.question,
-            "context": context_str,
-        })
+        raw: dict = await _qa_chain.ainvoke(
+            {
+                "question": question_for_llm,
+                "context": context_str,
+            }
+        )
     except Exception:
         logger.exception("QA LLM generation failed.")
         raw = {
@@ -143,24 +155,34 @@ async def quick_qa_node(state: AgentState) -> dict:
 
     # Run verification: strips hallucinated anchors
     if not state.ablation_config.get("skip_verification"):
-        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        valid_ids = build_and_verify_sources(
+            sources_used, citation_map, _verifier, markdown_content=markdown
+        )
         markdown = strip_invalid_anchors(markdown, valid_ids)
+
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
 
     logger.info(
         "QA complete: confidence=%s, sources=%d.",
-        confidence, len(sources),
+        confidence,
+        len(sources),
     )
 
-    return {
-        "retrieved_sources": sources,
-        "context_str": context_str,
-        "summary": extract_first_paragraph(markdown),
-        "markdown_content": markdown,
-        "confidence": confidence,
-    }
+    return emit_message(
+        state=state,
+        state_update={
+            "retrieved_sources": sources,
+            "context_str": context_str,
+            "summary": extract_first_paragraph(markdown),
+            "markdown_content": markdown,
+            "confidence": confidence,
+        },
+        sender="quick_qa",
+        msg_type="qa_answer",
+        content=markdown,
+    )
 
 
 # ── Helpers ──────────────────────────────────────────────────────

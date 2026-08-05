@@ -38,9 +38,13 @@ class Settings(BaseSettings):
     PINECONE_LEGAL_INDEX_HOST: str = ""
     PINECONE_LEGAL_INDEX_NAME: str = "lawdex-legal-index"
     PINECONE_LEGAL_NAMESPACE: str = "legal_corpus"
+
     PINECONE_LEGAL_BM25_INDEX_HOST: str = ""
     PINECONE_LEGAL_BM25_INDEX_NAME: str = "lawdex-legal-bm25-index"
     PINECONE_LEGAL_BM25_NAMESPACE: str = "legal_corpus"
+
+    PINECONE_LEGAL_DENSE_FIELD: str = "dense_vector"
+    PINECONE_LEGAL_BODY_FIELD: str = "text"
 
     PINECONE_EMBEDDING_MODEL: str = "jina-embeddings-v4"
     PINECONE_EMBEDDING_DIMENSION: int = 2048
@@ -69,29 +73,38 @@ class Settings(BaseSettings):
 
     GOOGLE_API_KEY: str = ""
     JINA_API_KEY: str = ""
-    LLM_MODEL_NAME: str = "gemini-3.1-flash-lite-preview"
+    JINA_EMBEDDING_MODEL: str = "jina-embeddings-v4"
+    JINA_EMBEDDING_DIMENSION: int = 2048
+    LLM_MODEL_NAME: str = "gemini-3.1-flash-lite"
     LLM_TEMPERATURE: float = 0.1
     PROMPT_IMPROVE_TEMPERATURE: float = 0.35
     LLM_MAX_TOKENS: int = 2048
 
     # === Neo4j Settings ===
     RETRIEVAL_BACKEND: str = "pinecone"  # "pinecone" | "neo4j" | "both"
-    NEO4J_URI: str = "bolt://localhost:7687"
+    NEO4J_URI: str = "neo4j+s://928438a5.databases.neo4j.io"
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = ""
     NEO4J_DATABASE: str = "neo4j"
+    NEO4J_INDEX_MIGRATION_MODE: str = "validate"
+    NEO4J_BACKUP_CONFIRMED: bool = False
+    NEO4J_BACKUP_REFERENCE: str = ""
 
     NEO4J_EMBEDDING_MODEL: str = "jina-embeddings-v4"
     NEO4J_EMBEDDING_DIMENSION: int = 2048
     NEO4J_VECTOR_INDEX_NAME: str = "chunk-embeddings"
     NEO4J_FULLTEXT_INDEX_NAME: str = "chunk-fulltext"
+    NEO4J_WORK_FULLTEXT_INDEX_NAME: str = "legal-work-fulltext"
 
     NEO4J_VECTOR_CANDIDATES_K: int = 30
     NEO4J_FTS_CANDIDATES_K: int = 30
+    NEO4J_AUTHORITY_CANDIDATES_K: int = 20
     NEO4J_GRAPH_TRAVERSAL_LIMIT: int = 15
+    NEO4J_FILTER_OVERFETCH_FACTOR: int = 4
     NEO4J_VECTOR_WEIGHT: float = 0.4
     NEO4J_FTS_WEIGHT: float = 0.3
     NEO4J_GRAPH_WEIGHT: float = 0.3
+    NEO4J_AUTHORITY_WEIGHT: float = 0.8
     NEO4J_BATCH_SIZE: int = 100
 
     model_config = SettingsConfigDict(

@@ -16,9 +16,12 @@ from app.services.retrieval.retrieval_service import RetrievalService
 from app.services.retrieval.neo4j_retrieval_service import get_neo4j_retrieval_service
 from app.services.generation.context_assembler import MultiSourceContextAssembler
 from app.services.generation.citation_verifier import CitationVerifier
-from app.services.retrieval.user_document_retrieval_service import UserDocumentRetrievalService
+from app.services.retrieval.user_document_retrieval_service import (
+    UserDocumentRetrievalService,
+)
 
 logger = logging.getLogger(__name__)
+
 
 # Helper to get the configured legal retrieval service
 def get_configured_retrieval_service():
@@ -30,12 +33,12 @@ def get_configured_retrieval_service():
         logger.info("Routing shared agent legal retrieval to PINECONE backend.")
         return RetrievalService()
 
+
 # ── Eagerly loaded singletons (used by every request) ──
 
 retrieval_service = get_configured_retrieval_service()
 context_assembler = MultiSourceContextAssembler()
 citation_verifier = CitationVerifier()
-
 
 
 # ── Lazily loaded singleton (only when user documents are involved) ──

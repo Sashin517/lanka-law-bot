@@ -37,6 +37,8 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
+from app.agents.message_bus import emit_message
+from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -119,17 +121,29 @@ async def deep_research_node(state: AgentState) -> dict:
     )
     logger.info(
         "Research context assembled: %d sources, %d chars.",
-        len(citation_map), len(context_str),
+        len(citation_map),
+        len(context_str),
     )
 
     # ── Step 5: Synthesize research memo (hybrid JSON) ──
+    question_for_llm = state.question
+    grounding_feedback = state.working_memory.get("grounding_feedback")
+    if grounding_feedback:
+        logger.info("Retrying deep_research with grounding feedback: %s", grounding_feedback)
+        question_for_llm += (
+            f"\n\n[RETRY NOTICE: Previous research synthesis contained ungrounded claims: {grounding_feedback}. "
+            f"Ensure every point in the research memo is strictly supported by the context.]"
+        )
+
     sub_query_text = "\n".join(f"- {sq}" for sq in sub_queries)
     try:
-        raw: dict = await _synthesis_chain.ainvoke({
-            "question": state.question,
-            "sub_queries": sub_query_text,
-            "context": context_str,
-        })
+        raw: dict = await _synthesis_chain.ainvoke(
+            {
+                "question": question_for_llm,
+                "sub_queries": sub_query_text,
+                "context": context_str,
+            }
+        )
     except Exception:
         logger.exception("Research synthesis LLM call failed.")
         raw = {
@@ -146,25 +160,43 @@ async def deep_research_node(state: AgentState) -> dict:
     sources_used = raw.get("sources_used", [])
 
     if not state.ablation_config.get("skip_verification"):
-        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        valid_ids = build_and_verify_sources(
+            sources_used, citation_map, _verifier, markdown_content=markdown
+        )
         markdown = strip_invalid_anchors(markdown, valid_ids)
+
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
 
     logger.info(
         "Deep research complete: %d sub-queries, %d sources, confidence=%s.",
-        len(sub_queries), len(sources), confidence,
+        len(sub_queries),
+        len(sources),
+        confidence,
     )
 
-    return {
-        "retrieved_sources": sources,
-        "sub_queries": sub_queries,
-        "context_str": context_str,
-        "summary": extract_first_paragraph(markdown),
-        "markdown_content": markdown,
-        "confidence": confidence,
-    }
+    return emit_message(
+        state=state,
+        state_update={
+            "retrieved_sources": sources,
+            "sub_queries": sub_queries,
+            "context_str": context_str,
+            "summary": extract_first_paragraph(markdown),
+            "markdown_content": markdown,
+            "confidence": confidence,
+            "working_memory": {
+                **state.working_memory,
+                "research_context": context_str,
+                "research_sources": [s.model_dump() for s in sources],
+                "research_markdown": markdown,
+            },
+        },
+        sender="deep_research",
+        msg_type="research_findings",
+        content=markdown,
+        metadata={"sub_queries": sub_queries, "source_count": len(sources)},
+    )
 
 
 # ── Internal helpers ──────────────────────────────────────────────
@@ -185,15 +217,16 @@ async def _decompose_query(question: str) -> list[str]:
     return [question]
 
 
-async def _parallel_legal_retrieval(sub_queries: list[str], ablation_config: dict) -> list[dict]:
+async def _parallel_legal_retrieval(
+    sub_queries: list[str], ablation_config: dict
+) -> list[dict]:
     """Run retrieval for all sub-queries concurrently, then deduplicate."""
     tasks = [
         asyncio.to_thread(
             _retrieval.search,
             query=sq,
             top_k=5,
-            expand_parents=ablation_config.get("expand_parents", True),
-            **ablation_config,
+            **retrieval_search_kwargs(ablation_config),
         )
         for sq in sub_queries
     ]
