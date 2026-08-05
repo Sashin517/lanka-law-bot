@@ -1,16 +1,46 @@
-# Services package backward-compatibility exports
-from app.services.retrieval.retrieval_service import RetrievalService, get_retrieval_service
-from app.services.retrieval.user_document_retrieval_service import UserDocumentRetrievalService
-from app.services.retrieval.user_document_vector_store import UserDocumentVectorStore
-from app.services.retrieval.legal_vector_store import LegalVectorStore, PineconeLegalRetriever
-from app.services.retrieval.voyage_embedding_service import VoyageEmbeddingService
-from app.services.retrieval.retrieval_fusion import reciprocal_rank_fusion, retrieval_dedup_key
+"""Lazy compatibility exports for the services package.
 
-from app.services.ingestion.document_parser import DocumentParser, ParsedDocument
-from app.services.ingestion.document_storage import DocumentStorage, StoredFile
-from app.services.ingestion.legal_chunker import LegalDocumentChunker, ChunkingDocumentContext, LegalChunk, ChunkSet
-from app.services.ingestion.ingestion_jobs import IngestionJobService
+Importing a lightweight submodule must not initialize retrievers, download ML
+models, or construct the agent graph. Existing ``from app.services import X``
+callers remain supported through PEP 562 lazy attribute resolution.
+"""
+from __future__ import annotations
 
-from app.services.generation.generation_service import GenerationService
-from app.services.generation.context_assembler import ContextAssembler, MultiSourceContextAssembler
-from app.services.generation.citation_verifier import CitationVerifier
+from importlib import import_module
+
+
+_EXPORTS = {
+    "RetrievalService": "app.services.retrieval.retrieval_service",
+    "get_retrieval_service": "app.services.retrieval.retrieval_service",
+    "UserDocumentRetrievalService": "app.services.retrieval.user_document_retrieval_service",
+    "UserDocumentVectorStore": "app.services.retrieval.user_document_vector_store",
+    "LegalVectorStore": "app.services.retrieval.legal_vector_store",
+    "PineconeLegalRetriever": "app.services.retrieval.legal_vector_store",
+    "VoyageEmbeddingService": "app.services.retrieval.voyage_embedding_service",
+    "reciprocal_rank_fusion": "app.services.retrieval.retrieval_fusion",
+    "retrieval_dedup_key": "app.services.retrieval.retrieval_fusion",
+    "DocumentParser": "app.services.ingestion.document_parser",
+    "ParsedDocument": "app.services.ingestion.document_parser",
+    "DocumentStorage": "app.services.ingestion.document_storage",
+    "StoredFile": "app.services.ingestion.document_storage",
+    "LegalDocumentChunker": "app.services.ingestion.legal_chunker",
+    "ChunkingDocumentContext": "app.services.ingestion.legal_chunker",
+    "LegalChunk": "app.services.ingestion.legal_chunker",
+    "ChunkSet": "app.services.ingestion.legal_chunker",
+    "IngestionJobService": "app.services.ingestion.ingestion_jobs",
+    "GenerationService": "app.services.generation.generation_service",
+    "ContextAssembler": "app.services.generation.context_assembler",
+    "MultiSourceContextAssembler": "app.services.generation.context_assembler",
+    "CitationVerifier": "app.services.generation.citation_verifier",
+}
+
+__all__ = list(_EXPORTS)
+
+
+def __getattr__(name: str):
+    module_name = _EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(name)
+    value = getattr(import_module(module_name), name)
+    globals()[name] = value
+    return value

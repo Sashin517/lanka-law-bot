@@ -1,16 +1,15 @@
-"""
-Jina AI Embedding Service.
-Generates embeddings using Jina AI's cloud-hosted jina-embeddings-v4 model.
-Conforms to task-specific tasks for asymmetric search.
-"""
+"""Validated Jina embeddings shared by Pinecone, Neo4j and user documents."""
 
 from __future__ import annotations
 
 import logging
+import math
 import os
+import random
 import time
+from typing import Any
+
 import httpx
-from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
 
@@ -18,122 +17,121 @@ logger = logging.getLogger(__name__)
 
 
 class JinaEmbeddingService:
-    """Service to fetch text embeddings from Jina AI using jina-embeddings-v4."""
+    """Generate asymmetric Jina embeddings and fail closed on bad vectors."""
 
     def __init__(self) -> None:
-        self._model = settings.NEO4J_EMBEDDING_MODEL  # "jina-embeddings-v4"
-        self._dim = settings.NEO4J_EMBEDDING_DIMENSION  # 2048
+        self._model = settings.JINA_EMBEDDING_MODEL
+        self._dim = settings.JINA_EMBEDDING_DIMENSION
+        self._client = httpx.Client(timeout=httpx.Timeout(60.0, connect=20.0))
 
-    def _embed_with_retry(
-        self, input_texts: List[str], task: str, max_retries: int = 5
-    ) -> List[List[float]]:
-        # Get your Jina AI API key for free: https://jina.ai/?sui=apikey
+    def _api_key(self) -> str:
         api_key = settings.JINA_API_KEY or os.environ.get("JINA_API_KEY", "")
         if not api_key:
-            logger.error(
-                "JINA_API_KEY is not set! Please set the JINA_API_KEY environment variable."
-            )
-            return [[0.0] * self._dim for _ in range(len(input_texts))]
+            raise RuntimeError("JINA_API_KEY is required for retrieval embeddings.")
+        return api_key
 
+    def _validate_vector(self, vector: Any) -> list[float]:
+        if not isinstance(vector, list) or len(vector) != self._dim:
+            raise RuntimeError(
+                f"Jina returned an invalid dimension; expected {self._dim}."
+            )
+        converted = [float(value) for value in vector]
+        if not all(math.isfinite(value) for value in converted):
+            raise RuntimeError("Jina returned a non-finite embedding.")
+        if math.sqrt(sum(value * value for value in converted)) == 0:
+            raise RuntimeError("Jina returned an all-zero embedding.")
+        return converted
+
+    def _embed_with_retry(
+        self, input_texts: list[str], task: str, max_retries: int = 5
+    ) -> list[list[float]]:
+        if not input_texts:
+            return []
         headers = {
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {self._api_key()}",
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
-        data = {
+        payload = {
             "model": self._model,
             "input": input_texts,
             "task": task,
             "dimensions": self._dim,
         }
 
-        backoff = 2.0
         for attempt in range(max_retries):
             try:
-                response = httpx.post(
+                response = self._client.post(
                     "https://api.jina.ai/v1/embeddings",
-                    json=data,
+                    json=payload,
                     headers=headers,
-                    timeout=60.0,
                 )
-                if response.status_code == 200:
-                    res_json = response.json()
-                    sorted_data = sorted(res_json["data"], key=lambda x: x["index"])
-                    return [item["embedding"] for item in sorted_data]
-                elif response.status_code == 429:
-                    logger.warning(
-                        "Jina AI rate limit hit (429)! Retrying in %.2f seconds...",
-                        backoff,
+            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+                if attempt == max_retries - 1:
+                    raise RuntimeError("Jina embedding request failed after retries.") from exc
+                time.sleep(min(30.0, 2**attempt + random.random()))
+                continue
+
+            if response.status_code == 200:
+                try:
+                    rows = sorted(response.json()["data"], key=lambda item: item["index"])
+                    vectors = [self._validate_vector(item["embedding"]) for item in rows]
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise RuntimeError("Jina returned a malformed response.") from exc
+                if len(vectors) != len(input_texts):
+                    raise RuntimeError(
+                        f"Jina returned {len(vectors)} vectors for {len(input_texts)} inputs."
                     )
-                    time.sleep(backoff)
-                    backoff *= 2.0
-                else:
-                    logger.warning(
-                        "Jina AI API returned error status %d: %s",
-                        response.status_code,
-                        response.text,
-                    )
-                    time.sleep(backoff)
-                    backoff *= 2.0
-            except Exception as e:
-                logger.warning("Jina AI request exception: %s. Retrying...", e)
-                time.sleep(backoff)
-                backoff *= 2.0
+                return vectors
 
-        # Return zero vector fallbacks if failed
-        return [[0.0] * self._dim for _ in range(len(input_texts))]
+            if response.status_code in {400, 401, 403, 404, 422}:
+                raise RuntimeError(f"Permanent Jina API failure: HTTP {response.status_code}.")
+            if attempt == max_retries - 1:
+                raise RuntimeError(f"Jina API unavailable: HTTP {response.status_code}.")
+            retry_after = response.headers.get("Retry-After")
+            try:
+                delay = float(retry_after) if retry_after else 2**attempt
+            except (TypeError, ValueError):
+                delay = 2**attempt
+            time.sleep(min(60.0, delay + random.random()))
 
-    def embed_query(self, query: str) -> List[float]:
-        """Embeds a single query using the asymmetric search query prefix/task."""
-        try:
-            embeddings = self._embed_with_retry([query], task="retrieval.query")
-            return embeddings[0]
-        except Exception as exc:
-            logger.exception("Jina query embedding generation failed: %s", exc)
-            return [0.0] * self._dim
+        raise AssertionError("unreachable")
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embeds a list of document chunks using the asymmetric search passage prefix/task."""
-        if not texts:
-            return []
-        try:
-            embeddings = []
-            # Jina API can handle batch inputs. We split them into safe batch sizes of 16.
-            batch_size = 16
-            for i in range(0, len(texts), batch_size):
-                batch = texts[i : i + batch_size]
-                embeddings.extend(
-                    self._embed_with_retry(batch, task="retrieval.passage")
+    def embed_query(self, query: str) -> list[float]:
+        if not query or not query.strip():
+            raise ValueError("A non-empty query is required for embedding.")
+        return self._embed_with_retry([query], task="retrieval.query")[0]
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        embeddings: list[list[float]] = []
+        for start in range(0, len(texts), 16):
+            embeddings.extend(
+                self._embed_with_retry(
+                    texts[start : start + 16], task="retrieval.passage"
                 )
-            return embeddings
-        except Exception as exc:
-            logger.exception("Jina document embedding generation failed: %s", exc)
-            return [[0.0] * self._dim for _ in range(len(texts))]
+            )
+        return embeddings
 
-    def embed_documents_batch(self, docs: List[Dict[str, Any]]) -> List[List[float]]:
-        """
-        Embeds a batch of document texts.
-        """
-        if not docs:
-            return []
-
-        formatted_contents = []
-        for doc in docs:
-            title = doc.get("title") or "none"
-            formatted_contents.append(f"title: {title} | text: {doc['text']}")
-
-        try:
-            return self._embed_with_retry(formatted_contents, task="retrieval.passage")
-        except Exception as exc:
-            logger.exception("Jina batch document embedding generation failed: %s", exc)
-            return [[0.0] * self._dim for _ in range(len(docs))]
+    def embed_documents_batch(self, docs: list[dict[str, Any]]) -> list[list[float]]:
+        formatted = [
+            "\n".join(
+                part
+                for part in (
+                    f"title: {doc.get('title')}",
+                    f"section: {doc.get('section') or doc.get('section_label')}",
+                    f"text: {doc.get('text', '')}",
+                )
+                if not part.endswith("None")
+            )
+            for doc in docs
+        ]
+        return self.embed_documents(formatted)
 
 
-_instance: Optional[JinaEmbeddingService] = None
+_instance: JinaEmbeddingService | None = None
 
 
 def get_jina_embedding_service() -> JinaEmbeddingService:
-    """Singleton getter for JinaEmbeddingService (reimplemented with Jina AI)."""
     global _instance
     if _instance is None:
         _instance = JinaEmbeddingService()
