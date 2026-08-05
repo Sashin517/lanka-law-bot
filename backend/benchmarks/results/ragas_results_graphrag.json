@@ -1,0 +1,39 @@
+{
+  "aggregate": {
+    "faithfulness": 0.8650820465091402,
+    "factual_correctness(mode=f1)": 0.35288027056896576,
+    "context_recall": 0.5414970952682038,
+    "llm_context_precision_with_reference": 0.29954661333425714,
+    "drafting_rubric_score": 0.6207015144145553
+  },
+  "per_mode_aggregate": {
+    "quick_qa": {
+      "faithfulness": 0.9435625801277505,
+      "factual_correctness(mode=f1)": 0.5628946622268328,
+      "context_recall": 0.953563485032858,
+      "llm_context_precision_with_reference": 0.7426921083313663,
+      "drafting_rubric_score": NaN
+    },
+    "deep_research": {
+      "faithfulness": 0.859901115655822,
+      "factual_correctness(mode=f1)": 0.2003249995761676,
+      "context_recall": 0.28802808151271925,
+      "llm_context_precision_with_reference": 0.0,
+      "drafting_rubric_score": NaN
+    },
+    "drafting": {
+      "faithfulness": NaN,
+      "factual_correctness(mode=f1)": NaN,
+      "context_recall": NaN,
+      "llm_context_precision_with_reference": NaN,
+      "drafting_rubric_score": 0.6156114408434394
+    },
+    "reasoning": {
+      "faithfulness": 0.8093276617973724,
+      "factual_correctness(mode=f1)": 0.42913331743991523,
+      "context_recall": 0.6170286276534092,
+      "llm_context_precision_with_reference": 0.418660634266497,
+      "drafting_rubric_score": NaN
+    }
+  }
+}

@@ -1,8 +1,292 @@
+{
+  "run_metadata": {
+    "cache_schema_version": 2,
+    "benchmark": {
+      "name": "sri_lanka_golden_benchmark_20",
+      "sha256": "5926f920caa4fb21588c9989be8221b297b37c91aadda877f0f0d7b525ea340e",
+      "record_count": 8,
+      "record_ids": [
+        "SL-GB-QA-001",
+        "SL-GB-QA-002",
+        "SL-GB-DF-001",
+        "SL-GB-DF-002",
+        "SL-GB-RS-001",
+        "SL-GB-RS-002",
+        "SL-GB-DR-001",
+        "SL-GB-DR-002"
+      ]
+    },
+    "evaluation_model": "gemini-3.1-flash-lite-preview"
+  },
+  "configs": [
+    "full_pipeline",
+    "dense_only",
+    "sparse_only",
+    "no_reranking",
+    "no_parent_expansion",
+    "no_citation_verify",
+    "no_planning"
+  ],
+  "config_metadata": {
+    "full_pipeline": {
+      "cache_schema_version": 2,
+      "benchmark": {
+        "name": "sri_lanka_golden_benchmark_20",
+        "sha256": "5926f920caa4fb21588c9989be8221b297b37c91aadda877f0f0d7b525ea340e",
+        "record_count": 8,
+        "record_ids": [
+          "SL-GB-QA-001",
+          "SL-GB-QA-002",
+          "SL-GB-DF-001",
+          "SL-GB-DF-002",
+          "SL-GB-RS-001",
+          "SL-GB-RS-002",
+          "SL-GB-DR-001",
+          "SL-GB-DR-002"
+        ]
+      },
+      "config_name": "full_pipeline",
+      "ablation_config": {},
+      "retrieval_effects": {
+        "backend": "neo4j",
+        "retrieval_channels": [
+          "dense",
+          "sparse",
+          "graph"
+        ],
+        "reranking_enabled": true,
+        "parent_expansion_enabled": true,
+        "dense_fallback_allowed": false,
+        "citation_verification_enabled": true,
+        "planning_enabled": true
+      },
+      "pipeline_model": "gemini-3.1-flash-lite",
+      "evaluation_model": "gemini-3.1-flash-lite-preview"
+    },
+    "dense_only": {
+      "cache_schema_version": 2,
+      "benchmark": {
+        "name": "sri_lanka_golden_benchmark_20",
+        "sha256": "5926f920caa4fb21588c9989be8221b297b37c91aadda877f0f0d7b525ea340e",
+        "record_count": 8,
+        "record_ids": [
+          "SL-GB-QA-001",
+          "SL-GB-QA-002",
+          "SL-GB-DF-001",
+          "SL-GB-DF-002",
+          "SL-GB-RS-001",
+          "SL-GB-RS-002",
+          "SL-GB-DR-001",
+          "SL-GB-DR-002"
+        ]
+      },
+      "config_name": "dense_only",
+      "ablation_config": {
+        "disable_bm25": true
+      },
+      "retrieval_effects": {
+        "backend": "neo4j",
+        "retrieval_channels": [
+          "dense"
+        ],
+        "reranking_enabled": true,
+        "parent_expansion_enabled": true,
+        "dense_fallback_allowed": false,
+        "citation_verification_enabled": true,
+        "planning_enabled": true
+      },
+      "pipeline_model": "gemini-3.1-flash-lite",
+      "evaluation_model": "gemini-3.1-flash-lite-preview"
+    },
+    "sparse_only": {
+      "cache_schema_version": 2,
+      "benchmark": {
+        "name": "sri_lanka_golden_benchmark_20",
+        "sha256": "5926f920caa4fb21588c9989be8221b297b37c91aadda877f0f0d7b525ea340e",
+        "record_count": 8,
+        "record_ids": [
+          "SL-GB-QA-001",
+          "SL-GB-QA-002",
+          "SL-GB-DF-001",
+          "SL-GB-DF-002",
+          "SL-GB-RS-001",
+          "SL-GB-RS-002",
+          "SL-GB-DR-001",
+          "SL-GB-DR-002"
+        ]
+      },
+      "config_name": "sparse_only",
+      "ablation_config": {
+        "disable_dense": true
+      },
+      "retrieval_effects": {
+        "backend": "neo4j",
+        "retrieval_channels": [
+          "sparse"
+        ],
+        "reranking_enabled": true,
+        "parent_expansion_enabled": true,
+        "dense_fallback_allowed": false,
+        "citation_verification_enabled": true,
+        "planning_enabled": true
+      },
+      "pipeline_model": "gemini-3.1-flash-lite",
+      "evaluation_model": "gemini-3.1-flash-lite-preview"
+    },
+    "no_reranking": {
+      "cache_schema_version": 2,
+      "benchmark": {
+        "name": "sri_lanka_golden_benchmark_20",
+        "sha256": "5926f920caa4fb21588c9989be8221b297b37c91aadda877f0f0d7b525ea340e",
+        "record_count": 8,
+        "record_ids": [
+          "SL-GB-QA-001",
+          "SL-GB-QA-002",
+          "SL-GB-DF-001",
+          "SL-GB-DF-002",
+          "SL-GB-RS-001",
+          "SL-GB-RS-002",
+          "SL-GB-DR-001",
+          "SL-GB-DR-002"
+        ]
+      },
+      "config_name": "no_reranking",
+      "ablation_config": {
+        "disable_reranking": true
+      },
+      "retrieval_effects": {
+        "backend": "neo4j",
+        "retrieval_channels": [
+          "dense",
+          "sparse",
+          "graph"
+        ],
+        "reranking_enabled": false,
+        "parent_expansion_enabled": true,
+        "dense_fallback_allowed": false,
+        "citation_verification_enabled": true,
+        "planning_enabled": true
+      },
+      "pipeline_model": "gemini-3.1-flash-lite",
+      "evaluation_model": "gemini-3.1-flash-lite-preview"
+    },
+    "no_parent_expansion": {
+      "cache_schema_version": 2,
+      "benchmark": {
+        "name": "sri_lanka_golden_benchmark_20",
+        "sha256": "5926f920caa4fb21588c9989be8221b297b37c91aadda877f0f0d7b525ea340e",
+        "record_count": 8,
+        "record_ids": [
+          "SL-GB-QA-001",
+          "SL-GB-QA-002",
+          "SL-GB-DF-001",
+          "SL-GB-DF-002",
+          "SL-GB-RS-001",
+          "SL-GB-RS-002",
+          "SL-GB-DR-001",
+          "SL-GB-DR-002"
+        ]
+      },
+      "config_name": "no_parent_expansion",
+      "ablation_config": {
+        "expand_parents": false
+      },
+      "retrieval_effects": {
+        "backend": "neo4j",
+        "retrieval_channels": [
+          "dense",
+          "sparse",
+          "graph"
+        ],
+        "reranking_enabled": true,
+        "parent_expansion_enabled": false,
+        "dense_fallback_allowed": false,
+        "citation_verification_enabled": true,
+        "planning_enabled": true
+      },
+      "pipeline_model": "gemini-3.1-flash-lite",
+      "evaluation_model": "gemini-3.1-flash-lite-preview"
+    },
+    "no_citation_verify": {
+      "cache_schema_version": 2,
+      "benchmark": {
+        "name": "sri_lanka_golden_benchmark_20",
+        "sha256": "5926f920caa4fb21588c9989be8221b297b37c91aadda877f0f0d7b525ea340e",
+        "record_count": 8,
+        "record_ids": [
+          "SL-GB-QA-001",
+          "SL-GB-QA-002",
+          "SL-GB-DF-001",
+          "SL-GB-DF-002",
+          "SL-GB-RS-001",
+          "SL-GB-RS-002",
+          "SL-GB-DR-001",
+          "SL-GB-DR-002"
+        ]
+      },
+      "config_name": "no_citation_verify",
+      "ablation_config": {
+        "skip_verification": true
+      },
+      "retrieval_effects": {
+        "backend": "neo4j",
+        "retrieval_channels": [
+          "dense",
+          "sparse",
+          "graph"
+        ],
+        "reranking_enabled": true,
+        "parent_expansion_enabled": true,
+        "dense_fallback_allowed": false,
+        "citation_verification_enabled": false,
+        "planning_enabled": true
+      },
+      "pipeline_model": "gemini-3.1-flash-lite",
+      "evaluation_model": "gemini-3.1-flash-lite-preview"
+    },
+    "no_planning": {
+      "cache_schema_version": 2,
+      "benchmark": {
+        "name": "sri_lanka_golden_benchmark_20",
+        "sha256": "5926f920caa4fb21588c9989be8221b297b37c91aadda877f0f0d7b525ea340e",
+        "record_count": 8,
+        "record_ids": [
+          "SL-GB-QA-001",
+          "SL-GB-QA-002",
+          "SL-GB-DF-001",
+          "SL-GB-DF-002",
+          "SL-GB-RS-001",
+          "SL-GB-RS-002",
+          "SL-GB-DR-001",
+          "SL-GB-DR-002"
+        ]
+      },
+      "config_name": "no_planning",
+      "ablation_config": {
+        "force_fast_path": true
+      },
+      "retrieval_effects": {
+        "backend": "neo4j",
+        "retrieval_channels": [
+          "dense",
+          "sparse",
+          "graph"
+        ],
+        "reranking_enabled": true,
+        "parent_expansion_enabled": true,
+        "dense_fallback_allowed": false,
+        "citation_verification_enabled": true,
+        "planning_enabled": false
+      },
+      "pipeline_model": "gemini-3.1-flash-lite",
+      "evaluation_model": "gemini-3.1-flash-lite-preview"
+    }
+  },
   "summary": {
     "full_pipeline": {
-      "total": 20,
+      "total": 8,
       "skipped": 0,
-      "answered": 20,
+      "answered": 8,
       "metrics": {
         "faithfulness": 0.7897676247036066,
         "factual_correctness": 0.8220352420649668,
@@ -13,9 +297,9 @@
       }
     },
     "dense_only": {
-      "total": 20,
+      "total": 8,
       "skipped": 0,
-      "answered": 20,
+      "answered": 8,
       "metrics": {
         "faithfulness": 0.7519284064056562,
         "factual_correctness": 0.6437043630274434,
@@ -26,9 +310,9 @@
       }
     },
     "sparse_only": {
-      "total": 20,
+      "total": 8,
       "skipped": 0,
-      "answered": 20,
+      "answered": 8,
       "metrics": {
         "faithfulness": 0.7031760160574736,
         "factual_correctness": 0.47462545609810336,
@@ -39,9 +323,9 @@
       }
     },
     "no_reranking": {
-      "total": 20,
+      "total": 8,
       "skipped": 0,
-      "answered": 20,
+      "answered": 8,
       "metrics": {
         "faithfulness": 0.7576451853099027,
         "factual_correctness": 0.6624851269701589,
@@ -52,9 +336,9 @@
       }
     },
     "no_parent_expansion": {
-      "total": 20,
+      "total": 8,
       "skipped": 0,
-      "answered": 20,
+      "answered": 8,
       "metrics": {
         "faithfulness": 0.7343942344866115,
         "factual_correctness": 0.7276817534911179,
@@ -65,9 +349,9 @@
       }
     },
     "no_citation_verify": {
-      "total": 20,
+      "total": 8,
       "skipped": 0,
-      "answered": 20,
+      "answered": 8,
       "metrics": {
         "faithfulness": 0.6214247562839597,
         "factual_correctness": 0.6074099509656614,
@@ -78,9 +362,9 @@
       }
     },
     "no_planning": {
-      "total": 20,
+      "total": 8,
       "skipped": 2,
-      "answered": 20,
+      "answered": 6,
       "metrics": {
         "faithfulness": 0.5359587351835177,
         "factual_correctness": 0.4828572597706833,
@@ -91,7 +375,7 @@
       }
     }
   },
-  "per_mode_metrics": { 
+  "per_mode_metrics": {
     "full_pipeline": {
       "quick_qa": {
         "faithfulness": 0.7523876474553758,
@@ -331,3 +615,4 @@
       }
     }
   }
+}

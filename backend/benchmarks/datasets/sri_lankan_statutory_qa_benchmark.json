@@ -1,0 +1,628 @@
+[
+  {
+    "id": "SL-EVID-QA-001",
+    "question": "Who bears the burden of proving that an accused's actions fall within the General Exceptions of the Penal Code?",
+    "mode": "quick_qa",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "Who bears the burden of proving that an accused's actions fall within the General Exceptions of the Penal Code?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 105 of the Evidence Ordinance, when a person is accused of any offence, the burden of proving the existence of circumstances bringing the case within any of the general exceptions in the Penal Code is upon him, and the court shall presume the absence of such circumstances[cite: 1].",
+    "expected_sources": [
+      {
+        "title": "Evidence Ordinance",
+        "section": "Section 105",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 105"],
+    "requires_multi_source": false,
+    "expected_plan_type": "fast_path",
+    "expected_agents": ["quick_qa"]
+  },
+  {
+    "id": "SL-SHOP-QA-002",
+    "question": "What is the maximum normal weekly working period allowed for an employee under the Shop and Office Employees Act?",
+    "mode": "quick_qa",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "What is the maximum normal weekly working period allowed for an employee under the Shop and Office Employees Act?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "According to Section 3(1)(b) of the Shop and Office Employees Act, the normal period during which any person may be employed in or about the business of any shop or office shall not exceed forty-five hours in any one week, excluding intervals allowed for rest or a meal[cite: 9].",
+    "expected_sources": [
+      {
+        "title": "Shop and Office Employees Act",
+        "section": "Section 3",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 3"],
+    "requires_multi_source": false,
+    "expected_plan_type": "fast_path",
+    "expected_agents": ["quick_qa"]
+  },
+  {
+    "id": "SL-CIVIL-QA-003",
+    "question": "Can a defendant file a direct appeal against a default judgment entered against them in a civil action?",
+    "mode": "quick_qa",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "Can a defendant file a direct appeal against a default judgment entered against them in a civil action?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "No. Under Section 88(1) of the Civil Procedure Code, no appeal shall lie against any judgment entered upon default[cite: 15]. However, an order refusing to set aside a judgment entered upon default is liable to an appeal to the relevant High Court, with leave first obtained from such High Court[cite: 15].",
+    "expected_sources": [
+      {
+        "title": "Civil Procedure Code",
+        "section": "Section 88",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 88"],
+    "requires_multi_source": false,
+    "expected_plan_type": "fast_path",
+    "expected_agents": ["quick_qa"]
+  },
+  {
+    "id": "SL-CONST-QA-004",
+    "question": "Within what time frame must a citizen apply to the Supreme Court alleging the infringement of a fundamental right by executive action?",
+    "mode": "quick_qa",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "Within what time frame must a citizen apply to the Supreme Court alleging the infringement of a fundamental right by executive action?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Article 126(2) of the Constitution, an application praying for relief or redress in respect of an infringement of a fundamental right must be made to the Supreme Court within one month of such infringement[cite: 16].",
+    "expected_sources": [
+      {
+        "title": "The Constitution of the Democratic Socialist Republic of Sri Lanka",
+        "section": "Article 126",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Article 126"],
+    "requires_multi_source": false,
+    "expected_plan_type": "fast_path",
+    "expected_agents": ["quick_qa"]
+  },
+  {
+    "id": "SL-PRES-QA-005",
+    "question": "What is the prescriptive period to maintain an action for the recovery of a mortgage debt in Sri Lanka?",
+    "mode": "quick_qa",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "What is the prescriptive period to maintain an action for the recovery of a mortgage debt in Sri Lanka?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 5 of the Prescription Ordinance, no action shall be maintainable for the recovery of any sum due upon a hypothecation or mortgage unless commenced within ten years from the date of the instrument, or of the last payment of interest thereon, or of the breach of the condition[cite: 7].",
+    "expected_sources": [
+      {
+        "title": "Prescription Ordinance",
+        "section": "Section 5",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 5"],
+    "requires_multi_source": false,
+    "expected_plan_type": "fast_path",
+    "expected_agents": ["quick_qa"]
+  },
+  {
+    "id": "SL-CRIM-QA-006",
+    "question": "What is the maximum time a police officer can detain a suspect arrested without a warrant before producing them to a Magistrate?",
+    "mode": "quick_qa",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "What is the maximum time a police officer can detain a suspect arrested without a warrant before producing them to a Magistrate?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 37 of the Code of Criminal Procedure Act, a peace officer shall not detain a person arrested without a warrant for a longer period than is reasonable, and such period shall not exceed twenty-four hours exclusive of the time necessary for the journey from the place of arrest to the Magistrate[cite: 14].",
+    "expected_sources": [
+      {
+        "title": "Code of Criminal Procedure",
+        "section": "Section 37",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 37"],
+    "requires_multi_source": false,
+    "expected_plan_type": "fast_path",
+    "expected_agents": ["quick_qa"]
+  },
+  {
+    "id": "SL-AML-QA-007",
+    "question": "What is the initial duration of a Freezing Order issued by a Police Officer regarding an account suspected of money laundering?",
+    "mode": "quick_qa",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "What is the initial duration of a Freezing Order issued by a Police Officer regarding an account suspected of money laundering?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 7(3) of the Prevention of Money Laundering Act, No. 5 of 2006, a Freezing Order made by a Police Officer shall be in force for a period of seven days from the making thereof, subject to confirmation by the High Court[cite: 4].",
+    "expected_sources": [
+      {
+        "title": "Prevention of Money Laundering Act, No. 5 of 2006",
+        "section": "Section 7",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 7"],
+    "requires_multi_source": false,
+    "expected_plan_type": "fast_path",
+    "expected_agents": ["quick_qa"]
+  },
+  {
+    "id": "SL-REG-QA-008",
+    "question": "Under the Registration of Documents Ordinance, what is the legal effect of an unregistered instrument affecting land compared to a subsequent registered instrument?",
+    "mode": "quick_qa",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "Under the Registration of Documents Ordinance, what is the legal effect of an unregistered instrument affecting land compared to a subsequent registered instrument?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "According to Section 7(1) of the Registration of Documents Ordinance, an unregistered instrument executed on or after January 1, 1864, shall be void as against all parties claiming an adverse interest thereto on valuable consideration by virtue of any subsequent instrument which is duly registered, unless there is fraud or collusion in obtaining the subsequent instrument[cite: 8].",
+    "expected_sources": [
+      {
+        "title": "Registration of Documents Ordinance",
+        "section": "Section 7",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 7"],
+    "requires_multi_source": false,
+    "expected_plan_type": "fast_path",
+    "expected_agents": ["quick_qa"]
+  },
+  {
+    "id": "SL-PART-DR-009",
+    "question": "If a co-owner institutes a partition action, what are the mandatory steps to register the action to bind subsequent purchasers, and what are the consequences of failing to do so?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "If a co-owner institutes a partition action, what are the mandatory steps to register the action to bind subsequent purchasers, and what are the consequences of failing to do so?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "In a partition action, the plaintiff must file an application for the registration of the action as a lis pendens with the Registrar of Lands in the relevant district(s) along with the plaint[cite: 5]. After the action is registered as a lis pendens, the plaintiff must file a declaration by an attorney-at-law certifying that the registers have been personally inspected, disclosing any additional persons who should be made parties to the action[cite: 5]. Under Section 66 of the Partition Law, after the action is duly registered as a lis pendens, any voluntary alienation, lease, or hypothecation of an undivided share made until the final determination of the action shall be void[cite: 5].",
+    "expected_sources": [
+      {
+        "title": "Partition Law",
+        "section": "Section 6, Section 12, Section 66",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 6", "Section 12", "Section 66"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "drafting"]
+  },
+  {
+    "id": "SL-IND-DR-010",
+    "question": "When an employer intends to retrench fifteen or more workmen in an industry, what statutory notices must be given, and how soon can the retrenchment be effected?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "When an employer intends to retrench fifteen or more workmen in an industry, what statutory notices must be given, and how soon can the retrenchment be effected?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 31F of the Industrial Disputes Act, an employer intending to effect retrenchment must give at least one month's notice in writing to the workman, to their trade union (if the workman is a member), and send a copy of such notice to the Commissioner[cite: 2]. Under Section 31G, the employer cannot effect the retrenchment until after the expiry of two months from the date of such notice[cite: 2].",
+    "expected_sources": [
+      {
+        "title": "Industrial Disputes Act",
+        "section": "Section 31F, Section 31G",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 31F", "Section 31G"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "drafting"]
+  },
+  {
+    "id": "SL-TRUST-DR-011",
+    "question": "Under the Trusts (Amendment) Act of 2018, what obligations are placed on a trustee regarding the disclosure of beneficial ownership to combat money laundering?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Under the Trusts (Amendment) Act of 2018, what obligations are placed on a trustee regarding the disclosure of beneficial ownership to combat money laundering?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The Trusts (Amendment) Act, No. 6 of 2018 introduced Section 19A, requiring trustees to keep updated records of the identity of the author, co-trustees, beneficiaries, and beneficial owners (defined as natural persons who ultimately own or control the trust)[cite: 11]. Under Section 19B, trustees must provide this information to relevant authorities, including public authorities preventing money laundering and terrorist financing, and to financial institutions when engaging in transactions exceeding prescribed limits[cite: 11].",
+    "expected_sources": [
+      {
+        "title": "Trusts (Amendment) Act, No. 6 of 2018",
+        "section": "Section 19A, Section 19B",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 19A", "Section 19B"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "drafting"]
+  },
+  {
+    "id": "SL-LAND-DR-012",
+    "question": "Upon the death of a permit-holder of State land who leaves a surviving spouse, does the spouse automatically succeed to the land, and can the spouse freely dispose of it thereafter?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Upon the death of a permit-holder of State land who leaves a surviving spouse, does the spouse automatically succeed to the land, and can the spouse freely dispose of it thereafter?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 48A(1) of the Land Development Ordinance, the spouse of a deceased permit-holder is entitled to succeed to the land alienated on the permit, regardless of whether they were nominated as successor by that permit-holder[cite: 3]. However, if the spouse complies with the permit conditions and subsequently obtains a grant for the land, Section 48A(2) strictly dictates that the spouse shall have no power to dispose of the land alienated by the grant, nor the power to nominate a successor, unless the spouse was the originally nominated successor[cite: 3].",
+    "expected_sources": [
+      {
+        "title": "Land Development Ordinance",
+        "section": "Section 48A",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 48A"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "drafting"]
+  },
+  {
+    "id": "SL-CIVIL-DR-013",
+    "question": "If a party wishes to produce a computer-generated email as evidence in a civil trial, what specific pre-trial procedures must be followed under the Civil Procedure Code, and what happens if the opposing party objects to its admissibility?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "If a party wishes to produce a computer-generated email as evidence in a civil trial, what specific pre-trial procedures must be followed under the Civil Procedure Code, and what happens if the opposing party objects to its admissibility?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 79C(2) of the Civil Procedure Code, a party proposing to tender documents in electronic form must, not less than thirty days before the date first fixed for the pre-trial conference, file a list and copies of such documents in court after giving notice to the opposing party[cite: 15]. The opposing party may apply within fifteen days for permission to access and inspect the electronic document, device, or information system[cite: 15]. If the opposing party objects to its admissibility, they must file written objections with reasons before or at the pre-trial conference[cite: 15]. The court will hear the parties, and if no admission is recorded, the court shall make an appropriate pre-trial order regarding its admissibility[cite: 15].",
+    "expected_sources": [
+      {
+        "title": "Civil Procedure Code",
+        "section": "Section 79C",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 79C"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "reasoning", "drafting"]
+  },
+  {
+    "id": "SL-PENAL-DR-014",
+    "question": "During a riot, an individual is attacked by a mob attempting to murder him. To protect his life, he fires a weapon at the mob, but due to the situation, he runs the risk of harming innocent children mingled in the crowd. Under the Penal Code of Sri Lanka, is he criminally liable if an innocent child is harmed?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "During a riot, an individual is attacked by a mob attempting to murder him. To protect his life, he fires a weapon at the mob, but due to the situation, he runs the risk of harming innocent children mingled in the crowd. Under the Penal Code of Sri Lanka, is he criminally liable if an innocent child is harmed?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 99 of the Penal Code, if a defender is exercising the right of private defence against an assault which reasonably causes the apprehension of death, and he is situated such that he cannot effectually exercise that right without risk of harm to an innocent person, his right of private defence extends to the running of that risk[cite: 6]. Therefore, if he fires at the mob in good faith to save his own life and inadvertently harms an innocent child, he commits no offence[cite: 6].",
+    "expected_sources": [
+      {
+        "title": "Penal Code",
+        "section": "Section 99",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 99"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "reasoning", "drafting"]
+  },
+  {
+    "id": "SL-CRIM-DR-015",
+    "question": "Can a suspect charged with a crime in the Magistrate's Court enter into a plea agreement, and if the Magistrate rejects the proposed sentence in the agreement, can the accused withdraw their guilty plea?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Can a suspect charged with a crime in the Magistrate's Court enter into a plea agreement, and if the Magistrate rejects the proposed sentence in the agreement, can the accused withdraw their guilty plea?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Yes, under Section 183A of the Code of Criminal Procedure, a plea agreement may be entered into between the prosecutor and an accused[cite: 14]. Both parties can recommend a sentence to the court, but the court retains sole discretion in sentencing[cite: 14]. If the prosecutor recommends a sentence that is more severe than the recommendation included in the plea agreement, the accused may withdraw the plea of guilty and set aside the plea agreement[cite: 14]. However, if the accused recommends a less severe sentence than the agreement and the court rejects it, the accused cannot withdraw the plea on that ground alone[cite: 14]. If the court entirely rejects the plea agreement, it becomes null and void and the parties are not bound by it[cite: 14].",
+    "expected_sources": [
+      {
+        "title": "Code of Criminal Procedure",
+        "section": "Section 183A",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 183A"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "reasoning", "drafting"]
+  },
+  {
+    "id": "SL-CONST-DR-016",
+    "question": "The High Court convicts an individual and sentences them to death. Does the President have the absolute power to grant a pardon, and what procedural steps must the President follow before granting a pardon to a condemned prisoner?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "The High Court convicts an individual and sentences them to death. Does the President have the absolute power to grant a pardon, and what procedural steps must the President follow before granting a pardon to a condemned prisoner?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Article 34(1) of the Constitution, the President may grant a pardon, either free or subject to lawful conditions, to any offender convicted in any court[cite: 16]. However, when an offender is condemned to suffer death, the President must cause a report to be made to him by the Judge who tried the case[cite: 16]. This report must be forwarded to the Attorney-General for advice, and then sent, together with the Attorney-General's advice, to the Minister in charge of the subject of Justice, who forwards the report with his recommendation to the President[cite: 16]. Therefore, while the President holds the pardon power, a specific procedural consultation pathway is constitutionally mandated for death sentences[cite: 16].",
+    "expected_sources": [
+      {
+        "title": "The Constitution of the Democratic Socialist Republic of Sri Lanka",
+        "section": "Article 34",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Article 34"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "reasoning", "drafting"]
+  },
+  {
+    "id": "SL-COMP-DR-017",
+    "question": "If a company reduces its stated capital, does it have to satisfy the solvency test? How is this test defined under the Companies Act, and what happens if a distribution is made when the test is not met?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "If a company reduces its stated capital, does it have to satisfy the solvency test? How is this test defined under the Companies Act, and what happens if a distribution is made when the test is not met?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 59 of the Companies Act, No. 07 of 2007, a company may reduce its stated capital by special resolution, which under Section 62 is treated as a distribution[cite: 13]. Under Section 56, the board must authorize a distribution only if it is satisfied the company will satisfy the solvency test immediately after making the distribution, supported by a certificate of solvency from the auditors[cite: 13]. Section 57 states a company satisfies the solvency test if it is able to pay its debts as they become due in the normal course of business, and the value of its assets is greater than the value of its liabilities and stated capital combined[cite: 13]. Under Section 61, a distribution made when the company did not satisfy the solvency test may be recovered from the shareholders, unless they received it in good faith, altered their position in reliance on it, and it would be unreasonable to require repayment[cite: 13].",
+    "expected_sources": [
+      {
+        "title": "Companies Act, No. 07 of 2007",
+        "section": "Section 56, Section 57, Section 59, Section 61, Section 62",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 56",
+      "Section 57",
+      "Section 59",
+      "Section 61",
+      "Section 62"
+    ],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "reasoning", "drafting"]
+  },
+  {
+    "id": "SL-AML-DR-018",
+    "question": "If a person is convicted of money laundering, how does the High Court handle the forfeiture of their assets, and what protections exist for innocent third parties who purchased a portion of the accused's property?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "If a person is convicted of money laundering, how does the High Court handle the forfeiture of their assets, and what protections exist for innocent third parties who purchased a portion of the accused's property?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 13(1) of the Prevention of Money Laundering Act, upon conviction, the Court shall order that any property of such person derived or realized from unlawful activity be forfeited to the State free from all encumbrances[cite: 4]. The Court may presume that property is derived from unlawful activity if it is not commensurate with the accused's known sources of income[cite: 4]. However, under Section 13(2), the Court must consider whether a forfeiture order is likely to prejudice the rights of a bona fide purchaser for value who acquired a bona fide interest in the property[cite: 4]. Furthermore, Section 14 allows any affected person to apply to the Court within thirty days of the forfeiture order to claim compensation for losses suffered as a result of such order[cite: 4].",
+    "expected_sources": [
+      {
+        "title": "Prevention of Money Laundering Act, No. 5 of 2006",
+        "section": "Section 13, Section 14",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 13", "Section 14"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "reasoning", "drafting"]
+  },
+  {
+    "id": "SL-CIVIL-DR-019",
+    "question": "A sole plaintiff institutes a civil action but dies before the trial concludes. No memorandum nominating a legal representative was filed by the plaintiff. What happens to the action, and how can it be revived?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "A sole plaintiff institutes a civil action but dies before the trial concludes. No memorandum nominating a legal representative was filed by the plaintiff. What happens to the action, and how can it be revived?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 394(1) of the Civil Procedure Code, on the death of a party who failed to file a memorandum, any party to the action may apply ex parte to the court requesting that an executor, administrator, or next of kin be substituted[cite: 15]. However, under Section 398A, if no application is made by any legal representative of the deceased plaintiff within six months from the death, the court may make an order that the action shall abate and award costs to the defendant[cite: 15]. The court may still, on application by the defendant at any time, appoint a legal representative to proceed with the action to arrive at a final determination[cite: 15]. Additionally, under Section 403, a person claiming to be the legal representative can apply within a reasonable time to set aside the abatement order if prevented by sufficient cause from continuing the action[cite: 15].",
+    "expected_sources": [
+      {
+        "title": "Civil Procedure Code",
+        "section": "Section 394, Section 398A, Section 403",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 394", "Section 398A", "Section 403"],
+    "requires_multi_source": false,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "reasoning", "drafting"]
+  },
+  {
+    "id": "SL-MED-DR-020",
+    "question": "Two corporate entities sign a contract containing a mediation clause governed by the Commercial Mediation Centre of Sri Lanka Act. A dispute arises, and Party A wants to immediately file a lawsuit in the District Court to recover damages and obtain an interim injunction. Can Party A do so?",
+    "mode": "drafting",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Two corporate entities sign a contract containing a mediation clause governed by the Commercial Mediation Centre of Sri Lanka Act. A dispute arises, and Party A wants to immediately file a lawsuit in the District Court to recover damages and obtain an interim injunction. Can Party A do so?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 3A(1) of the Commercial Mediation Centre of Sri Lanka (Amendment) Act, No. 37 of 2005, where parties have agreed to refer a dispute for mediation, no proceedings regarding a commercial dispute shall be instituted in or entertained by a court unless accompanied by a certificate of non-settlement issued by the mediator[cite: 12]. However, Section 3A(2) provides an exception: this prohibition does not apply where a party seeks relief in respect of any provisional remedy under Part V of the Civil Procedure Code[cite: 12]. Therefore, Party A can institute an action in the District Court solely to seek the provisional remedy (the interim injunction), but the court will only entertain it in so far as it relates to the grant of that provisional remedy; the substantive claim for damages cannot proceed without the certificate of non-settlement[cite: 12].",
+    "expected_sources": [
+      {
+        "title": "Commercial Mediation Centre of Sri Lanka (Amendment) Act, No. 37 of 2005",
+        "section": "Section 3A",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": ["Section 3A"],
+    "requires_multi_source": true,
+    "expected_plan_type": "planned",
+    "expected_agents": ["deep_research", "reasoning", "drafting"]
+  }
+]

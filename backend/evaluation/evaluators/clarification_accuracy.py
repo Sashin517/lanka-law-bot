@@ -3,6 +3,8 @@
 Checks whether the system correctly identified that clarification is needed
 (e.g., missing document for review, ambiguous query).
 Applies to all entries but is most meaningful for clarification-category ones.
+
+Includes type coercion to handle bool/str mismatches at the LangSmith boundary.
 """
 
 
@@ -18,6 +20,11 @@ def clarification_accuracy_evaluator(run, example):
     if not actual_needs:
         actual_needs = run.outputs.get("needs_clarification", False)
 
+    # Coerce both to bool to handle str/bool mismatches from JSON serialization
+    # (e.g. "true"/"false" strings vs True/False booleans)
+    expected_needs = _to_bool(expected_needs)
+    actual_needs = _to_bool(actual_needs)
+
     match = expected_needs == actual_needs
 
     return {
@@ -25,3 +32,12 @@ def clarification_accuracy_evaluator(run, example):
         "score": 1.0 if match else 0.0,
         "comment": f"expected_clarification={expected_needs} actual={actual_needs}",
     }
+
+
+def _to_bool(value) -> bool:
+    """Coerce a value to bool, handling common JSON serialization edge cases."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.lower() in ("true", "1", "yes")
+    return bool(value)
