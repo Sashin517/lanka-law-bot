@@ -135,3 +135,52 @@ export async function improvePrompt(
 
   return parseJsonOrThrow<ImprovePromptResponse>(response);
 }
+
+// ─── Draft Editing API ──────────────────────────────────────────
+
+export interface DraftEditPayload {
+  draft_id: string;
+  instruction: string;
+  selected_text: string | null;
+  selection_start: number | null;
+  selection_end: number | null;
+  current_content: string;
+  document_ids: string[];
+}
+
+/**
+ * Result from `/api/draft/edit` — supports both light and heavy paths.
+ *
+ * - `edit_path: "light"` → standalone service (~2-3s), no execution_trace.
+ * - `edit_path: "heavy"` → full LangGraph pipeline (~8-15s), includes trace.
+ */
+export interface DraftEditResult {
+  edit_type: string;
+  original_text: string;
+  edited_text: string;
+  markdown_content: string;
+  sources: SourceRef[];
+  edit_summary: string;
+  confidence: string;
+  edit_path: "light" | "heavy";
+  execution_trace?: ExecutionTrace | null;
+}
+
+/**
+ * Send a targeted edit request to the backend.
+ *
+ * The backend's edit classifier decides whether to use the light path
+ * (standalone service, ~2-3s) or the heavy path (full LangGraph
+ * pipeline, ~8-15s). The frontend does NOT need to specify the path.
+ */
+export async function editDraft(
+  payload: DraftEditPayload,
+): Promise<DraftEditResult> {
+  const response = await fetch(`${API_BASE_URL}/api/draft/edit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  return parseJsonOrThrow<DraftEditResult>(response);
+}
