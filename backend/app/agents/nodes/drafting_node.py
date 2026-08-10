@@ -35,6 +35,8 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
+from app.agents.message_bus import emit_message
+from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +52,14 @@ _drafting_parser = JsonOutputParser()
 # Document-type detection patterns for template selection
 _DOC_TYPE_PATTERNS: list[tuple[str, list[str]]] = [
     ("contract", ["contract", "agreement", "lease", "employment", "service agreement"]),
-    ("pleading", ["plaint", "petition", "answer", "pleading", "court filing", "motion"]),
-    ("notice", ["notice", "demand", "letter of demand", "quit notice", "termination notice"]),
+    (
+        "pleading",
+        ["plaint", "petition", "answer", "pleading", "court filing", "motion"],
+    ),
+    (
+        "notice",
+        ["notice", "demand", "letter of demand", "quit notice", "termination notice"],
+    ),
     ("affidavit", ["affidavit", "sworn statement", "declaration", "deposition"]),
 ]
 
@@ -74,8 +82,7 @@ async def drafting_node(state: AgentState) -> dict:
         legal_results = _retrieval.search(
             query=state.question,
             top_k=state.legal_top_k,
-            expand_parents=state.ablation_config.get("expand_parents", True),
-            **state.ablation_config,
+            **retrieval_search_kwargs(state.ablation_config),
         )
 
     # ── Step 3: Retrieve from user documents (if applicable) ──
@@ -103,20 +110,56 @@ async def drafting_node(state: AgentState) -> dict:
     )
     logger.info(
         "Drafting context assembled: %d sources, %d chars.",
-        len(citation_map), len(context_str),
+        len(citation_map),
+        len(context_str),
+    )
+
+    # ── Enrich context with upstream agent outputs ──
+    enriched_context = context_str
+    research_output = state.working_memory.get("research_markdown", "")
+    reasoning_output = state.working_memory.get("reasoning_output", "")
+
+    if research_output:
+        enriched_context = (
+            "## Prior Research Findings\n\n"
+            f"{research_output}\n\n---\n\n"
+            f"{enriched_context}"
+        )
+    if reasoning_output:
+        enriched_context = (
+            "## Prior Legal Analysis\n\n"
+            f"{reasoning_output}\n\n---\n\n"
+            f"{enriched_context}"
+        )
+
+    logger.info(
+        "Drafting context enriched with upstream: research=%d chars, reasoning=%d chars.",
+        len(research_output),
+        len(reasoning_output),
     )
 
     # ── Step 5: Generate draft with template-injected prompt (hybrid JSON) ──
+    question_for_llm = state.question
+    grounding_feedback = state.working_memory.get("grounding_feedback")
+    if grounding_feedback:
+        logger.info("Retrying drafting with grounding feedback: %s", grounding_feedback)
+        question_for_llm += (
+            f"\n\n[RETRY NOTICE: Previous draft contained ungrounded claims: {grounding_feedback}. "
+            f"Adjust the draft to be strictly supported by provided sources.]"
+        )
+
     prompt = ChatPromptTemplate.from_template(DRAFTING_PROMPT)
     chain = prompt | _drafting_llm | _drafting_parser
 
     try:
-        raw: dict = await chain.ainvoke({
-            "question": state.question,
-            "template": template_text,
-            "context": context_str
-            or "(No source documents available — use template structure only.)",
-        })
+        raw: dict = await chain.ainvoke(
+            {
+                "question": question_for_llm,
+                "template": template_text,
+                "context": enriched_context
+                or "(No source documents available — use template structure only.)",
+            }
+        )
     except Exception:
         logger.exception("Drafting LLM generation failed.")
         raw = {
@@ -132,14 +175,20 @@ async def drafting_node(state: AgentState) -> dict:
     # ── Step 6: Verify citations via existing CitationVerifier ──
     markdown = raw.get("draft_markdown", "")
     sources_used = raw.get("sources_used", [])
-    title = raw.get("title") or _extract_title(markdown) or _title_from_template(template_key)
+    title = (
+        raw.get("title")
+        or _extract_title(markdown)
+        or _title_from_template(template_key)
+    )
     document_type = raw.get("document_type") or template_key
     requires_completion = bool(raw.get("requires_completion", False))
     section_map = raw.get("section_map") or _build_section_map(markdown)
     change_summary = raw.get("change_summary") or f"Generated {title}."
 
     if not state.ablation_config.get("skip_verification"):
-        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        valid_ids = build_and_verify_sources(
+            sources_used, citation_map, _verifier, markdown_content=markdown
+        )
         markdown = strip_invalid_anchors(markdown, valid_ids)
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
@@ -147,7 +196,9 @@ async def drafting_node(state: AgentState) -> dict:
 
     logger.info(
         "Drafting complete: template=%s, %d sources, confidence=%s.",
-        template_key, len(sources), confidence,
+        template_key,
+        len(sources),
+        confidence,
     )
 
     return {
@@ -155,7 +206,7 @@ async def drafting_node(state: AgentState) -> dict:
         "context_str": context_str,
         "summary": extract_first_paragraph(markdown),
         "markdown_content": markdown,
-        "draft_content": markdown,          # Backward compat
+        "draft_content": markdown,  # Backward compat
         "draft_title": title,
         "draft_document_type": document_type,
         "sources_used": sources_used,
@@ -175,6 +226,24 @@ async def drafting_node(state: AgentState) -> dict:
         ],
         "confidence": confidence,
     }
+    return emit_message(
+        state=state,
+        state_update={
+            "retrieved_sources": sources,
+            "context_str": context_str,
+            "summary": extract_first_paragraph(markdown),
+            "markdown_content": markdown,
+            "draft_content": markdown,
+            "confidence": confidence,
+            "working_memory": {
+                **state.working_memory,
+                "draft_output": markdown,
+            },
+        },
+        sender="drafting",
+        msg_type="draft_output",
+        content=markdown,
+    )
 
 
 # ── Helpers ───────────────────────────────────────────────────────
@@ -185,17 +254,14 @@ def _select_template(question: str, answer_mode: str) -> str:
 
     Priority: explicit answer_mode match → keyword detection → default.
     """
-    # Check if answer_mode directly maps to a template
     if answer_mode in TEMPLATE_REGISTRY:
         return answer_mode
 
-    # Keyword-based detection from the question text
     text = question.lower()
     for template_key, keywords in _DOC_TYPE_PATTERNS:
         if any(kw in text for kw in keywords):
             return template_key
 
-    # Default to contract (most common drafting request)
     return "contract"
 
 
@@ -225,7 +291,9 @@ def _build_section_map(markdown: str) -> dict:
         marker, _, heading = text.partition(" ")
         if not heading:
             continue
-        section_id = "".join(ch.lower() if ch.isalnum() else "-" for ch in heading).strip("-")
+        section_id = "".join(
+            ch.lower() if ch.isalnum() else "-" for ch in heading
+        ).strip("-")
         section_map[section_id or f"section-{index}"] = {
             "heading": heading.strip(),
             "level": len(marker),

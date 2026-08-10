@@ -1,24 +1,67 @@
+from __future__ import annotations
+
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from pydantic import ConfigDict
 
 from app.core.config import settings
+from app.services.retrieval.retrieval_fusion import reciprocal_rank_fusion
 
 logger = logging.getLogger(__name__)
 
 
+RETURN_FIELDS = [
+    "title",
+    "citation",
+    "section_label",
+    "body",
+    "text",
+    "chunk_id",
+    "parent_id",
+    "chunk_type",
+    "section",
+    "section_number",
+    "breadcrumb",
+    "page_start",
+    "page_end",
+    "source_filename",
+    "source_type",
+    "doc_type",
+    "source_uri",
+    "source_sha256",
+    "authoritative",
+    "work_id",
+    "expression_id",
+    "case_name",
+    "court",
+    "docket_number",
+    "reporter_citation",
+    "work_year",
+    "year",
+    "chapter_number",
+    "valid_from",
+    "valid_to",
+    "is_current",
+    "corpus_version",
+    "schema_version",
+    "text_hash",
+]
+
+
 class LegalVectorStore:
+    """Pinecone legal document vector store supporting dense vector search and BM25 document search."""
+
     def __init__(self) -> None:
         if not settings.PINECONE_API_KEY:
+            raise RuntimeError("PINECONE_API_KEY is required for legal retrieval.")
+        if settings.JINA_EMBEDDING_DIMENSION != settings.PINECONE_EMBEDDING_DIMENSION:
             raise RuntimeError(
-                "PINECONE_API_KEY is required for legal document ingestion."
-            )
-        if not settings.PINECONE_LEGAL_INDEX_HOST:
-            raise RuntimeError(
-                "PINECONE_LEGAL_INDEX_HOST is required for legal document ingestion."
+                "JINA_EMBEDDING_DIMENSION and PINECONE_EMBEDDING_DIMENSION must match."
             )
         try:
             from pinecone import Pinecone
@@ -28,54 +71,75 @@ class LegalVectorStore:
             ) from exc
 
         self._pc = Pinecone(api_key=settings.PINECONE_API_KEY)
-        self._index = self._pc.Index(host=settings.PINECONE_LEGAL_INDEX_HOST)
-        self._bm25_index = (
-            self._pc.preview.index(host=settings.PINECONE_LEGAL_BM25_INDEX_HOST)
-            if settings.PINECONE_LEGAL_BM25_INDEX_HOST
-            else None
-        )
-        self.collection = settings.PINECONE_LEGAL_INDEX_NAME
-        self.namespace = settings.PINECONE_LEGAL_NAMESPACE
-        self.bm25_collection = settings.PINECONE_LEGAL_BM25_INDEX_NAME
-        self.bm25_namespace = settings.PINECONE_LEGAL_BM25_NAMESPACE
+
+        # Dense vector index configuration
+        self.dense_index_name = getattr(settings, "PINECONE_LEGAL_INDEX_NAME", "lawdex-legal-index")
+        self.dense_namespace = getattr(settings, "PINECONE_LEGAL_NAMESPACE", "legal_corpus")
+        if settings.PINECONE_LEGAL_INDEX_HOST:
+            self._dense_index = self._pc.Index(host=settings.PINECONE_LEGAL_INDEX_HOST)
+        else:
+            self._dense_index = self._pc.Index(self.dense_index_name)
+
+        # BM25 document index configuration
+        self.bm25_index_name = getattr(settings, "PINECONE_LEGAL_BM25_INDEX_NAME", "lawdex-legal-bm25-index")
+        self.bm25_namespace = getattr(settings, "PINECONE_LEGAL_BM25_NAMESPACE", "legal_corpus")
+        bm25_host = getattr(settings, "PINECONE_LEGAL_BM25_INDEX_HOST", "")
+        if bm25_host:
+            self._bm25_index = self._pc.preview.index(host=bm25_host)
+        else:
+            self._bm25_index = self._pc.preview.index(name=self.bm25_index_name)
+
+        self.collection = self.dense_index_name
+        self.namespace = self.dense_namespace
 
     def ensure_collection(self) -> None:
-        """Verify the Pinecone index exists and is ready."""
+        """Validate readiness of Pinecone indices."""
         try:
-            desc = self._pc.describe_index(self.collection)
-            logger.info(
-                "Pinecone index '%s' is ready (dimension=%s, metric=%s).",
-                self.collection,
-                getattr(desc, "dimension", "?"),
-                getattr(desc, "metric", "?"),
-            )
+            dense_desc = self._pc.describe_index(self.dense_index_name)
+            dense_ready = getattr(dense_desc.status, "ready", False) if not isinstance(dense_desc.status, dict) else dense_desc.status.get("ready", False)
+            if not dense_ready:
+                logger.warning("Dense vector index '%s' is not ready yet.", self.dense_index_name)
         except Exception as exc:
-            raise RuntimeError(
-                f"Cannot reach Pinecone index '{self.collection}': {exc}"
-            ) from exc
-
-    def _hit_to_document(self, hit: Any) -> Document:
-        metadata = (
-            dict(hit.fields or {})
-            if hasattr(hit, "fields") and hit.fields
-            else dict(hit.metadata or {})
-        )
-        text = metadata.pop("text", "") or ""
-        metadata["point_id"] = hit.id
-        return Document(page_content=text, metadata=metadata)
+            logger.warning("Could not describe dense index '%s': %s", self.dense_index_name, exc)
 
     @staticmethod
-    def _bm25_match_to_document(match: Any) -> Document:
-        metadata = (
+    def _child_filter(metadata_filters: dict | None) -> dict:
+        required = {"chunk_type": {"$eq": "child"}}
+        if not metadata_filters:
+            return required
+        return {"$and": [required, metadata_filters]}
+
+    @staticmethod
+    def _dense_match_to_langchain(match: Any, *, channel: str) -> Document:
+        metadata = dict(getattr(match, "metadata", {}) or {})
+        point_id = getattr(match, "id", "")
+        score = getattr(match, "score", None)
+        body = metadata.get("text") or metadata.get("body") or ""
+        metadata["point_id"] = point_id
+        metadata["retrieval_channel"] = channel
+        if score is not None:
+            metadata["retrieval_score"] = float(score)
+        return Document(page_content=body, metadata=metadata)
+
+    @staticmethod
+    def _preview_document_to_langchain(
+        match: Any,
+        *,
+        channel: str,
+    ) -> Document:
+        fields = (
             dict(match.to_dict())
             if hasattr(match, "to_dict")
             else dict(getattr(match, "_data", {}))
         )
-        point_id = metadata.pop("_id", getattr(match, "id", ""))
-        metadata.pop("_score", None)
-        text = metadata.pop("text", "") or ""
-        metadata["point_id"] = point_id
-        return Document(page_content=text, metadata=metadata)
+        point_id = fields.pop("_id", getattr(match, "id", ""))
+        score = fields.pop("_score", getattr(match, "score", None))
+        body = fields.get("text") or fields.get("body") or ""
+        fields["point_id"] = point_id
+        fields["retrieval_channel"] = channel
+        if score is not None:
+            fields["retrieval_score"] = float(score)
+        return Document(page_content=body, metadata=fields)
 
     def search_children(
         self,
@@ -83,20 +147,24 @@ class LegalVectorStore:
         limit: int = 5,
         metadata_filters: dict | None = None,
     ) -> list[Document]:
-        """Dense semantic search via Pinecone search_records."""
-        filter_dict = {"chunk_type": {"$eq": "child"}}
-        if metadata_filters:
-            filter_dict.update(metadata_filters)
+        """Rank child documents by dense vector similarity."""
+        from app.services.retrieval.jina_embedding_service import (
+            get_jina_embedding_service,
+        )
 
-        results = self._index.search_records(
-            namespace=self.namespace,
-            inputs={"text": query},
+        query_vector = get_jina_embedding_service().embed_query(query)
+        filter_dict = self._child_filter(metadata_filters)
+
+        results = self._dense_index.query(
+            vector=query_vector,
             top_k=limit,
+            namespace=self.dense_namespace,
+            include_metadata=True,
             filter=filter_dict,
         )
         return [
-            self._hit_to_document(hit)
-            for hit in (results.result.hits if results.result else [])
+            self._dense_match_to_langchain(match, channel="dense")
+            for match in results.matches
         ]
 
     def search_children_bm25(
@@ -105,106 +173,149 @@ class LegalVectorStore:
         limit: int = 5,
         metadata_filters: dict | None = None,
     ) -> list[Document]:
-        """BM25 full-text search via Pinecone document search."""
-        if self._bm25_index is None:
-            raise RuntimeError(
-                "PINECONE_LEGAL_BM25_INDEX_HOST is required for Pinecone BM25 search."
+        """Rank child documents using Pinecone BM25 document search."""
+        try:
+            results = self._bm25_index.documents.search(
+                namespace=self.bm25_namespace,
+                top_k=limit,
+                score_by=[
+                    {
+                        "type": "text",
+                        "field": "text",
+                        "query": query,
+                    },
+                ],
+                include_fields=RETURN_FIELDS,
+                filter=self._child_filter(metadata_filters),
             )
-
-        filter_dict = {"chunk_type": {"$eq": "child"}}
-        if metadata_filters:
-            filter_dict.update(metadata_filters)
-
-        results = self._bm25_index.documents.search(
-            namespace=self.bm25_namespace,
-            top_k=limit,
-            score_by=[{"type": "text", "field": "text", "query": query}],
-            include_fields=["*"],
-            filter=filter_dict,
-        )
-        return [self._bm25_match_to_document(match) for match in results.matches]
-
-    def load_children_for_bm25(self, limit: int = 50000) -> list[Document]:
-        """Load child chunk documents for BM25 sparse search using fetch_by_metadata."""
-        meta_filter = {"chunk_type": {"$eq": "child"}}
-        documents: list[Document] = []
-        pagination_token: str | None = None
-
-        while len(documents) < limit:
-            batch_limit = min(1000, limit - len(documents))
-            kwargs: dict = {
-                "namespace": self.namespace,
-                "filter": meta_filter,
-                "limit": batch_limit,
-            }
-            if pagination_token:
-                kwargs["pagination_token"] = pagination_token
-
-            response = self._index.fetch_by_metadata(**kwargs)
-
-            for record in (response.vectors or {}).values():
-                metadata = dict(record.metadata or {})
-                text = metadata.pop("text", "") or ""
-                metadata["point_id"] = record.id
-                documents.append(Document(page_content=text, metadata=metadata))
-
-            pagination_token = (
-                response.pagination.get("next") if response.pagination else None
-            )
-            if not pagination_token:
-                break
-
-        return documents[:limit]
+            return [
+                self._preview_document_to_langchain(match, channel="bm25")
+                for match in results.matches
+            ]
+        except Exception as exc:
+            logger.warning("BM25 document search failed, falling back to empty list: %s", exc)
+            return []
 
     def fetch_parent(self, parent_id: str) -> Document | None:
-        """Fetch parent chunk by chunk_id using a dummy dense search with exact metadata filter."""
-        query_filter = {
-            "chunk_type": {"$eq": "parent"},
-            "chunk_id": {"$eq": parent_id},
-        }
-        results = self._index.search_records(
-            namespace=self.namespace,
-            inputs={"text": "dummy query to fetch parent by id"},
-            top_k=1,
-            filter=query_filter,
-        )
-        hits = results.result.hits if results.result else []
-        return self._hit_to_document(hits[0]) if hits else None
+        """Fetch an exact parent document by ID from dense index or BM25 index."""
+        if not parent_id:
+            return None
+
+        # Attempt 1: Fetch from dense vector index
+        try:
+            response = self._dense_index.fetch(
+                ids=[parent_id],
+                namespace=self.dense_namespace,
+            )
+            vectors = getattr(response, "vectors", {}) or {}
+            if parent_id in vectors:
+                vec = vectors[parent_id]
+                metadata = dict(getattr(vec, "metadata", {}) or {})
+                body = metadata.get("text") or metadata.get("body") or ""
+                metadata["point_id"] = parent_id
+                metadata["retrieval_channel"] = "parent_fetch"
+                if metadata.get("chunk_type") and metadata.get("chunk_type") != "parent":
+                    logger.warning("ID %s resolved to a non-parent document in dense index", parent_id)
+                return Document(page_content=body, metadata=metadata)
+        except Exception as exc:
+            logger.debug("Fetch parent from dense index failed: %s", exc)
+
+        # Attempt 2: Fetch from BM25 document index
+        try:
+            response = self._bm25_index.documents.fetch(
+                namespace=self.bm25_namespace,
+                ids=[parent_id],
+                include_fields=RETURN_FIELDS,
+            )
+            docs = getattr(response, "documents", {}) or {}
+            parent = docs.get(parent_id)
+            if parent is not None:
+                doc = self._preview_document_to_langchain(parent, channel="parent_fetch")
+                return doc
+        except Exception as exc:
+            logger.debug("Fetch parent from BM25 index failed: %s", exc)
+
+        return None
 
 
 class PineconeLegalRetriever(BaseRetriever):
-    """LangChain BaseRetriever wrapper around LegalVectorStore dense search."""
+    """LangChain wrapper around dense document search."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     store: LegalVectorStore
     k: int = 5
     metadata_filters: dict | None = None
 
-    class Config:
-        arbitrary_types_allowed = True
-
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:
-        """Execute the dense search on Pinecone."""
         return self.store.search_children(
             query=query, limit=self.k, metadata_filters=self.metadata_filters
         )
 
 
 class PineconeLegalBM25Retriever(BaseRetriever):
-    """LangChain BaseRetriever wrapper around Pinecone BM25 FTS search."""
+    """LangChain wrapper around multi-field BM25 document search."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     store: LegalVectorStore
     k: int = 5
     metadata_filters: dict | None = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> list[Document]:
+        return self.store.search_children_bm25(
+            query=query, limit=self.k, metadata_filters=self.metadata_filters
+        )
+
+
+class PineconeLegalHybridRetriever(BaseRetriever):
+    """Run dense and BM25 searches concurrently and fuse by shared chunk ID."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    store: LegalVectorStore
+    k: int = 5
+    dense_weight: float = 0.6
+    sparse_weight: float = 0.4
+    metadata_filters: dict | None = None
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:
-        """Execute the BM25 full-text search on Pinecone."""
-        return self.store.search_children_bm25(
-            query=query, limit=self.k, metadata_filters=self.metadata_filters
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="legal-search") as pool:
+            dense_future = pool.submit(
+                self.store.search_children,
+                query,
+                self.k,
+                self.metadata_filters,
+            )
+            bm25_future = pool.submit(
+                self.store.search_children_bm25,
+                query,
+                self.k,
+                self.metadata_filters,
+            )
+            dense_error = sparse_error = None
+            try:
+                dense = dense_future.result()
+            except Exception as exc:
+                dense_error = exc
+                dense = []
+                logger.exception("Dense Pinecone search failed")
+            try:
+                sparse = bm25_future.result()
+            except Exception as exc:
+                sparse_error = exc
+                sparse = []
+                logger.exception("BM25 Pinecone search failed")
+
+        if dense_error and sparse_error:
+            raise RuntimeError("Both Pinecone retrieval channels failed") from dense_error
+        return reciprocal_rank_fusion(
+            [dense, sparse],
+            weights=[self.dense_weight, self.sparse_weight],
         )

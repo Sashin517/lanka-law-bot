@@ -20,6 +20,13 @@ class SourceReference(BaseModel):
     source_type: str | None = None
     document_id: str | None = None
     filename: str | None = None
+    page_start: int | None = None
+    page_end: int | None = None
+    source_uri: str | None = None
+    court: str | None = None
+    reporter_citation: str | None = None
+    docket_number: str | None = None
+    authoritative: bool | None = None
 
 
 class ConfidenceLevel(str, Enum):

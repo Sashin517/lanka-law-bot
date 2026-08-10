@@ -1,0 +1,1251 @@
+[
+  {
+    "id": "SL-GB-QA-001",
+    "question": "Under the Trusts (Amendment) Act, No. 6 of 2018, how frequently must a trustee verify and update prescribed identity information, and how long must the trustee retain it after a person's involvement with the trust ends?",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "Under the Trusts (Amendment) Act, No. 6 of 2018, how frequently must a trustee verify and update prescribed identity information, and how long must the trustee retain it after a person's involvement with the trust ends?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Section 19A(2) requires the prescribed identity information to be verified and updated every three months, to the greatest extent possible. Under Section 19A(5), the trustee must retain the relevant identity records for at least six years from the date on which the person's involvement with the express trust ceases.",
+    "expected_sources": [
+      {
+        "title": "Trusts (Amendment) Act, No. 6 of 2018",
+        "section": "Sections 19A(2) and 19A(5)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 19A(2)",
+      "Section 19A(5)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "trusts",
+      "identity_records",
+      "record_retention",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB-QA-002",
+    "question": "If a commercial contract contains a mediation agreement, may a party seek an urgent provisional remedy from court before obtaining a certificate of non-settlement?",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "If a commercial contract contains a mediation agreement, may a party seek an urgent provisional remedy from court before obtaining a certificate of non-settlement?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Yes, but only for the provisional remedy. Section 3A(1) generally prevents a court from entertaining proceedings concerning a commercial dispute covered by a mediation agreement unless they are accompanied by the Section 3F certificate of non-settlement. Section 3A(2) creates an exception for provisional remedies under Part V of the Civil Procedure Code; the court may entertain and determine the action only so far as it concerns that provisional relief.",
+    "expected_sources": [
+      {
+        "title": "Commercial Mediation Centre of Sri Lanka (Amendment) Act, No. 37 of 2005",
+        "section": "Sections 3A and 3F",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 3A(1)",
+      "Section 3A(2)",
+      "Section 3F"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "commercial_mediation",
+      "certificate_of_non_settlement",
+      "provisional_remedy",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB-QA-003",
+    "question": "What national minimum monthly and daily wages apply to workers in Sri Lanka from 1 January 2026?",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "What national minimum monthly and daily wages apply to workers in Sri Lanka from 1 January 2026?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "From 1 January 2026, the national minimum monthly wage is Rs. 30,000 and the national minimum daily wage is Rs. 1,200 for workers in any industry or service. These figures appear in the substituted Section 3(1)(b) of the National Minimum Wage of Workers Act, as enacted by Section 2 of Act No. 11 of 2025.",
+    "expected_sources": [
+      {
+        "title": "National Minimum Wage of Workers (Amendment) Act, No. 11 of 2025",
+        "section": "Section 2, substituting Section 3(1)(b)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 2",
+      "Substituted Section 3(1)(b)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "minimum_wage",
+      "employment",
+      "2026",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB-QA-004",
+    "question": "According to Shahul Hameed v. Abdul Cader, must notice to the Commissioner of National Housing under Section 22(1A) of the Rent Act be served before the ejectment action is instituted?",
+    "category": "quick_qa",
+    "difficulty": "medium",
+    "request": {
+      "question": "According to Shahul Hameed v. Abdul Cader, must notice to the Commissioner of National Housing under Section 22(1A) of the Rent Act be served before the ejectment action is instituted?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "case_laws",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "No. The Court of Appeal treated Section 22(1A) as requiring notice of the action itself, which ordinarily presupposes an instituted action and a case number. Notice may therefore accompany the registered plaint. The Commissioner's practical role arises after a decree for ejectment, and the tenant was not prejudiced by the absence of pre-action notice. The appeal was dismissed.",
+    "expected_sources": [
+      {
+        "title": "Shahul Hameed v. Abdul Cader [1999] 3 Sri L.R. 340",
+        "section": "Held and judgment on Section 22(1A)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Rent Act Section 22(1A)",
+      "Civil Procedure Code Section 461"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "rent_act",
+      "ejectment",
+      "notice",
+      "case_law",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB-QA-005",
+    "question": "What domestic legal effect did Singarasa v. Attorney-General attribute to Sri Lanka's accession to the Optional Protocol to the ICCPR and to the views of the UN Human Rights Committee?",
+    "category": "quick_qa",
+    "difficulty": "medium",
+    "request": {
+      "question": "What domestic legal effect did Singarasa v. Attorney-General attribute to Sri Lanka's accession to the Optional Protocol to the ICCPR and to the views of the UN Human Rights Committee?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "case_laws",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The Supreme Court applied Sri Lanka's dualist constitutional structure. It held that the 1997 accession and declaration under the Optional Protocol could not, without constitutionally valid legislative implementation, confer domestic judicial power on the UN Human Rights Committee or create an internal mechanism to revise a final Sri Lankan judgment. The Committee's views therefore supplied no domestic basis for revision, and the application was dismissed.",
+    "expected_sources": [
+      {
+        "title": "Singarasa v. Attorney-General [2013] 1 Sri L.R. 245",
+        "section": "Judgment and final order",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Constitution Articles 3, 4 and 33(f)",
+      "Optional Protocol to the ICCPR Article 1"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "international_law",
+      "dualist_system",
+      "iccpr",
+      "judicial_power",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB-RS-001",
+    "question": "A Provincial Governor removes every member of a Provincial Public Service Commission merely stating that the Commission must be 'reconstituted', appoints political allies the next day, and refuses to disclose any supporting material. The Board of Ministers challenges both the removals and appointments. Analyze the legality of the Governor's conduct and the appropriate public-law remedies.",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A Provincial Governor removes every member of a Provincial Public Service Commission merely stating that the Commission must be 'reconstituted', appoints political allies the next day, and refuses to disclose any supporting material. The Board of Ministers challenges both the removals and appointments. Analyze the legality of the Governor's conduct and the appropriate public-law remedies.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether the Governor's statutory discretion permits removal without a legally sufficient reason and whether the replacement appointments survive the invalid removals.\n\nRule: Podinilame v. Mathew holds that public-law discretion is held in trust for the statutory purpose and is never absolute or unfettered. A bare desire to reconstitute the Commission is no cause; removal requires reasons sufficiently serious to bear on the members' ability to discharge their duties. Premachandra v. Jayawickrema further establishes that even where the Constitution entrusts an opinion to a Governor, the decision-making process remains reviewable for legality, rationality, relevant evidence and fairness. Undisclosed or unsupported assertions cannot outweigh firm, verifiable material.\n\nApplication: The stated reason does not address misconduct, incapacity or any statutory purpose. The immediate partisan replacements and refusal to disclose material support an inference of improper purpose, arbitrariness and a flawed process. The removals are ultra vires. Appointments made only because of those removals are consequentially unlawful.\n\nConclusion: Certiorari should quash the removal and appointment decisions, and quo warranto may challenge the new members' authority to hold office. If a fresh exercise of power is necessary, mandamus may require the Governor to act according to law, but should not dictate the identity of a particular appointee.",
+    "expected_sources": [
+      {
+        "title": "Podinilame v. Mathew [1996] 2 Sri L.R. 82",
+        "section": "Held and judgment",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Premachandra and Dodangoda v. Jayawickrema and Bakeer Markar [1993] 2 Sri L.R. 294",
+        "section": "Administrative-law analysis and order",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Constitution of the Democratic Socialist Republic of Sri Lanka",
+        "section": "Articles 154B, 154C and 154F",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Constitution Articles 154B, 154C and 154F",
+      "Provincial Councils Act Sections 32 and 33",
+      "Certiorari",
+      "Quo warranto",
+      "Mandamus"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "provincial_councils",
+      "governor",
+      "administrative_law",
+      "wednesbury_review",
+      "writs",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB-RS-002",
+    "question": "Parents applying under the 'residence in close proximity' category for Grade 1 admission lose five marks because officials count a nearby girls' school that has no Grade 1 intake as an alternative government primary school. With the restored marks, their child exceeds the cut-off. Analyze whether Article 12(1) is infringed and what relief is appropriate.",
+    "category": "reasoning",
+    "difficulty": "medium",
+    "request": {
+      "question": "Parents applying under the 'residence in close proximity' category for Grade 1 admission lose five marks because officials count a nearby girls' school that has no Grade 1 intake as an alternative government primary school. With the restored marks, their child exceeds the cut-off. Analyze whether Article 12(1) is infringed and what relief is appropriate.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether applying the admissions circular on a factually inapplicable premise amounts to unequal or arbitrary administrative treatment.\n\nRule: Article 12(1) guarantees equality before the law and equal protection of the law. SC/FR/58/2018 held that a school that could not in fact admit the child as a government primary school should not be counted to reduce proximity marks. Once the wrongly deducted marks were restored, the child crossed the admission threshold and the respondents' refusal infringed Article 12(1). Roberts v. Ratnayake is distinguishable: that case concerned rights arising solely from a lawfully terminated contract, whereas school admission is an administrative decision governed by a public circular.\n\nApplication: A school with no Grade 1 intake is not a genuine alternative for the relevant admission. Deducting marks on that basis applies the circular irrationally. If the additional five marks place the child above the cut-off, the error is material and produces unequal administrative treatment.\n\nConclusion: The court should declare an Article 12(1) infringement and direct the principal or competent authority to admit the child to Grade 1 or, if time has passed, to the appropriate current grade.",
+    "expected_sources": [
+      {
+        "title": "J.M.H. Chandani Jayasundara and Others v. Principal, Visakha Vidyalaya and Others, SC/FR/58/2018",
+        "section": "Judgment and order dated 25 March 2019",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Roberts and Another v. Ratnayake and Others [1986] 2 Sri L.R. 36",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Constitution of the Democratic Socialist Republic of Sri Lanka",
+        "section": "Articles 12(1), 17 and 126",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Constitution Article 12(1)",
+      "Constitution Articles 17 and 126",
+      "Grade 1 admissions circular"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "fundamental_rights",
+      "school_admission",
+      "article_12",
+      "administrative_action",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB-RS-003",
+    "question": "A notarial deed transfers land subject to a condition requiring the transferee to retransfer it if the transferor repays the price with interest within five years. The transferee accepted the land and consideration but did not sign the deed. Later it is proved that the attesting notary had no valid annual licence and that the parties and witnesses did not sign in one another's presence. Can the transferor enforce the retransfer condition?",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A notarial deed transfers land subject to a condition requiring the transferee to retransfer it if the transferor repays the price with interest within five years. The transferee accepted the land and consideration but did not sign the deed. Later it is proved that the attesting notary had no valid annual licence and that the parties and witnesses did not sign in one another's presence. Can the transferor enforce the retransfer condition?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: The scenario raises two distinct questions: whether a transferee who did not sign may avoid an intrinsic condition, and whether the deed was validly executed at all.\n\nRule: Gnanasambandam v. Bin Adaham holds that, where a valid deed transfers property subject to a condition subsequent, the transferee who accepts the encumbered title cannot detach the condition from the transfer merely because the transferee did not sign; acceptance of the benefit carries the intrinsic obligation to retransfer. Rohan de Soyza v. Jinendradasa holds, however, that a purported transfer executed before a notary without a valid annual licence and without the required simultaneous presence violates Section 2 of the Prevention of Frauds Ordinance and is void; registration does not cure that foundational defect.\n\nApplication: If execution were otherwise valid, the transferee's non-signature alone would not defeat the retransfer condition. Here, the independent notarial and presence defects go to the legal existence of the transfer itself. A party cannot selectively enforce a condition in a deed that is void for failure to meet Section 2, although restitutionary or other relief may arise on separately pleaded facts.\n\nConclusion: The condition is not defeated simply by the transferee's non-signature, but it cannot be enforced as a term of this deed if the lack of a licensed notary and simultaneous execution is proved. The deed and its registration are vulnerable to cancellation.",
+    "expected_sources": [
+      {
+        "title": "Prevention of Frauds Ordinance (Consolidated 2024)",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Gnanasambandam v. Bin Adaham and Another [1998] 2 Sri L.R. 305",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Rohan de Soyza v. Jinendradasa [2004] 1 Sri L.R. 379",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Registration of Documents Ordinance (Consolidated 2024)",
+        "section": "Section 31",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Prevention of Frauds Ordinance Section 2",
+      "Registration of Documents Ordinance Section 31",
+      "Condition subsequent",
+      "Notarial execution"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "land_transfer",
+      "condition_subsequent",
+      "notary",
+      "prevention_of_frauds",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB-RS-004",
+    "question": "A political activist is arrested under special security legislation after a press conference advocating communal harmony. The arresting officers produce no objective material supporting suspicion, obtain a detention order without disclosing the material placed before the Minister, and include a false claim in the B-report that the Attorney-General advised the arrest. The activist also alleges assault but supplies no medical or corroborating evidence. Analyze the claims under Articles 12(1), 13(1), 13(2) and 11.",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A political activist is arrested under special security legislation after a press conference advocating communal harmony. The arresting officers produce no objective material supporting suspicion, obtain a detention order without disclosing the material placed before the Minister, and include a false claim in the B-report that the Attorney-General advised the arrest. The activist also alleges assault but supplies no medical or corroborating evidence. Analyze the claims under Articles 12(1), 13(1), 13(2) and 11.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "case_laws",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether the arrest and detention followed lawful procedure and whether the separate allegation of ill-treatment is proved to the required standard.\n\nRule: SC/FR/97/2021 requires both a genuinely held suspicion and objectively sufficient material for an arrest of this kind. Reading a speech as a whole matters; isolated words stripped of context cannot create reasonable suspicion. A false B-report assertion may evidence malice. Failure to establish the material supporting a detention order also undermines Article 13(2). Arbitrary illegality engages Article 12(1). For Article 11, SC/FR/233/2018 confirms that the right is absolute but the alleged acts must be proved on a balance of probabilities with a high degree of certainty; material gaps in medical and corroborative evidence may be fatal.\n\nApplication: The harmonious content of the speech, absence of objective material, non-production of the investigative basis and false statement support violations of Articles 13(1), 13(2) and 12(1). The assault allegation is analytically separate. Without medical records, consistent contemporaneous complaints, video support or other corroboration, a court may decline to find the high-probability factual basis required for Article 11.\n\nConclusion: The activist should succeed on arbitrary arrest, detention and equality claims, with a declaration and just and equitable compensation, but the Article 11 claim is likely to fail on proof rather than because the right is qualified.",
+    "expected_sources": [
+      {
+        "title": "Sansoon Salley Mohamed Azath v. Attorney-General and Others, SC/FR/97/2021",
+        "section": "Judgment dated 12 December 2024",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Punchimenike and Another v. Excise Officers and Others, SC/FR/233/2018",
+        "section": "Article 11 analysis and conclusion",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Constitution of the Democratic Socialist Republic of Sri Lanka",
+        "section": "Articles 11, 12(1), 13(1), 13(2) and 126(4)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Constitution Article 11",
+      "Constitution Article 12(1)",
+      "Constitution Articles 13(1) and 13(2)",
+      "Constitution Article 126(4)"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "arrest",
+      "detention",
+      "reasonable_suspicion",
+      "article_11",
+      "fundamental_rights",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB-RS-005",
+    "question": "Under an instalment supply contract, a buyer accepts the first shipment but refuses to pay unless the seller gives a new guarantee not found in the contract. The seller treats this as repudiation and stops later deliveries. The buyer counterclaims for non-delivery, while the seller claims storage losses for a later shipment that was never placed at the agreed delivery point and was never specifically offered to the buyer. Analyze both claims.",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "Under an instalment supply contract, a buyer accepts the first shipment but refuses to pay unless the seller gives a new guarantee not found in the contract. The seller treats this as repudiation and stops later deliveries. The buyer counterclaims for non-delivery, while the seller claims storage losses for a later shipment that was never placed at the agreed delivery point and was never specifically offered to the buyer. Analyze both claims.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue 1: Whether the buyer's qualified refusal to pay amounted to repudiation. Fernando v. Mendis distinguishes a mere delayed payment from a definite refusal to perform except on a new, extra-contractual term. The latter demonstrates an intention not to be bound and may justify withholding future deliveries. On these facts, the buyer's insistence on a new guarantee supports the seller's repudiation defence to the buyer's non-delivery claim.\n\nIssue 2: Whether the seller may recover loss for non-acceptance of the later shipment. Section 37 of the Sale of Goods Ordinance, as applied in Rawanna & Co. v. Arunachapillai, requires proof that the seller was ready and willing to deliver and requested the buyer to take delivery. Goods not available at the agreed delivery point, coupled with no specific request to take them, fail both requirements.\n\nConclusion: The seller may have been entitled to suspend or terminate future performance because of the buyer's repudiatory refusal to pay, but cannot recover Section 37 storage or non-acceptance losses for a shipment the seller neither had ready at the agreed place nor offered by a proper request. The distinct contractual consequences should not be conflated.",
+    "expected_sources": [
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Sections 30, 31 and 37",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Fernando and Others v. Mendis, 23 N.L.R. 489",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Rawanna & Co. v. Arunachapillai, 47 N.L.R. 220",
+        "section": "Held and judgment on Section 37",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Sale of Goods Ordinance Section 37",
+      "Repudiation",
+      "Readiness and willingness to deliver",
+      "Request to take delivery"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "sale_of_goods",
+      "instalment_contract",
+      "repudiation",
+      "non_acceptance",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB-DR-001",
+    "question": "Prepare a comparative research memorandum on the boundaries of judicial review and fundamental-rights relief in Sri Lanka. Distinguish private contractual disputes, emergency restrictions on expression, franchise and election administration, provincial gubernatorial discretion, public-office resignation and election eligibility, intergovernmental administrative arrangements, school admissions, arrest and detention, Article 11 proof, environmental decision-making, and the domestic effect of international human-rights mechanisms. State the controlling principles and remedies illustrated by the attached authorities.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Prepare a comparative research memorandum on the boundaries of judicial review and fundamental-rights relief in Sri Lanka. Distinguish private contractual disputes, emergency restrictions on expression, franchise and election administration, provincial gubernatorial discretion, public-office resignation and election eligibility, intergovernmental administrative arrangements, school admissions, arrest and detention, Article 11 proof, environmental decision-making, and the domestic effect of international human-rights mechanisms. State the controlling principles and remedies illustrated by the attached authorities.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "A complete memorandum should synthesize the following propositions. Roberts v. Ratnayake confines a dispute arising solely from a lawfully governed contract to ordinary contract law unless executive or administrative action independently engages Article 12. Visuvalingam v. Liyanage recognizes standing for readers and the protected recipient side of expression, but upholds restrictions that are lawfully imposed under Article 15(7) in an emergency and are within the competent authority's reasonable, honest judgment; the applications were dismissed without costs. Karunathilaka v. Dayananda Dissanayake treats the silent act of voting as protected expression under Article 14(1)(a). The Commissioner's acquiescence in suspending postal-ballot arrangements and failure to use the statutory power to fix a fresh Provincial Council poll date produced a grossly unjustified delay and was unlawful, arbitrary and for a collateral purpose. Presidential immunity did not convert official presidential action into unreviewable action or prevent appropriate proceedings through the Attorney-General.\n\nAbeywickrema v. Pathirana treats public office as a statutory status: resignation is effective only upon acceptance by the proper appointing authority, ultra vires acts are reviewable, and estoppel cannot confer power a public authority lacks. Podinilame and Premachandra show that gubernatorial discretion is not unfettered. Removal of provincial commissioners requires legally relevant reasons, while a Governor choosing a Chief Minister must use a fair, rational process grounded in credible evidence. Certiorari and quo warranto may quash unlawful decisions; mandamus can compel a lawful fresh decision but not the appointment of a named person.\n\nWeerawansha v. Attorney-General is an interim-order authority, not a final merits judgment. It declined to suspend the entire P-TOMS structure but stayed identified provisions concerning governmental functions, the regional fund and location, while indicating lawful alternatives. SC/FR/58/2018 treats irrational application of school-admission criteria as an Article 12(1) infringement and orders admission. SC/FR/97/2021 requires subjective and objectively reasonable suspicion for arrest, treats false official assertions and unsupported detention as arbitrary, and granted declarations and State compensation. SC/FR/233/2018 emphasizes that Article 11 is absolute but factual allegations must still be proved on a balance of probabilities with a high degree of certainty; the evidentiary failure led to dismissal without costs.\n\nBulankulama v. Ministry of Industrial Development applies Articles 12(1), 14(1)(g) and 14(1)(h), public-trust reasoning, sustainable-development principles and lawful environmental assessment to restrain the proposed Eppawala project until comprehensive study, publication and Central Environmental Authority approval. Singarasa confirms the dualist limit: executive accession to an international procedure cannot transfer domestic judicial power or authorize revision of a final judgment without constitutional legislative implementation. The memo must distinguish declaratory relief, compensation, writs, mandatory directions, costs and limited interim stays, and must not present Weerawansha as a final determination.",
+    "expected_sources": [
+      {
+        "title": "Constitution of the Democratic Socialist Republic of Sri Lanka",
+        "section": "Articles 3, 4, 11-17, 33, 91, 126, 154B-154F",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Roberts and Another v. Ratnayake and Others [1986] 2 Sri L.R. 36",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Visuvalingam and Others v. Liyanage and Others [1984] 2 Sri L.R.",
+        "section": "Majority judgment and order",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Karunathilaka and Another v. Dayananda Dissanayake, Commissioner of Elections and Others [1999] 1 Sri L.R. 157",
+        "section": "Held and judgment",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Abeywickrema v. Pathirana and Others [1986] 1 Sri L.R. 120",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Podinilame v. Mathew [1996] 2 Sri L.R. 82",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Premachandra and Dodangoda v. Jayawickrema and Bakeer Markar [1993] 2 Sri L.R. 294",
+        "section": "Judgment and order",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Weerawansha and Others v. Attorney-General and Others [2006] 1 Sri L.R.",
+        "section": "Limited interim stay order",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "J.M.H. Chandani Jayasundara and Others v. Principal, Visakha Vidyalaya and Others, SC/FR/58/2018",
+        "section": "Judgment and order",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Sansoon Salley Mohamed Azath v. Attorney-General and Others, SC/FR/97/2021",
+        "section": "Judgment and compensation order",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Punchimenike and Another v. Excise Officers and Others, SC/FR/233/2018",
+        "section": "Article 11 analysis and order",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Bulankulama and Others v. Ministry of Industrial Development and Others, SC Application No. 884/99 (FR)",
+        "section": "Judgment and order",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Singarasa v. Attorney-General [2013] 1 Sri L.R. 245",
+        "section": "Judgment and final order",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Constitution Articles 11, 12, 13, 14 and 15",
+      "Constitution Articles 17 and 126",
+      "Provincial Councils Elections Act Section 22(6)",
+      "Constitution Articles 154B-154F",
+      "Certiorari, quo warranto and mandamus",
+      "Interim relief under Article 126(4)"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "constitutional_law",
+      "fundamental_rights",
+      "judicial_review",
+      "administrative_law",
+      "comparative_memo",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB-DR-002",
+    "question": "Prepare a title-risk and litigation roadmap for a disputed Sri Lankan land transaction involving a conditional transfer, alleged defective notarial execution, competing registration, occupation over time, a mortgage and guarantee, possible partition, and State-alienated land restrictions. Explain how validity, priority, prescription, disabilities, statutory sale, pleadings, lis pendens and interim relief must be analyzed, using the attached statutes and cases.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Prepare a title-risk and litigation roadmap for a disputed Sri Lankan land transaction involving a conditional transfer, alleged defective notarial execution, competing registration, occupation over time, a mortgage and guarantee, possible partition, and State-alienated land restrictions. Explain how validity, priority, prescription, disabilities, statutory sale, pleadings, lis pendens and interim relief must be analyzed, using the attached statutes and cases.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The roadmap must begin with validity, not registration. Section 2 of the Prevention of Frauds Ordinance requires the prescribed written, signed and notarial form for transactions affecting immovable property. Rohan de Soyza demonstrates that an unlicensed notary and lack of simultaneous presence render a purported transfer void and justify cancellation of registration. Registration under the Registration of Documents Ordinance governs notice and priority among competing instruments but does not manufacture validity. Gnanasambandam establishes that, where the deed is valid, a transferee who accepts land subject to an intrinsic condition to retransfer cannot escape that condition merely by not signing the deed.\n\nPrescription must be classified by the cause of action. Sections 3 and 4 address adverse possession and possessory restoration; Sections 5, 6 and 9 respectively govern mortgage or bond claims, written obligations, and loss or damage. Raja Nanayakkara excludes the first day and permits filing on the next working day when the last day is a public holiday. Jayasena applies the statutory disability protections in Sections 13 and 14 where mortgage rights devolve on minors. Hatton National Bank v. Sellers Sports distinguishes the ten-year mortgage-bond period from the six-year guarantee period, with the guarantee claim accruing when the stipulated written demand is not met.\n\nAbeykoon v. National Savings Bank shows that a special statutory certificate-of-sale mechanism may pass title without an ordinary notarial conveyance, the specific enactment prevailing over general formal law. Recovery of Loans by Banks similarly requires attention to its notice, resolution, sale and certificate machinery. Land Development Ordinance permits and grants carry statutory conditions, restrictions on disposition, mortgage and execution, and special succession rules that ordinary private conveyancing cannot override.\n\nProcedurally, the Civil Procedure Code requires material facts, cause of action, jurisdiction and relief to be properly pleaded; injunction applications under Sections 662-667 require petition and affidavit and expose the applicant to compensation if improperly obtained. A partition action must be registered as lis pendens, followed by statutory notice and survey, investigation of title, interlocutory decree and final partition or sale. Samuel Gnanam is relevant where partnership parties or Section 18 formal objections arise: initial capital and agency among partners must be proved rather than assumed. Fernando v. Mendis and Rawanna are not land authorities and should not be used to resolve title. The final advice must separately identify deed invalidity, priority, limitation, State-land restrictions, banking remedies and procedural preservation steps.",
+    "expected_sources": [
+      {
+        "title": "Prevention of Frauds Ordinance (Consolidated 2024)",
+        "section": "Sections 2 and 18",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Registration of Documents Ordinance (Consolidated 2024)",
+        "section": "Priority and cancellation provisions, including Section 31",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prescription Ordinance (Consolidated 2024)",
+        "section": "Sections 3-6, 9 and 13-14",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Civil Procedure Code (Consolidated to Act No. 43 of 2024)",
+        "section": "Sections 40-46 and 662-667",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Partition Law (Consolidated 2024)",
+        "section": "Lis pendens, survey, interlocutory decree and final decree provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Land Development Ordinance (Consolidated 2024)",
+        "section": "Sections 19, 37, 39, 45-46 and 48A-73",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Recovery of Loans by Banks (Special Provisions) Act, No. 4 of 1990",
+        "section": "Sections 2 onward on notice, recovery and sale",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Gnanasambandam v. Bin Adaham and Another [1998] 2 Sri L.R. 305",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Rohan de Soyza v. Jinendradasa [2004] 1 Sri L.R. 379",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Raja Nanayakkara v. Mercy Jayasinghe and Others [2004] 2 Sri L.R. 416",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Jayasena v. Dayasena [2002] 3 Sri L.R. 261",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Abeykoon and Another v. National Savings Bank [1999] 3 Sri L.R. 144",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Hatton National Bank Ltd. v. Sellers Sports (Pvt) Ltd. and Others [2000] 3 Sri L.R. 326",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Samuel Gnanam and Others v. Ismail Lebbe [2008] 2 Sri L.R. 61",
+        "section": "Held",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Prevention of Frauds Ordinance Sections 2 and 18",
+      "Prescription Ordinance Sections 3-6, 9, 13 and 14",
+      "Civil Procedure Code Sections 40-46 and 662-667",
+      "Registration of Documents Ordinance Section 31",
+      "Partition lis pendens and survey provisions",
+      "Land Development Ordinance disposition and succession provisions"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "property_law",
+      "title_risk",
+      "prescription",
+      "partition",
+      "bank_recovery",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB-DR-003",
+    "question": "A Sri Lankan company plans to sell connected devices through online orders, cash sales and hire-purchase, using standard terms, electronic signatures and automated acceptance. It also has legacy bearer shares and may refer disputes to commercial mediation. Prepare a comprehensive legal compliance memorandum covering corporate authority and beneficial ownership, contract formation, sale and delivery obligations, consumer and hire-purchase protections, exclusion clauses, applicable commercial law, and the route to court after mediation.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "A Sri Lankan company plans to sell connected devices through online orders, cash sales and hire-purchase, using standard terms, electronic signatures and automated acceptance. It also has legacy bearer shares and may refer disputes to commercial mediation. Prepare a comprehensive legal compliance memorandum covering corporate authority and beneficial ownership, contract formation, sale and delivery obligations, consumer and hire-purchase protections, exclusion clauses, applicable commercial law, and the route to court after mediation.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The company has corporate personality and broad capacity under Section 2 of the Companies Act, but contracts must be executed through Section 19-compliant authority and directors remain subject to Sections 187-190. The 2025 amendment requires legacy bearer instruments to be disclosed and converted within the statutory sixty-day period, with rights nullified on non-compliance, and introduces detailed beneficial-owner identification, company and Registrar registers, event-driven notifications and transitional reporting under Sections 130A-130J.\n\nElectronic form alone cannot deny validity. The Electronic Transactions Act recognizes electronic records, signatures and contracts formed through automated message systems, subject to its attribution, dispatch, receipt and error rules and statutory exclusions. The Sale of Goods Ordinance then governs sale versus agreement to sell, description, quality and fitness, delivery, acceptance and remedies. Fernando v. Mendis treats a refusal to pay unless the seller accepts a new term as potential repudiation; Rawanna requires actual readiness and a request to take delivery before Section 37 non-acceptance loss may be recovered. Croos v. De Soysa limits 'goods' to tangible corporeal movables, so an assignment of an incorporeal monopoly right lies outside that regime.\n\nConsumer-facing terms also engage the Consumer Affairs Authority Act. The Authority may inquire into timely written complaints about non-conforming goods and warranties, and implied consumer warranties and prohibitions on misleading conduct cannot simply be drafted away. Hire-purchase transactions require pre-contract cash-price disclosure, a signed agreement containing the prescribed price, instalment, deposit, goods and notice information, and delivery of a copy; enforcement and repossession rights are restricted by the Consumer Credit Act. The Unfair Contract Terms Act makes exclusions for death or personal injury from negligence ineffective and subjects other negligence exclusions and specified standard-form or consumer terms to reasonableness.\n\nThe Civil Law Ordinance imports English commercial law for specified subjects only where Sri Lankan written law does not otherwise provide. A contractual mediation clause triggers Sections 3A-3F of the Commercial Mediation Centre amendment: substantive proceedings ordinarily require a certificate of non-settlement, mediation communications are protected, a signed settlement is enforceable as a contract, and urgent provisional remedies remain available on a limited basis. The memo should end with an implementation checklist covering corporate registers, contracting authority, online assent records, consumer disclosures, hire-purchase documentation, delivery evidence, reasonable limitations and dispute-escalation language.",
+    "expected_sources": [
+      {
+        "title": "Companies Act, No. 7 of 2007",
+        "section": "Sections 2, 19-23, 123-124 and 187-190",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Companies (Amendment) Act, No. 12 of 2025",
+        "section": "Section 51A and Sections 130A-130J",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Electronic Transactions Act (Consolidated 2024)",
+        "section": "Sections 3-8, 11-17 and 26",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Sections 2, 4-5, 14-15, 27-37 and remedies",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Consumer Affairs Authority Act, No. 9 of 2003",
+        "section": "Sections 12-15 and 30-32",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Consumer Credit Act, No. 29 of 1982",
+        "section": "Sections 3-4, 19-23 and 29",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Unfair Contract Terms Act, No. 26 of 1997",
+        "section": "Sections 2-7 and reasonableness provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Civil Law Ordinance",
+        "section": "Sections 2-5",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Commercial Mediation Centre of Sri Lanka (Amendment) Act, No. 37 of 2005",
+        "section": "Sections 3A-3F",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Fernando and Others v. Mendis, 23 N.L.R. 489",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Rawanna & Co. v. Arunachapillai, 47 N.L.R. 220",
+        "section": "Held",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Croos v. De Soysa, 7 N.L.R. 32",
+        "section": "Held",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Companies Act Sections 2, 19 and 187-190",
+      "Companies Act Section 51A and Sections 130A-130J",
+      "Electronic Transactions Act Sections 3-8 and 17",
+      "Sale of Goods Ordinance Sections 14, 15 and 37",
+      "Consumer Affairs Authority Act Section 13 and implied warranties",
+      "Consumer Credit Act Section 3",
+      "Unfair Contract Terms Act reasonableness test",
+      "Commercial Mediation Sections 3A-3F"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "companies",
+      "ecommerce",
+      "consumer_law",
+      "sale_of_goods",
+      "commercial_mediation",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB-DR-004",
+    "question": "Prepare a prosecution-and-defence research memorandum for a money-laundering case in which the accused made an alleged confession in police custody, supplied information leading to discovery of property, and is said to possess assets disproportionate to known income. Address the substantive offence, attempts and abetment, the statutory presumption, admissibility and use of statements, a Magistrate-recorded confession, proof of the predicate unlawful activity, forfeiture, and protection of bona fide third parties.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Prepare a prosecution-and-defence research memorandum for a money-laundering case in which the accused made an alleged confession in police custody, supplied information leading to discovery of property, and is said to possess assets disproportionate to known income. Address the substantive offence, attempts and abetment, the statutory presumption, admissibility and use of statements, a Magistrate-recorded confession, proof of the predicate unlawful activity, forfeiture, and protection of bona fide third parties.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Section 3 of the Prevention of Money Laundering Act criminalizes specified transactions and dealings with property derived or realized from unlawful activity where the accused knew or had reason to believe its illicit origin. Attempt, conspiracy, aiding and abetting carry the same punishment, and the Act adopts the Penal Code meaning of abetment. A conviction for the predicate unlawful activity is not a prerequisite to proving laundering, but the prosecution must still establish the statutory elements and the link to unlawful activity. Section 4 creates a rebuttable presumption where money or other property cannot be reconciled with known income or receipts.\n\nAdmissibility must be separated from substantive proof. Evidence Ordinance Section 24 excludes a confession caused by a relevant inducement, threat or promise. Sections 25 and 26 prohibit proof of a confession to police or while in police custody unless the custodial confession is made in the immediate presence of a Magistrate. Section 27 permits only so much of the accused's information as distinctly relates to the fact discovered. Section 30 prevents a co-accused's confession from being considered against another jointly tried accused.\n\nCriminal Procedure Code provisions governing police statements restrict their evidentiary use and do not permit routine corroboration by the prior police statement. Section 127 allows a Magistrate to record a confession only after inquiry supplies reason to believe it was voluntary and requires the prescribed memorandum. The prosecution must therefore prove voluntariness, compliance and independent evidence rather than treating the police narrative as substantive proof.\n\nUpon conviction, Section 13 authorizes forfeiture of property derived from money laundering and addresses property disproportionate to known sources. Section 14 preserves a procedure for persons asserting bona fide interests. The memorandum should identify the prosecution's asset trail, source-of-funds and knowledge evidence; the defence challenges to the presumption and chain of custody; the limited Section 27 discovery evidence; and third-party ownership claims. It should not assume that an inadmissible confession becomes admissible merely because the alleged offence is serious.",
+    "expected_sources": [
+      {
+        "title": "Prevention of Money Laundering Act, No. 5 of 2006",
+        "section": "Sections 3-5 and 13-14",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Evidence Ordinance (Consolidated 2024)",
+        "section": "Sections 24-30",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Code of Criminal Procedure Act (Consolidated 2024)",
+        "section": "Police-statement provisions and Section 127",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Penal Code (Consolidated 2024)",
+        "section": "Sections 100-102 on abetment and relevant predicate offences",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Prevention of Money Laundering Act Sections 3, 4, 13 and 14",
+      "Evidence Ordinance Sections 24-27 and 30",
+      "Code of Criminal Procedure Act Section 127",
+      "Penal Code Sections 100-102"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "money_laundering",
+      "confession",
+      "evidence",
+      "criminal_procedure",
+      "forfeiture",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB-DR-005",
+    "question": "Prepare a consolidated compliance memorandum for a Sri Lankan employer and family-owned enterprise covering hours and holidays, minimum wages from 2025 onward, maternity protection, written and verbal service contracts, termination and labour-tribunal remedies, exposure under the Public Servants (Liabilities) Ordinance when lending to an employee in public service, marriage-capacity checks relevant to employee benefits, and identity-record obligations where the family assets are held through an express trust.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Prepare a consolidated compliance memorandum for a Sri Lankan employer and family-owned enterprise covering hours and holidays, minimum wages from 2025 onward, maternity protection, written and verbal service contracts, termination and labour-tribunal remedies, exposure under the Public Servants (Liabilities) Ordinance when lending to an employee in public service, marriage-capacity checks relevant to employee benefits, and identity-record obligations where the family assets are held through an express trust.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The Shop and Office Employees Act limits ordinary work to eight hours a day and forty-five hours a week and provides weekly, annual, casual and public-holiday entitlements with remuneration, subject to its detailed conditions and exceptions. The National Minimum Wage amendment sets Rs. 27,000 monthly and Rs. 1,080 daily for 1 April-31 December 2025, rising to Rs. 30,000 and Rs. 1,200 from 1 January 2026; specified budgetary relief allowances form part of those wages rather than an additional duplicate payment.\n\nThe Maternity Benefits Ordinance supplies paid maternity benefit and protected absence according to the statutory circumstances, prohibits termination merely because of pregnancy, confinement or consequent illness, places the burden on the employer to prove another reason, and restricts injurious work around confinement. Applicable coverage must be checked because shop and office employees may fall under the separate maternity provisions in the Shop and Office Employees Act.\n\nThe Service Contracts Ordinance deems most verbal servant contracts month-to-month with one month's notice, regulates wages on discharge, and imposes special form, explanation, certification, triplicate and duration requirements for covered written engagements exceeding one month. These historic provisions must be reconciled with later employment legislation. Under the Industrial Disputes Act, disputes may proceed through conciliation or arbitration; collective agreements and awards bind as provided; and a workman may apply to a labour tribunal concerning termination or gratuity, generally within six months, with reinstatement or compensation among the possible remedies.\n\nThe Public Servants (Liabilities) Ordinance can bar specified actions on loans, guarantees and securities against protected public servants, subject to the salary threshold and exceptions including non-disclosure of public-servant status. The Marriage Registration Ordinance generally requires both parties to have completed eighteen years and identifies prohibited relationships and subsisting-marriage restrictions; benefit administration should verify legal status without purporting to adjudicate it.\n\nFor an express trust, the Trusts amendment requires registration-related information, quarterly verification and updating of prescribed identity information, six-year post-involvement retention, identification of natural beneficial owners and disclosure to authorized anti-money-laundering bodies. The memo should end with separate payroll, leave, termination, lending, dependent-benefit and trust-record checklists rather than treating these enactments as a single employment code.",
+    "expected_sources": [
+      {
+        "title": "Shop and Office Employees (Regulation of Employment and Remuneration) Act (Consolidated 2024)",
+        "section": "Sections 3-7 and relevant remuneration and maternity provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "National Minimum Wage of Workers (Amendment) Act, No. 11 of 2025",
+        "section": "Sections 2-3",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Maternity Benefits Ordinance",
+        "section": "Sections 3-10A and related provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Service Contracts Ordinance",
+        "section": "Sections 3-9",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Industrial Disputes Act (Consolidated 2024)",
+        "section": "Sections 3-8, 15-20 and 31B-31DD",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Public Servants (Liabilities) Ordinance",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Marriage Registration Ordinance",
+        "section": "Sections 15-18 and registration provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Trusts (Amendment) Act, No. 6 of 2018",
+        "section": "Sections 6A-6B and 19A-19C",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Shop and Office Employees Act Sections 3-7",
+      "National Minimum Wage substituted Section 3(1)",
+      "Maternity Benefits Ordinance Section 10A",
+      "Service Contracts Ordinance Sections 3, 4 and 7",
+      "Industrial Disputes Act Section 31B",
+      "Public Servants (Liabilities) Ordinance Section 2",
+      "Marriage Registration Ordinance Sections 15-18",
+      "Trusts Ordinance Sections 19A-19C"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "employment",
+      "minimum_wage",
+      "maternity",
+      "labour_tribunal",
+      "marriage",
+      "trusts",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB-DF-001",
+    "question": "Draft a fundamental-rights petition and prayer for relief for residents and farmers challenging an imminent agreement for rapid extraction of a major mineral deposit. The proposed agreement was negotiated without a lawful comprehensive environmental impact assessment, would displace communities and threaten water and livelihoods, and sidelines the Central Environmental Authority. Use Bulankulama and the Constitution, and include interim and final relief without inventing facts.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft a fundamental-rights petition and prayer for relief for residents and farmers challenging an imminent agreement for rapid extraction of a major mineral deposit. The proposed agreement was negotiated without a lawful comprehensive environmental impact assessment, would displace communities and threaten water and livelihoods, and sidelines the Central Environmental Authority. Use Bulankulama and the Constitution, and include interim and final relief without inventing facts.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The output should be a Supreme Court fundamental-rights pleading with placeholders for petitioners, respondents, dates, project documents and affected land. It should plead standing and imminent executive or administrative action; identify Articles 12(1), 14(1)(g), 14(1)(h), 17 and 126; and organize facts concerning livelihood, residence, water, environmental assessment, public participation and the statutory role of the Central Environmental Authority. The legal grounds should accurately invoke Bulankulama's public-trust, sustainable-development, precautionary, polluter-pays and lawful-EIA reasoning without presenting international declarations as self-executing statutes. The prayer should seek declarations, an interim restraint against contracting or implementation, publication of comprehensive studies, lawful environmental approval and consultation, costs, and such just and equitable relief as the Court considers appropriate. Unknown facts must remain bracketed placeholders and the draft must end with notes for completion.",
+    "expected_sources": [
+      {
+        "title": "Constitution of the Democratic Socialist Republic of Sri Lanka",
+        "section": "Articles 12(1), 14(1)(g), 14(1)(h), 17 and 126",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Bulankulama and Others v. Ministry of Industrial Development and Others, SC Application No. 884/99 (FR)",
+        "section": "Judgment and order",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Constitution Articles 12(1), 14(1)(g), 14(1)(h), 17 and 126",
+      "Public trust doctrine",
+      "Environmental impact assessment",
+      "Interim relief"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "fundamental_rights_petition",
+      "environment",
+      "bulankulama",
+      "interim_relief"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-GB-DF-002",
+    "question": "Draft a compliant employment agreement and statutory-entitlements schedule for a full-time shop employee commencing on 1 January 2026. Include working-time limits, weekly and annual holidays, the applicable minimum wage, maternity protections, termination and dispute-resolution language, and placeholders for terms that cannot be inferred. Do not contract out of statutory rights.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft a compliant employment agreement and statutory-entitlements schedule for a full-time shop employee commencing on 1 January 2026. Include working-time limits, weekly and annual holidays, the applicable minimum wage, maternity protections, termination and dispute-resolution language, and placeholders for terms that cannot be inferred. Do not contract out of statutory rights.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The draft should use a professional employment-agreement structure with placeholders for employer, employee, position, workplace, probation, wage above the statutory floor, payment cycle and commencement date. It must state that ordinary hours will not exceed eight per day or forty-five per week except as lawfully permitted; preserve weekly, annual, casual and public holidays under the Shop and Office Employees Act; and identify the 1 January 2026 national minimum of Rs. 30,000 monthly or Rs. 1,200 daily as applicable. It should include pregnancy and maternity non-discrimination, statutory leave and benefit language, and prohibit termination merely because of pregnancy, confinement or related illness. Termination clauses must preserve Industrial Disputes Act and labour-tribunal rights and should not purport to predetermine just and equitable relief. Because this is a shop employee, the Service Contracts Ordinance should be treated only as potentially relevant background and not used to reduce later statutory protection. The document must include recordkeeping, grievance, governing-law and notes-for-completion sections.",
+    "expected_sources": [
+      {
+        "title": "Shop and Office Employees (Regulation of Employment and Remuneration) Act (Consolidated 2024)",
+        "section": "Sections 3-7 and maternity/remuneration provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "National Minimum Wage of Workers (Amendment) Act, No. 11 of 2025",
+        "section": "Sections 2-3",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Maternity Benefits Ordinance",
+        "section": "Sections 3-10A",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Industrial Disputes Act (Consolidated 2024)",
+        "section": "Section 31B and related provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Service Contracts Ordinance",
+        "section": "Sections 3-7",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Shop and Office Employees Act Sections 3-7",
+      "National Minimum Wage substituted Section 3(1)(b)",
+      "Maternity Benefits Ordinance Section 10A",
+      "Industrial Disputes Act Section 31B"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "employment_agreement",
+      "shop_employee",
+      "minimum_wage",
+      "maternity",
+      "labour_rights"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-GB-DF-003",
+    "question": "Draft the core customer-facing terms for an online hire-purchase sale of a household appliance by a Sri Lankan company. The terms must support electronic signatures and automated order processing, contain the mandatory hire-purchase price and instalment disclosures, preserve statutory quality and warranty rights, use a legally defensible limitation clause, and include a commercial-mediation escalation clause with an urgent-relief carve-out.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft the core customer-facing terms for an online hire-purchase sale of a household appliance by a Sri Lankan company. The terms must support electronic signatures and automated order processing, contain the mandatory hire-purchase price and instalment disclosures, preserve statutory quality and warranty rights, use a legally defensible limitation clause, and include a commercial-mediation escalation clause with an urgent-relief carve-out.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The draft should include placeholders for the company, customer, goods, cash price, hire-purchase price, deposit, instalment amounts and dates, delivery, title passage and statutory notice. It must record the customer's electronic assent and recognize automated processing without suggesting that electronic form defeats validity. It must preserve Sale of Goods and Consumer Affairs Authority implied conditions and warranties, complaint rights and remedies. The limitation clause must not exclude death or personal injury caused by negligence and must subject any limitation for other negligence loss or standard consumer terms to the statutory reasonableness requirement. Repossession and termination language must be qualified by the Consumer Credit Act rather than granting self-help beyond the statute. The mediation clause should require reference to the Commercial Mediation Centre and a certificate of non-settlement before substantive court proceedings, preserve confidentiality and enforceability of a signed settlement, and expressly retain the limited right to seek a provisional remedy. The draft must end with client-input notes and should not invent prices or dates.",
+    "expected_sources": [
+      {
+        "title": "Electronic Transactions Act (Consolidated 2024)",
+        "section": "Sections 3-8, 11-17 and 26",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Consumer Credit Act, No. 29 of 1982",
+        "section": "Sections 3-4, 19-23 and 29",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Sections 14-15 and relevant remedies",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Consumer Affairs Authority Act, No. 9 of 2003",
+        "section": "Sections 13 and 30-32",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Unfair Contract Terms Act, No. 26 of 1997",
+        "section": "Sections 3-7",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Commercial Mediation Centre of Sri Lanka (Amendment) Act, No. 37 of 2005",
+        "section": "Sections 3A-3F",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Electronic Transactions Act Sections 3, 7 and 17",
+      "Consumer Credit Act Section 3",
+      "Sale of Goods Ordinance Sections 14-15",
+      "Consumer Affairs Authority Act Section 13",
+      "Unfair Contract Terms Act Section 3",
+      "Commercial Mediation Sections 3A-3F"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "hire_purchase",
+      "electronic_contract",
+      "consumer_terms",
+      "mediation",
+      "limitation_clause"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-GB-DF-004",
+    "question": "Draft written defence submissions seeking exclusion of an alleged custodial confession in a money-laundering prosecution. The statement was made to police after a promise of leniency; part of it allegedly led to discovery of an account; a later confession was recorded by a Magistrate but the record does not show the required voluntariness inquiry. Also address the Section 4 asset presumption and a spouse's bona fide claim to jointly owned property threatened with forfeiture.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft written defence submissions seeking exclusion of an alleged custodial confession in a money-laundering prosecution. The statement was made to police after a promise of leniency; part of it allegedly led to discovery of an account; a later confession was recorded by a Magistrate but the record does not show the required voluntariness inquiry. Also address the Section 4 asset presumption and a spouse's bona fide claim to jointly owned property threatened with forfeiture.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The submissions should use headings for facts assumed, issues, statutory framework, inadmissibility, limited discovery evidence, defective Magistrate procedure, rebuttal of the property presumption, third-party interest and relief. They should argue that inducement or promise engages Evidence Ordinance Section 24; police and custodial confessions are excluded by Sections 25 and 26; and only the portion distinctly related to a discovered fact may be proved under Section 27. The Section 127 confession should be challenged because voluntariness inquiry and the prescribed memorandum are safeguards, not formalities. The draft should acknowledge that Section 4 of the Money Laundering Act is rebuttable and identify placeholders for lawful income, acquisition and ownership evidence. It should request protection of the spouse's bona fide interest under the forfeiture provisions without asserting unprovided facts. The requested orders should be carefully limited to exclusion, a voir dire or preliminary inquiry as appropriate, non-reliance on inadmissible material, and preservation or adjudication of the third-party interest.",
+    "expected_sources": [
+      {
+        "title": "Evidence Ordinance (Consolidated 2024)",
+        "section": "Sections 24-27",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Code of Criminal Procedure Act (Consolidated 2024)",
+        "section": "Police-statement provisions and Section 127",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Money Laundering Act, No. 5 of 2006",
+        "section": "Sections 3-4 and 13-14",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Evidence Ordinance Sections 24-27",
+      "Code of Criminal Procedure Act Section 127",
+      "Prevention of Money Laundering Act Sections 4, 13 and 14"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "written_submissions",
+      "confession",
+      "money_laundering",
+      "forfeiture",
+      "evidence"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-GB-DF-005",
+    "question": "Draft a District Court plaint, supporting affidavit and narrowly framed interim-injunction prayer for co-owners seeking cancellation of a forged deed and preservation of land pending a partition action. The alleged deed was signed before an unlicensed notary without simultaneous presence; a competing instrument has been registered; one parcel may be held under a Land Development Ordinance grant; and the defendant threatens an immediate sale. Include lis pendens, survey and limitation averments with placeholders.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft a District Court plaint, supporting affidavit and narrowly framed interim-injunction prayer for co-owners seeking cancellation of a forged deed and preservation of land pending a partition action. The alleged deed was signed before an unlicensed notary without simultaneous presence; a competing instrument has been registered; one parcel may be held under a Land Development Ordinance grant; and the defendant threatens an immediate sale. Include lis pendens, survey and limitation averments with placeholders.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The output should contain three clearly separated draft components: plaint, verifying/supporting affidavit, and interim-injunction prayer. The plaint must include court and party placeholders, title genealogy, land description, co-ownership, the challenged deed and registration particulars, the precise Section 2 execution defects, threatened alienation, cause of action, jurisdiction, limitation and relief. It should seek a declaration of invalidity and cancellation of registration consistently with Rohan de Soyza, while recognizing that registration does not cure a void instrument. Partition allegations must provide for registration of the action as lis pendens, statutory notices, preliminary survey and investigation of all shares and interests. The Land Development Ordinance parcel must be separately identified and made subject to verification of grant conditions, disposition restrictions and statutory succession; the draft must not assume it is freely partitionable. The injunction materials should comply with Civil Procedure Code Sections 662-667, explain urgency and preservation of the subject matter, give a cross-undertaking or acknowledge compensation risk, and avoid seeking final relief at the interim stage. All dates, deed numbers, registry references, shares and survey details must remain placeholders.",
+    "expected_sources": [
+      {
+        "title": "Civil Procedure Code (Consolidated to Act No. 43 of 2024)",
+        "section": "Sections 40-46, 181-183A, 440A and 662-667",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Partition Law (Consolidated 2024)",
+        "section": "Lis pendens, notice, survey and decree provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Frauds Ordinance (Consolidated 2024)",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Registration of Documents Ordinance (Consolidated 2024)",
+        "section": "Section 31 and registration provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Land Development Ordinance (Consolidated 2024)",
+        "section": "Sections 37, 39, 45-46 and succession provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prescription Ordinance (Consolidated 2024)",
+        "section": "Applicable limitation provisions",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Rohan de Soyza v. Jinendradasa [2004] 1 Sri L.R. 379",
+        "section": "Held",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Civil Procedure Code Sections 40-46 and 662-667",
+      "Prevention of Frauds Ordinance Section 2",
+      "Registration of Documents Ordinance Section 31",
+      "Partition lis pendens and preliminary survey provisions",
+      "Land Development Ordinance disposition restrictions"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "plaint",
+      "partition",
+      "deed_cancellation",
+      "interim_injunction",
+      "land_development"
+    ],
+    "mode": "drafting"
+  }
+]

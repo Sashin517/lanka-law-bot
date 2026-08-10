@@ -1,0 +1,988 @@
+[
+  {
+    "id": "SL-GB2-QA-001",
+    "question": "What restrictions must the articles of a private company contain under Section 27 of the Companies Act, No. 7 of 2007, and which shareholders are excluded when applying the fifty-shareholder limit?",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "What restrictions must the articles of a private company contain under Section 27 of the Companies Act, No. 7 of 2007, and which shareholders are excluded when applying the fifty-shareholder limit?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Section 27 requires the articles of a private company to prohibit the company from offering its shares or other securities to the public and to limit the number of shareholders to fifty. Employees who are shareholders, and former employees who became shareholders while employed and continued as shareholders after leaving employment, are excluded from that count.",
+    "expected_sources": [
+      {
+        "title": "Companies Act, No. 7 of 2007",
+        "section": "Section 27",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 27(a)",
+      "Section 27(b)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "companies",
+      "private_company",
+      "shareholder_limit",
+      "public_offer",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB2-QA-002",
+    "question": "Can the Electronic Transactions Act be relied upon to satisfy the legal formalities for executing a power of attorney or a contract for the sale or conveyance of immovable property?",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "Can the Electronic Transactions Act be relied upon to satisfy the legal formalities for executing a power of attorney or a contract for the sale or conveyance of immovable property?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "No. Section 23 expressly excludes a power of attorney from the Act under paragraph (d), and excludes a contract for the sale or conveyance of immovable property or any interest in such property under paragraph (f). The Act's rules recognizing electronic records and signatures therefore cannot, by themselves, be used to satisfy the formalities governing those transactions.",
+    "expected_sources": [
+      {
+        "title": "Electronic Transactions Act (Consolidated 2024)",
+        "section": "Section 23(d) and (f)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 23(d)",
+      "Section 23(f)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "electronic_transactions",
+      "power_of_attorney",
+      "immovable_property",
+      "statutory_exclusion",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB2-QA-003",
+    "question": "How does Section 3 of the Maternity Benefits Ordinance determine whether a woman worker is entitled to twelve weeks or six weeks of maternity benefit?",
+    "category": "quick_qa",
+    "difficulty": "easy",
+    "request": {
+      "question": "How does Section 3 of the Maternity Benefits Ordinance determine whether a woman worker is entitled to twelve weeks or six weeks of maternity benefit?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "A woman is entitled to twelve weeks - two weeks up to and including confinement and ten weeks after it - where the confinement results in a live child and she has no child or one child at that date. She is entitled to six weeks - two weeks up to and including confinement and four weeks after it - where a live child is born and she already has two or more children, or where the confinement does not result in a live child.",
+    "expected_sources": [
+      {
+        "title": "Maternity Benefits Ordinance",
+        "section": "Section 3(1)(a) and (b)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 3(1)(a)",
+      "Section 3(1)(b)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "employment",
+      "maternity_benefits",
+      "confinement",
+      "leave_duration",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB2-QA-004",
+    "question": "What time limits govern a workman's termination application to a Labour Tribunal and the Tribunal's making of its order under Sections 31B and 31C of the Industrial Disputes Act?",
+    "category": "quick_qa",
+    "difficulty": "medium",
+    "request": {
+      "question": "What time limits govern a workman's termination application to a Labour Tribunal and the Tribunal's making of its order under Sections 31B and 31C of the Industrial Disputes Act?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Under Section 31B(7), an application concerning termination of services, or the gratuity or other termination benefits identified in Section 31B(1)(b), must be made within six months from the date of termination. Section 31C(1) states that, after making the inquiries and hearing the evidence it considers necessary, the Labour Tribunal is to make its just and equitable order not later than six months from the date of the application.",
+    "expected_sources": [
+      {
+        "title": "Industrial Disputes Act (Consolidated 2024)",
+        "section": "Sections 31B(7) and 31C(1)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 31B(1)",
+      "Section 31B(7)",
+      "Section 31C(1)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "industrial_disputes",
+      "labour_tribunal",
+      "termination",
+      "time_limit",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB2-QA-005",
+    "question": "What is the effect under Section 66 of the Partition Law of a voluntary sale, lease or mortgage of an undivided share after a partition action has been registered as a lis pendens, and what happens if the action is later dismissed?",
+    "category": "quick_qa",
+    "difficulty": "medium",
+    "request": {
+      "question": "What is the effect under Section 66 of the Partition Law of a voluntary sale, lease or mortgage of an undivided share after a partition action has been registered as a lis pendens, and what happens if the action is later dismissed?",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "quick_qa",
+    "expected_task_type": "qa",
+    "expected_answer_mode": "direct_answer",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Once the partition action is duly registered as a lis pendens, Section 66(1) prohibits a voluntary alienation, lease or hypothecation of an undivided share or interest until the action is finally determined by dismissal, decree of partition or certificate of sale. A transaction made in breach of that prohibition is void under Section 66(2). However, if the partition action is dismissed, the transaction is deemed valid.",
+    "expected_sources": [
+      {
+        "title": "Partition Law (Consolidated 2024)",
+        "section": "Section 66(1)-(2)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 66(1)",
+      "Section 66(2)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.9,
+    "expected_confidence": "high",
+    "tags": [
+      "partition",
+      "lis_pendens",
+      "pendente_lite",
+      "alienation",
+      "quick_qa"
+    ],
+    "mode": "quick_qa"
+  },
+  {
+    "id": "SL-GB2-RS-001",
+    "question": "A company incorporated as a private company invites the general public to subscribe for its debentures and increases its shareholders to fifty-eight. The additional shareholders are outside investors, not present or former employees. The directors insist that the company remains private because its articles have not formally been amended. Analyze the company's legal status and possible relief.",
+    "category": "reasoning",
+    "difficulty": "medium",
+    "request": {
+      "question": "A company incorporated as a private company invites the general public to subscribe for its debentures and increases its shareholders to fifty-eight. The additional shareholders are outside investors, not present or former employees. The directors insist that the company remains private because its articles have not formally been amended. Analyze the company's legal status and possible relief.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether actual non-compliance with the statutory characteristics of a private company changes its status even without a formal amendment of the articles.\n\nRule: Section 27 requires the articles to prohibit public offers of shares or other securities and to limit shareholders to fifty, excluding only the specified present and former employee-shareholders. Section 28(2) applies where a private company fails to comply with Section 27: it ceases to be a private company, Sections 30 and 31 cease to apply, and it is deemed to have changed its name under Section 11. Under Section 28(3), a court may determine that those consequences do not apply if the failure was inadvertent, has been rectified, or such relief is just and equitable.\n\nApplication: A public invitation for debentures violates the public-offer restriction, and fifty-eight outside investors exceed the statutory limit. The argument that the articles were never amended does not answer actual failure to comply, which is independently addressed by Section 28(2). Deliberate conduct weakens any claim of inadvertence. Court relief would require prompt rectification or other facts making relief just and equitable.\n\nConclusion: Unless the court grants Section 28(3) relief, the company has ceased to be a private company and loses the special operation of Sections 30 and 31, with the corresponding deemed name change.",
+    "expected_sources": [
+      {
+        "title": "Companies Act, No. 7 of 2007",
+        "section": "Sections 27 and 28",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 27",
+      "Section 28(2)",
+      "Section 28(3)",
+      "Section 11"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "companies",
+      "private_company",
+      "public_securities",
+      "loss_of_status",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB2-RS-002",
+    "question": "A factory worker who is not employed in a shop or office takes maternity absence authorized by the Maternity Benefits Ordinance. During that absence, her employer sends a dismissal notice timed to expire before she returns and says only that the business is 'restructuring'. Internal messages instead refer to her pregnancy as an inconvenience. Analyze the validity of the dismissal and the effect on her maternity benefits.",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A factory worker who is not employed in a shop or office takes maternity absence authorized by the Maternity Benefits Ordinance. During that absence, her employer sends a dismissal notice timed to expire before she returns and says only that the business is 'restructuring'. Internal messages instead refer to her pregnancy as an inconvenience. Analyze the validity of the dismissal and the effect on her maternity benefits.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether the timing and reason for dismissal contravene the maternity protections and whether the worker loses her benefits.\n\nRule: Section 10 prohibits an employer from giving notice of dismissal during authorized absence or on a day that causes the notice to expire during that absence. Section 10A(1) prohibits termination by reason only of pregnancy, confinement or consequential illness. In a prosecution, Section 10A(2) places on the employer the burden of proving that termination resulted from another fact. Section 11 protects maternity benefits where a dismissal notice without sufficient cause is given within five months before confinement.\n\nApplication: The notice is independently prohibited because it was given during authorized absence and expires during that period. The internal messages provide evidence that pregnancy, rather than a genuine restructuring, was the operative reason. A bare restructuring label is unlikely to discharge the statutory burden if prosecution follows. The dismissal should not deprive the worker of maternity benefits where Section 11 applies.\n\nConclusion: The notice and termination are strongly vulnerable under Sections 10 and 10A, and the worker's accrued maternity-benefit rights remain protected. Labour Tribunal relief may also be pursued within the applicable statutory time limit.",
+    "expected_sources": [
+      {
+        "title": "Maternity Benefits Ordinance",
+        "section": "Sections 10, 10A and 11",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Industrial Disputes Act (Consolidated 2024)",
+        "section": "Sections 31B and 31C",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Maternity Benefits Ordinance Section 10",
+      "Maternity Benefits Ordinance Section 10A",
+      "Maternity Benefits Ordinance Section 11",
+      "Industrial Disputes Act Section 31B"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "maternity",
+      "pregnancy_discrimination",
+      "dismissal",
+      "labour_tribunal",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB2-RS-003",
+    "question": "A hirer has paid eighty per cent of the hire-purchase price of a refrigerator but misses two monthly instalments. The owner gives three days' notice, rejects the hirer's tender of the arrears on the fourth day, enters the hirer's home and repossesses the refrigerator without filing an action. Analyze the owner's termination and repossession and the hirer's remedies.",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A hirer has paid eighty per cent of the hire-purchase price of a refrigerator but misses two monthly instalments. The owner gives three days' notice, rejects the hirer's tender of the arrears on the fourth day, enters the hirer's home and repossesses the refrigerator without filing an action. Analyze the owner's termination and repossession and the hirer's remedies.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether the owner validly terminated the agreement and could recover the goods without court proceedings after eighty per cent of the price had been paid.\n\nRule: For more than one payment default, Section 18(1) requires at least two weeks' written notice where hire is payable monthly. If the hirer pays or tenders the arrears and contractual interest before that notice period expires, the owner may not terminate. Under Section 20(1), once seventy-five per cent of the hire-purchase price has been paid or tendered before lawful termination, possession may be recovered only by action, and the agreement must first have been duly terminated. Section 20(2) provides consequences for recovery in contravention, including termination of the agreement, release of the hirer from liability and a right to recover sums paid; a guarantor may likewise recover sums paid.\n\nApplication: Three days was materially shorter than the required two weeks. The tender on the fourth day fell within the statutory cure period and should have prevented termination. Independently, the eighty-per-cent payment triggered the court-action requirement. Self-help entry and repossession therefore contravened Section 20.\n\nConclusion: The termination and repossession were unlawful. Subject to proof, the hirer can invoke the statutory release and recovery remedies in Section 20(2), in addition to any other legally available relief.",
+    "expected_sources": [
+      {
+        "title": "Consumer Credit Act, No. 29 of 1982",
+        "section": "Sections 18, 19 and 20",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 18(1)",
+      "Section 19",
+      "Section 20(1)",
+      "Section 20(2)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "consumer_credit",
+      "hire_purchase",
+      "termination",
+      "repossession",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB2-RS-004",
+    "question": "A buyer sends an electronic purchase order stipulating that it will be binding only when the buyer receives an acknowledgement from the supplier's automated system. The order reaches the supplier's designated email address at 11:58 p.m. on Friday and is capable of retrieval, but a system failure prevents any acknowledgement. Staff discover the message on Monday. Analyze whether and when the order was received and whether it is treated as sent for contractual purposes.",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "request": {
+      "question": "A buyer sends an electronic purchase order stipulating that it will be binding only when the buyer receives an acknowledgement from the supplier's automated system. The order reaches the supplier's designated email address at 11:58 p.m. on Friday and is capable of retrieval, but a system failure prevents any acknowledgement. Staff discover the message on Monday. Analyze whether and when the order was received and whether it is treated as sent for contractual purposes.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: The distinction between statutory receipt of an electronic communication and the originator's stipulated acknowledgement requirement.\n\nRule: Under Section 14(2)(a)(i), where an electronic address has been designated, receipt occurs when the communication becomes capable of retrieval, and Section 14(2)(b) presumes retrievability when it reaches that address. Actual opening by staff is not required. However, Section 13(2) provides that where the originator has stipulated that the communication is binding only upon receipt of an acknowledgement, the communication is deemed never to have been sent unless that acknowledgement is received.\n\nApplication: The buyer's order was received at 11:58 p.m. on Friday for the statutory receipt analysis because it reached the designated address and was retrievable. Monday discovery does not postpone receipt. Nevertheless, the buyer, as originator, expressly stipulated the acknowledgement condition. No acknowledgement was received because of the system failure.\n\nConclusion: The order was technically received on Friday, but Section 13(2) treats it as never sent for the stipulated binding effect unless another contractual or factual basis displaces that condition.",
+    "expected_sources": [
+      {
+        "title": "Electronic Transactions Act (Consolidated 2024)",
+        "section": "Sections 13(2) and 14(2)",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 13(2)",
+      "Section 14(2)(a)(i)",
+      "Section 14(2)(b)"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "electronic_transactions",
+      "acknowledgement",
+      "receipt",
+      "automated_system",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB2-RS-005",
+    "question": "After borrowers default on a mortgage to the National Savings Bank, the property is sold by public auction and purchased by the Bank. The Bank relies on its signed certificate of sale to establish title, but the borrowers argue that no title passed because there was no conveyance executed before a notary under Section 2 of the Prevention of Frauds Ordinance. Analyze the objection using Abeykoon v. National Savings Bank.",
+    "category": "reasoning",
+    "difficulty": "medium",
+    "request": {
+      "question": "After borrowers default on a mortgage to the National Savings Bank, the property is sold by public auction and purchased by the Bank. The Bank relies on its signed certificate of sale to establish title, but the borrowers argue that no title passed because there was no conveyance executed before a notary under Section 2 of the Prevention of Frauds Ordinance. Analyze the objection using Abeykoon v. National Savings Bank.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "reasoning",
+    "expected_task_type": "reasoning",
+    "expected_answer_mode": "issue_analysis",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Issue: Whether the absence of a notarial conveyance invalidates title conveyed through the National Savings Bank's statutory certificate of sale.\n\nRule: Abeykoon v. National Savings Bank held that Section 55 of the National Savings Bank Act expressly provides for title to pass on a certificate of sale signed by the Bank. The title is bestowed by operation of law. The special statutory mechanism recognizes a disposition of immovable property otherwise than by a conveyance executed before a notary, so the general formal requirement in Section 2 of the Prevention of Frauds Ordinance does not invalidate the certificate.\n\nApplication: Assuming the sale and certificate satisfy the governing National Savings Bank Act, the borrowers cannot defeat the Bank's title merely because a separate notarial conveyance was not executed. Any independent procedural objections to the auction or ejectment proceedings must still be determined on their own merits.\n\nConclusion: The formal objection under the Prevention of Frauds Ordinance fails; the statutory certificate is legally capable of passing title.",
+    "expected_sources": [
+      {
+        "title": "Abeykoon and Another v. National Savings Bank [1999] 3 Sri L.R. 144",
+        "section": "Held and judgment concerning the certificate of sale",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Frauds Ordinance (Consolidated 2024)",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "National Savings Bank Act Section 55",
+      "Prevention of Frauds Ordinance Section 2",
+      "Generalia specialibus non derogant"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "banking",
+      "mortgage_sale",
+      "certificate_of_sale",
+      "immovable_property",
+      "reasoning"
+    ],
+    "mode": "reasoning"
+  },
+  {
+    "id": "SL-GB2-DR-001",
+    "question": "Prepare a legal-risk memorandum for a Sri Lankan online retailer that forms contracts through an automated ordering system, receives orders through designated electronic addresses, stores electronic signatures and transaction logs, permits customers to correct input errors only after checkout, and sells goods subject to standard warranty exclusions. Address contract formation, dispatch and receipt, acknowledgement, input errors, retention and evidential use of records, statutory exclusions from electronic contracting, consumer remedies, implied quality obligations and the control of exclusion clauses.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Prepare a legal-risk memorandum for a Sri Lankan online retailer that forms contracts through an automated ordering system, receives orders through designated electronic addresses, stores electronic signatures and transaction logs, permits customers to correct input errors only after checkout, and sells goods subject to standard warranty exclusions. Address contract formation, dispatch and receipt, acknowledgement, input errors, retention and evidential use of records, statutory exclusions from electronic contracting, consumer remedies, implied quality obligations and the control of exclusion clauses.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "A complete memorandum should explain that electronic form alone does not defeat legal recognition under Section 3 of the Electronic Transactions Act; accessible electronic information can satisfy writing under Section 4, reliable integrity and availability can satisfy an original-form requirement under Section 5, and Section 6 specifies retention conditions concerning accessibility, accurate format, origin, destination, date and time. Section 7 recognizes electronic signatures where the method identifies the person, indicates intention and is appropriately reliable or otherwise proved. Section 17 protects contracts formed through automated systems from invalidity merely because no natural person reviewed the final contract.\n\nThe retailer should clearly state the method of acceptance and acknowledgement. Sections 13 and 14 distinguish acknowledgement conditions from dispatch and receipt. A message sent to a designated address is received when capable of retrieval, ordinarily when it reaches that address. Under Section 14A, where a natural person makes an input error through an automated system that provides no correction opportunity, the erroneous portion may be withdrawn if the other party is notified promptly and no material benefit or value has been used or received. The system should therefore provide a pre-submission correction screen and preserve proof of the submitted version.\n\nSection 21 makes business electronic information relevant to a fact in issue admissible subject to the statutory reliability and accuracy conditions and creates rebuttable presumptions concerning truth, authorship and electronic signatures. The retailer should preserve reliable audit logs rather than only a final invoice. Section 23 must be separately checked because wills, powers of attorney, specified financial matters, trusts and contracts for sale or conveyance of immovable property fall outside the Act.\n\nConsumer-facing terms remain subject to substantive law. Sections 13 and 32 of the Consumer Affairs Authority Act provide complaint and implied-warranty routes, including fitness for purpose, compensation, replacement or refund, with different complaint periods depending on the statutory route. Sections 12-16 of the Sale of Goods Ordinance govern correspondence with description or sample and implied quality or fitness. Under the Unfair Contract Terms Act, liability for death or personal injury caused by negligence cannot be excluded, while exclusions for other negligence loss require reasonableness; consumer or standard-form breach exclusions are likewise controlled. Electronic assent does not validate an otherwise prohibited or unreasonable exclusion.",
+    "expected_sources": [
+      {
+        "title": "Electronic Transactions Act (Consolidated 2024)",
+        "section": "Sections 3-7, 13, 14, 14A, 17, 21 and 23",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Consumer Affairs Authority Act, No. 9 of 2003",
+        "section": "Sections 13 and 28-32",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Sections 12-16",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Unfair Contract Terms Act, No. 26 of 1997",
+        "section": "Sections 3-7 and Schedule 2",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Electronic Transactions Act Sections 3-7",
+      "Electronic Transactions Act Sections 13-14A",
+      "Electronic Transactions Act Sections 17, 21 and 23",
+      "Consumer Affairs Authority Act Sections 13 and 32",
+      "Sale of Goods Ordinance Sections 12-16",
+      "Unfair Contract Terms Act Sections 3-7"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "electronic_commerce",
+      "automated_contracting",
+      "electronic_evidence",
+      "consumer_protection",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB2-DR-002",
+    "question": "A Sri Lankan company discovers that its electronic beneficial-ownership register knowingly identifies a nominee instead of the natural person who indirectly controls twenty-five per cent of the voting rights. Directors ignored written warnings, the company withheld the information from the Registrar, and funds suspected to be proceeds of the concealment offence were moved through another company. Prepare an enforcement and defence memorandum covering beneficial-owner identification, notice and record duties, recognition of undisclosed ownership, company and officer liability, electronic proof, and the circumstances in which money-laundering exposure may arise.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "A Sri Lankan company discovers that its electronic beneficial-ownership register knowingly identifies a nominee instead of the natural person who indirectly controls twenty-five per cent of the voting rights. Directors ignored written warnings, the company withheld the information from the Registrar, and funds suspected to be proceeds of the concealment offence were moved through another company. Prepare an enforcement and defence memorandum covering beneficial-owner identification, notice and record duties, recognition of undisclosed ownership, company and officer liability, electronic proof, and the circumstances in which money-laundering exposure may arise.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The memorandum should identify the ultimate natural person, not the nominee, as the potential beneficial owner. Section 130J defines a beneficial owner to include a natural person who ultimately owns or controls ten per cent or more through direct or indirect ownership, voting rights or another ownership interest, and a natural person exercising effective control through other means. Twenty-five per cent indirect voting control therefore exceeds the statutory threshold.\n\nSection 130A requires notice to the Registrar at incorporation or within twenty working days of a share issue or transfer, shareholder disclosure to the company within ten working days, maintenance of a beneficial-ownership register at the registered office, retention of ordinary beneficial-ownership records for at least ten years, notification to the Registrar within fourteen working days after receiving details of ownership or change, and delivery of prescribed details with the annual return. Section 130F prevents an undisclosed and unregistered beneficial-ownership claim from being recognized for a lawful purpose. If the Registrar issues a Section 130E directive, the company has seven working days from receipt to comply.\n\nKnowingly providing false or misleading details, withholding details or making a false register entry falls within Section 130G. The company may be fined, and imprisonment is available; directors and officers are deemed to have committed the offence unless they prove lack of knowledge or due diligence. Written warnings undermine those defences. Electronic register entries, messages and audit logs should be assessed under Section 21 of the Electronic Transactions Act, including reliability and rebuttable presumptions of truth, authorship and signature, while contrary evidence remains possible.\n\nMoney laundering is not established merely because beneficial ownership was concealed. The prosecution must connect identified property to an 'unlawful activity' and prove the transaction, possession, concealment, transfer or investment with knowledge or reason to believe the property was derived from that activity. Because a Section 130G offence is punishable by imprisonment up to ten years, it is capable of falling within the residual definition of unlawful activity covering an offence punishable by seven years or more. Section 3(3) removes the need for a prior conviction of the predicate activity, while Section 4 supplies a rebuttable presumption for assets unexplained by known income. The factual derivation of the funds and the accused's knowledge remain essential and must not be inferred from non-disclosure alone.",
+    "expected_sources": [
+      {
+        "title": "Companies (Amendment) Act, No. 12 of 2025",
+        "section": "Sections 130A, 130E, 130F, 130G and 130J inserted into the Companies Act",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Companies Act, No. 7 of 2007",
+        "section": "Companies Act as amended, including Sections 130A-130J",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Electronic Transactions Act (Consolidated 2024)",
+        "section": "Section 21",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Money Laundering Act, No. 5 of 2006",
+        "section": "Sections 3 and 4 and definition of unlawful activity",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Companies Act Sections 130A, 130E-130G and 130J",
+      "Electronic Transactions Act Section 21",
+      "Prevention of Money Laundering Act Sections 3 and 4",
+      "Definition of unlawful activity"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "medium",
+    "tags": [
+      "beneficial_ownership",
+      "corporate_offences",
+      "electronic_evidence",
+      "money_laundering",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB2-DR-003",
+    "question": "Prepare a claimant-side research memorandum for a shop employee dismissed during maternity absence after being required to work ten-hour days, denied weekly and annual holidays, and paid Rs. 27,000 per month after 1 January 2026. Compare the available statutory claims, evidentiary burdens, Labour Tribunal procedure, time limits, election of remedies and potential relief.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Prepare a claimant-side research memorandum for a shop employee dismissed during maternity absence after being required to work ten-hour days, denied weekly and annual holidays, and paid Rs. 27,000 per month after 1 January 2026. Compare the available statutory claims, evidentiary burdens, Labour Tribunal procedure, time limits, election of remedies and potential relief.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "acts",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The memorandum should separate termination, maternity, working-time, holiday and wage claims. Section 3 of the Shop and Office Employees Act ordinarily limits normal work to eight hours per day and forty-five hours per week, excluding rest or meal intervals, subject to applicable regulations. Section 5 provides a whole weekly holiday and a half-holiday, with full remuneration where the employee worked at least twenty-eight non-overtime hours. Section 6 governs annual holiday and leave, including fourteen days in a second or subsequent year and up to seven days' leave for private business, ill health or another reasonable cause, subject to its conditions.\n\nBecause the claimant is a shop employee, Part IA of the Shop and Office Employees Act supplies the maternity regime. Section 18B provides pregnancy and confinement leave, including seventy days from confinement where a live child is delivered and twenty-eight days where no live child is delivered; Section 18C requires full remuneration for the statutory leave. Section 18E prohibits termination by reason only of pregnancy, confinement or consequential illness and places on the employer, in a prosecution, the burden of proving another cause. Section 18F prohibits notice of dismissal during Part IA leave or notice timed to expire during that leave. The Maternity Benefits Ordinance should not be presented as the governing maternity statute for this shop employee.\n\nFrom 1 January 2026 the national minimum monthly wage is Rs. 30,000 and the daily wage is Rs. 1,200. A payment of Rs. 27,000 therefore falls below the national monthly floor, subject to accurate proof of the employment period and classification. Budgetary-relief allowances existing on 31 March 2025 are consolidated as part of the wage, and the 2025 amendment prevents wage reduction that would negate the increase.\n\nUnder Section 31B of the Industrial Disputes Act, the worker or her union may apply to a Labour Tribunal concerning termination and identified termination benefits. The application must be filed within six months of termination. The Tribunal may grant relief notwithstanding contrary contractual terms and is to make a just and equitable order after inquiry. Section 31B(5) requires careful election of remedies: after Tribunal proceedings are entertained and concluded, another remedy for the same matter is unavailable, and prior resort to another legal remedy bars the Section 31B route. The memorandum should distinguish reinstatement, compensation, wages or benefits and statutory enforcement, preserve payroll, attendance, leave and pregnancy-related communications, and avoid double recovery.",
+    "expected_sources": [
+      {
+        "title": "Shop and Office Employees (Regulation of Employment and Remuneration) Act (Consolidated 2024)",
+        "section": "Sections 3, 5, 6 and 18A-18H",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Industrial Disputes Act (Consolidated 2024)",
+        "section": "Sections 31B and 31C",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "National Minimum Wage of Workers (Amendment) Act, No. 11 of 2025",
+        "section": "Sections 2-4",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Shop and Office Employees Act Sections 3, 5 and 6",
+      "Shop and Office Employees Act Sections 18B, 18C, 18E and 18F",
+      "Industrial Disputes Act Sections 31B and 31C",
+      "National Minimum Wage amendment Sections 2-4"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "employment",
+      "maternity",
+      "working_hours",
+      "minimum_wage",
+      "labour_tribunal",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB2-DR-004",
+    "question": "Prepare a conveyancing and litigation-risk memorandum for a purchaser proposing to acquire an undivided interest in land originally alienated by the State on a permit. The permit-holder has signed a private sale deed, a partition action concerning the land is registered as a lis pendens, a competing deed is presented for registration, and the purchaser proposes to lodge a priority notice. Explain validity, registration priority, the effect of lis pendens, and why registration cannot cure a defective or prohibited disposition.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Prepare a conveyancing and litigation-risk memorandum for a purchaser proposing to acquire an undivided interest in land originally alienated by the State on a permit. The permit-holder has signed a private sale deed, a partition action concerning the land is registered as a lis pendens, a competing deed is presented for registration, and the purchaser proposes to lodge a priority notice. Explain validity, registration priority, the effect of lis pendens, and why registration cannot cure a defective or prohibited disposition.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "The memorandum should begin with the source of title. Under Section 46(1) of the Land Development Ordinance, a permit-holder may not dispose of permit land. The limited exception in Section 46(2) permits, with the Government Agent's written consent, a mortgage to a registered society of which the permit-holder is a member. Any other disposition is null and void under Section 46(3). A private sale to the proposed purchaser therefore cannot be validated merely by notarial form or registration.\n\nA valid transaction affecting ordinary immovable property generally must satisfy Section 2 of the Prevention of Frauds Ordinance. Rohan de Soyza v. Jinendradasa illustrates that execution before an unlicensed notary and failure of the executant, witnesses and notary to sign in one another's presence render the deed defective. Section 7(4) of the Registration of Documents Ordinance confirms that registration does not cure a defect or confer validity beyond the statutory priority effect.\n\nPriority and validity must be distinguished. Under Section 7(1), an unregistered instrument is void against a subsequent adverse instrument acquired for value and duly registered, but fraud or collusion defeats the later instrument's priority under Section 7(2). Section 30 allows a transferee to register a priority notice before execution with the transferor's written consent, or after execution without it. A qualifying instrument registered while the notice is in force is treated as registered at the time of the notice. The notice lasts six weeks, may be renewed for another six weeks, and lapses if no instrument is registered while it remains in force. None of those priority effects can transform a Land Development Ordinance disposition that is substantively null.\n\nSection 66 of the Partition Law creates a separate prohibition after registration of the partition action as a lis pendens. A voluntary alienation, lease or hypothecation of an undivided share is prohibited pending final determination and is void, although it is deemed valid if the partition action is dismissed. The purchaser should not complete. The correct roadmap is to verify the State grant or permit and its conditions, obtain the Land Registry and partition records, determine whether any statutory disposition route exists, and seek case-specific court or administrative relief rather than relying on registration priority.",
+    "expected_sources": [
+      {
+        "title": "Land Development Ordinance (Consolidated 2024)",
+        "section": "Sections 42, 43 and 46",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Partition Law (Consolidated 2024)",
+        "section": "Section 66",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Registration of Documents Ordinance (Consolidated 2024)",
+        "section": "Sections 7 and 30",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Frauds Ordinance (Consolidated 2024)",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Rohan de Soyza v. Jinendradasa [2004] 1 Sri L.R. 379",
+        "section": "Held and judgment on defective notarial execution",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Land Development Ordinance Section 46",
+      "Partition Law Section 66",
+      "Registration of Documents Ordinance Sections 7 and 30",
+      "Prevention of Frauds Ordinance Section 2",
+      "Defective notarial execution"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "state_land",
+      "partition",
+      "registration_priority",
+      "notarial_form",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB2-DR-005",
+    "question": "Prepare a comparative commercial-law memorandum explaining how the attached Sri Lankan authorities treat five different stages of a transaction: whether an incorporeal trading right is 'goods'; when conditional non-payment amounts to repudiation of an instalment contract; what a seller must prove before recovering for non-acceptance; when actions on a mortgage and a written guarantee prescribe; and when a statutory bank-sale certificate passes title without a notarial conveyance.",
+    "category": "deep_research",
+    "difficulty": "hard",
+    "request": {
+      "question": "Prepare a comparative commercial-law memorandum explaining how the attached Sri Lankan authorities treat five different stages of a transaction: whether an incorporeal trading right is 'goods'; when conditional non-payment amounts to repudiation of an instalment contract; what a seller must prove before recovering for non-acceptance; when actions on a mortgage and a written guarantee prescribe; and when a statutory bank-sale certificate passes title without a notarial conveyance.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "deep_research",
+    "expected_task_type": "research",
+    "expected_answer_mode": "research_memo",
+    "expected_target_corpus": "both",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "Croos v. De Soysa treats the right to sell arrack within a district for a defined period as an incorporeal right rather than 'goods' under the Sale of Goods Ordinance. The Ordinance's concept of goods concerns tangible or corporeal movables. The verbal agreement for the trading right was therefore not unenforceable under the Sale of Goods writing rule applicable to goods.\n\nFernando v. Mendis distinguishes a mere delayed payment from conduct showing repudiation. The purchaser refused to pay for deliveries unless the seller supplied an indemnity or guarantee not required by the contract. That qualified refusal demonstrated an intention not to be bound and justified withholding later deliveries. The controlling inquiry is the intention revealed by the circumstances, not non-payment in isolation.\n\nRawanna & Co. v. Arunachapillai applies Section 37 of the Sale of Goods Ordinance. A seller claiming loss for a buyer's non-acceptance must prove both readiness and willingness to deliver and a request to the buyer to take delivery. Goods not actually available at the agreed store and the absence of a request defeated the seller's counterclaim.\n\nHatton National Bank Ltd. v. Sellers Sports distinguishes the secured obligations for prescription. An action enforcing the mortgage fell under Section 5 of the Prescription Ordinance and carried the ten-year period. The written guarantee fell under Section 6 and carried six years. Because the guarantee made payment due ten days after written demand, prescription on the guarantee ran from the breach following that demand, not from the principal debtor's earlier default.\n\nAbeykoon v. National Savings Bank holds that a certificate of sale under Section 55 of the National Savings Bank Act passes title by operation of law. The special statutory disposition does not require the ordinary notarial conveyance contemplated by Section 2 of the Prevention of Frauds Ordinance. The memo should keep these doctrines distinct: classification and form, repudiation, tender and demand, computation of prescription, and statutory transfer of title answer different stages and should not be collapsed into one general contract rule.",
+    "expected_sources": [
+      {
+        "title": "Croos v. De Soysa, 7 N.L.R. 32",
+        "section": "Judgment on incorporeal rights and the meaning of goods",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Fernando and Others v. Mendis, 23 N.L.R. 489",
+        "section": "Judgment on refusal to pay and repudiation",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Rawanna & Co. v. Arunachapillai, 47 N.L.R. 220",
+        "section": "Judgment applying Section 37 of the Sale of Goods Ordinance",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Hatton National Bank Ltd. v. Sellers Sports (Pvt) Ltd. and Others [2000] 3 Sri L.R. 326",
+        "section": "Held on prescription of mortgage and guarantee claims",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Abeykoon and Another v. National Savings Bank [1999] 3 Sri L.R. 144",
+        "section": "Held on statutory certificate of sale",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Sale of Goods Ordinance",
+        "section": "Definition of goods and Section 37",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prescription Ordinance (Consolidated 2024)",
+        "section": "Sections 5 and 6",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Frauds Ordinance (Consolidated 2024)",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Sale of Goods Ordinance definition of goods",
+      "Sale of Goods Ordinance Section 37",
+      "Prescription Ordinance Sections 5 and 6",
+      "Prevention of Frauds Ordinance Section 2",
+      "National Savings Bank Act Section 55"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.85,
+    "expected_confidence": "high",
+    "tags": [
+      "commercial_law",
+      "sale_of_goods",
+      "repudiation",
+      "prescription",
+      "bank_sale",
+      "deep_research"
+    ],
+    "mode": "deep_research"
+  },
+  {
+    "id": "SL-GB2-DF-001",
+    "question": "Draft a compliance package for an existing Sri Lankan private company consisting of: (1) replacement articles preserving private-company status; (2) a board resolution approving a beneficial-ownership register and reporting process; and (3) a beneficial-owner information notice. The company has forty ordinary investors, three employee-shareholders, two former employee-shareholders who acquired shares while employed, and one natural person indirectly controlling fifteen per cent of voting rights. Use placeholders for company and personal details.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft a compliance package for an existing Sri Lankan private company consisting of: (1) replacement articles preserving private-company status; (2) a board resolution approving a beneficial-ownership register and reporting process; and (3) a beneficial-owner information notice. The company has forty ordinary investors, three employee-shareholders, two former employee-shareholders who acquired shares while employed, and one natural person indirectly controlling fifteen per cent of voting rights. Use placeholders for company and personal details.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The package should contain three clearly separated documents. The replacement articles must prohibit public offers of shares or other company securities and cap shareholders at fifty while accurately reproducing the exclusions for employee-shareholders and qualifying former employee-shareholders in Section 27. It must not treat beneficial owners as registered shareholders without supporting facts.\n\nThe board resolution should establish a register at the registered office; assign responsibilities to the secretary and directors; require shareholder information within ten working days of subscription or transfer; provide for company notice to the Registrar within the applicable twenty-working-day and fourteen-working-day periods; require annual-return reporting; preserve ordinary beneficial-ownership records for at least ten years; and provide a process for responding to a Registrar's seven-working-day directive. The fifteen-per-cent indirect controller must be treated as a beneficial owner because the statutory threshold is ten per cent and indirect or effective control is included.\n\nThe notice should request the prescribed identity, address, contact, identification and nature-and-extent information, warn against false or withheld details without overstating guilt, and use placeholders for all unavailable particulars. The draft should identify client inputs and should not invent prescribed forms that are absent from the supplied materials.",
+    "expected_sources": [
+      {
+        "title": "Companies Act, No. 7 of 2007",
+        "section": "Sections 27 and 28",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Companies (Amendment) Act, No. 12 of 2025",
+        "section": "Sections 130A, 130E, 130G and 130J inserted into the Companies Act",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Companies Act Section 27",
+      "Companies Act Section 28",
+      "Companies Act Sections 130A, 130E, 130G and 130J"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "company_articles",
+      "board_resolution",
+      "beneficial_ownership",
+      "corporate_compliance"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-GB2-DF-002",
+    "question": "Draft a Labour Tribunal application for a shop employee who was dismissed during maternity absence. The notice was issued and expired during her authorized absence; emails refer to her pregnancy as the reason; she was paid Rs. 27,000 per month after 1 January 2026; and the application will be filed four months after termination. Include prayers for appropriate relief and placeholders for facts and evidence not supplied.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft a Labour Tribunal application for a shop employee who was dismissed during maternity absence. The notice was issued and expired during her authorized absence; emails refer to her pregnancy as the reason; she was paid Rs. 27,000 per month after 1 January 2026; and the application will be filed four months after termination. Include prayers for appropriate relief and placeholders for facts and evidence not supplied.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The application should identify the Labour Tribunal, applicant, employer and termination date with placeholders; invoke Section 31B jurisdiction; and expressly plead filing within six months. It should state the employment history, authorized maternity absence, notice timing, pregnancy-related communications and wage facts without inventing dates or amounts beyond those supplied.\n\nBecause the applicant is a shop employee, the legal grounds should rely on Part IA of the Shop and Office Employees Act. The pleading should state that Section 18E prohibited termination by reason only of pregnancy, confinement or consequential illness and that Section 18F prohibited notice during Part IA leave or notice timed to expire during it. Sections 18B and 18C should be used for the applicable leave and remuneration rights. The wage schedule should identify the Rs. 30,000 national monthly minimum from 1 January 2026 and calculate the shortfall only after inserting the number of affected months. The pleading should request reinstatement or, alternatively, just and equitable compensation, unpaid statutory wage differences, preserved maternity remuneration and other lawful relief, while avoiding duplicate recovery and acknowledging the election-of-remedies rule. It should list the termination letter, emails, wage records, attendance and maternity notices as evidence to attach, use placeholders where missing, and end with notes for completion.",
+    "expected_sources": [
+      {
+        "title": "Industrial Disputes Act (Consolidated 2024)",
+        "section": "Sections 31B and 31C",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Shop and Office Employees (Regulation of Employment and Remuneration) Act (Consolidated 2024)",
+        "section": "Sections 18B, 18C, 18E and 18F",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "National Minimum Wage of Workers (Amendment) Act, No. 11 of 2025",
+        "section": "Sections 2-4",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Industrial Disputes Act Sections 31B and 31C",
+      "Shop and Office Employees Act Sections 18B, 18C, 18E and 18F",
+      "National minimum wage effective 1 January 2026"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "labour_tribunal_application",
+      "maternity_dismissal",
+      "minimum_wage",
+      "employment"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-GB2-DF-003",
+    "question": "Draft a legally compliant notice from a hire-purchase owner to a hirer who has missed two monthly instalments. The notice must give the statutory opportunity to cure, must not claim an immediate right of self-help repossession, and must address the possibility that seventy-five per cent or more of the hire-purchase price has already been paid. Use placeholders for all transaction figures and dates.",
+    "category": "drafting",
+    "difficulty": "medium",
+    "request": {
+      "question": "Draft a legally compliant notice from a hire-purchase owner to a hirer who has missed two monthly instalments. The notice must give the statutory opportunity to cure, must not claim an immediate right of self-help repossession, and must address the possibility that seventy-five per cent or more of the hire-purchase price has already been paid. Use placeholders for all transaction figures and dates.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The notice should identify the agreement, goods, instalment dates, arrears and contractual interest with placeholders. Because payment is monthly, it must provide not less than two weeks' written notice under Section 18(1) and state that timely payment or tender of the arrears and applicable contractual interest prevents termination on those defaults. It should explain that termination will occur only after expiry of the statutory period without cure and should avoid demanding penalties unsupported by the agreement or Act.\n\nThe notice must state that any later recovery of possession remains subject to Sections 19 and 20. If seventy-five per cent or more of the hire-purchase price was paid or tendered before lawful termination, possession may be recovered only by action in court. The notice must not authorize entry, seizure or self-help repossession. It should request confirmation of the amount already paid, preserve the hirer's statutory rights, and include a notes section identifying the payment ledger, service method and calculation requiring verification.",
+    "expected_sources": [
+      {
+        "title": "Consumer Credit Act, No. 29 of 1982",
+        "section": "Sections 18-20",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Section 18(1)",
+      "Section 19",
+      "Section 20"
+    ],
+    "requires_multi_source": false,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "hire_purchase",
+      "default_notice",
+      "cure_period",
+      "repossession"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-GB2-DF-004",
+    "question": "Draft a purchaser's land-registration priority package consisting of a priority notice, a covering letter to the Registrar and protective completion clauses for a proposed Sri Lankan land transfer. The deed has not yet been executed, the transferor consents in writing to the notice, and completion is expected within six weeks. Use placeholders for parties, title, land description, registry references and dates.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft a purchaser's land-registration priority package consisting of a priority notice, a covering letter to the Registrar and protective completion clauses for a proposed Sri Lankan land transfer. The deed has not yet been executed, the transferor consents in writing to the notice, and completion is expected within six weeks. Use placeholders for parties, title, land description, registry references and dates.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The package should be organized as three documents. The priority notice should identify the transferee, transferor, proposed interest and land with placeholders and attach or record the transferor's written consent because the notice precedes execution. It should request registration under Section 30 without representing that the notice itself transfers title.\n\nThe covering letter should request endorsement and return details, record the registration date that begins the six-week period, and call for confirmation of the relevant folio. The completion clauses should require execution and registration while the notice is in force, prohibit the transferor from executing or attempting to register a competing instrument without the purchaser's written consent, require title and encumbrance disclosure, and permit renewal before expiry if completion is delayed. They should explain that a qualifying instrument registered while the notice remains effective is treated for priority purposes as registered at the notice date, but that the notice lapses if no instrument is registered while it remains in force. The package must state that priority does not cure invalid execution, lack of title, fraud, a statutory prohibition or another substantive defect and must end with a list of documents and registry details requiring completion.",
+    "expected_sources": [
+      {
+        "title": "Registration of Documents Ordinance (Consolidated 2024)",
+        "section": "Sections 7 and 30",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Frauds Ordinance (Consolidated 2024)",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "Registration of Documents Ordinance Section 30",
+      "Registration of Documents Ordinance Section 7(4)",
+      "Prevention of Frauds Ordinance Section 2"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "priority_notice",
+      "land_registration",
+      "conveyancing",
+      "completion"
+    ],
+    "mode": "drafting"
+  },
+  {
+    "id": "SL-GB2-DF-005",
+    "question": "Draft written submissions for the National Savings Bank, as purchaser at its statutory mortgage auction, opposing a borrower's preliminary objection that the Bank's certificate of sale cannot pass title without a separate notarial conveyance. Rely on Abeykoon v. National Savings Bank, preserve any unresolved procedural questions, and use placeholders for the auction, certificate, mortgage and court details.",
+    "category": "drafting",
+    "difficulty": "hard",
+    "request": {
+      "question": "Draft written submissions for the National Savings Bank, as purchaser at its statutory mortgage auction, opposing a borrower's preliminary objection that the Bank's certificate of sale cannot pass title without a separate notarial conveyance. Rely on Abeykoon v. National Savings Bank, preserve any unresolved procedural questions, and use placeholders for the auction, certificate, mortgage and court details.",
+      "document_ids": [],
+      "matter_id": null
+    },
+    "expected_route": "drafting",
+    "expected_task_type": "drafting",
+    "expected_answer_mode": "draft",
+    "expected_target_corpus": "templates",
+    "expected_needs_clarification": false,
+    "requires_user_document": false,
+    "document_fixture": null,
+    "ground_truth_answer": "[DRAFT_TEST] The submissions should identify the court, parties, mortgage, default, resolution, auction, purchase and certificate with placeholders. They should frame the preliminary issue narrowly: whether Section 2 of the Prevention of Frauds Ordinance invalidates a certificate of sale issued under the special National Savings Bank statutory scheme.\n\nThe legal argument should accurately state Abeykoon's holding that Section 55 of the National Savings Bank Act expressly permits title to pass on the Bank's signed certificate of sale and that title is bestowed by operation of law. It should invoke the special-over-general principle without suggesting that every bank auction or every defective certificate is automatically valid. The draft should distinguish ordinary voluntary conveyances governed by Section 2 of the Prevention of Frauds Ordinance from the statutory transfer considered in Abeykoon. It should request dismissal of the notarial-form objection but preserve inquiry into any separately pleaded defects in the resolution, notice, auction, certificate or ejectment procedure. The prayer should be appropriately limited, all missing evidence should remain placeholders, and the document should end with notes for completion.",
+    "expected_sources": [
+      {
+        "title": "Abeykoon and Another v. National Savings Bank [1999] 3 Sri L.R. 144",
+        "section": "Held and judgment concerning Section 55 and the certificate of sale",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Prevention of Frauds Ordinance (Consolidated 2024)",
+        "section": "Section 2",
+        "source_type": "legal_authority"
+      },
+      {
+        "title": "Civil Procedure Code (Consolidated to Act No. 43 of 2024)",
+        "section": "Applicable pleading and procedural provisions",
+        "source_type": "legal_authority"
+      }
+    ],
+    "relevant_sections": [
+      "National Savings Bank Act Section 55",
+      "Prevention of Frauds Ordinance Section 2",
+      "Generalia specialibus non derogant",
+      "Preliminary objections"
+    ],
+    "requires_multi_source": true,
+    "expected_grounding_min": 0.75,
+    "expected_confidence": "medium",
+    "tags": [
+      "drafting",
+      "written_submissions",
+      "bank_auction",
+      "certificate_of_sale",
+      "mortgage"
+    ],
+    "mode": "drafting"
+  }
+]

@@ -1,22 +1,21 @@
 from __future__ import annotations
 
 import logging
+from threading import Lock
+from typing import Any
 
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_core.documents import Document
-from langchain_classic.retrievers.contextual_compression import (
-    ContextualCompressionRetriever,
-)
-from langchain_classic.retrievers.document_compressors.cross_encoder_rerank import (
-    CrossEncoderReranker,
-)
-from langchain_classic.retrievers.ensemble import EnsembleRetriever
-
 from app.core.config import settings
 from app.services.retrieval.legal_vector_store import (
     LegalVectorStore,
     PineconeLegalBM25Retriever,
+    PineconeLegalHybridRetriever,
     PineconeLegalRetriever,
+)
+from evaluation.ablation import (
+    AblationConfigurationError,
+    describe_pinecone_effects,
+    retrieval_search_kwargs,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,8 +25,8 @@ class RetrievalService:
     """
     Hybrid retrieval pipeline (Pinecone-backed):
 
-    1. Dense search  (Pinecone lawdex-legal-index, children only)
-    2. Sparse search (Pinecone BM25 FTS, children only)
+    1. Dense search  (one Pinecone document index, children only)
+    2. Lexical search (multi-field BM25 on the same documents)
     3. Reciprocal Rank Fusion  (merge + deduplicate)
     4. Cross-Encoder Re-Ranking (precision scoring)
     5. Parent chunk expansion  (from Pinecone by chunk_id)
@@ -43,38 +42,22 @@ class RetrievalService:
             store=self._legal_store, k=settings.RETRIEVAL_CANDIDATES_K
         )
 
-        if settings.PINECONE_LEGAL_BM25_INDEX_HOST:
-            self._bm25_retriever = PineconeLegalBM25Retriever(
-                store=self._legal_store,
-                k=settings.RETRIEVAL_CANDIDATES_K,
-            )
-            self._hybrid_retriever = EnsembleRetriever(
-                retrievers=[self._dense_retriever, self._bm25_retriever],
-                weights=[settings.DENSE_WEIGHT, settings.SPARSE_WEIGHT],
-            )
-            logger.info("Pinecone BM25 FTS retriever enabled.")
-        else:
-            logger.warning(
-                "PINECONE_LEGAL_BM25_INDEX_HOST is not configured; "
-                "BM25 and hybrid retrieval disabled."
-            )
-            self._bm25_retriever = None
-            self._hybrid_retriever = None
+        self._bm25_retriever = PineconeLegalBM25Retriever(
+            store=self._legal_store,
+            k=settings.RETRIEVAL_CANDIDATES_K,
+        )
+        self._hybrid_retriever = PineconeLegalHybridRetriever(
+            store=self._legal_store,
+            k=settings.RETRIEVAL_CANDIDATES_K,
+            dense_weight=settings.DENSE_WEIGHT,
+            sparse_weight=settings.SPARSE_WEIGHT,
+        )
+        logger.info("Single-index Pinecone dense + BM25 retrieval enabled.")
 
-        cross_encoder = HuggingFaceCrossEncoder(
-            model_name=settings.RERANKER_MODEL,
-        )
-        reranker = CrossEncoderReranker(
-            model=cross_encoder,
-            top_n=settings.RERANKER_TOP_N,
-        )
-        if self._hybrid_retriever:
-            self._reranked_retriever = ContextualCompressionRetriever(
-                base_compressor=reranker,
-                base_retriever=self._hybrid_retriever,
-            )
-        else:
-            self._reranked_retriever = None
+        # Avoid model downloads and heavyweight initialisation during imports,
+        # worker startup, health checks, and BM25/dense-only ablations.
+        self._reranker = None
+        self._reranker_lock = Lock()
 
         logger.info("RetrievalService ready.")
 
@@ -92,48 +75,85 @@ class RetrievalService:
 
         Parameters
         ----------
-        year_filter : int | None
-            If set, prefer chunks whose ``year`` metadata matches.
-        act_name_filter : str | None
-            If set, prefer chunks whose ``title`` or ``case_name`` metadata contains this.
+        year_filter : int | list[int] | None
+            Restrict retrieval to chunks whose ``year`` metadata matches.
+        act_name_filter : str | list[str] | None
+            Restrict retrieval using full-text matching against ``title``.
 
         Returns a list of dicts, each containing:
             - ``child``    : Document  - the matched child chunk
             - ``parent``   : Document | None - expanded parent context
             - ``metadata`` : dict - full structured metadata
         """
-        disable_bm25 = kwargs.get("disable_bm25", False)
-        disable_dense = kwargs.get("disable_dense", False)
-        disable_reranking = kwargs.get("disable_reranking", False)
+        requested = {
+            **kwargs,
+            "expand_parents": expand_parents,
+        }
+        effects = self.describe_ablation_effects(requested)
+        options = retrieval_search_kwargs(requested)
+        disable_bm25 = options["disable_bm25"]
+        disable_dense = options["disable_dense"]
+        disable_reranking = options["disable_reranking"]
+
+        y_filters = [year_filter] if isinstance(year_filter, int) else year_filter
+        a_filters = (
+            [act_name_filter] if isinstance(act_name_filter, str) else act_name_filter
+        )
+        pinecone_filter = self._build_pinecone_filter(y_filters, a_filters)
+
+        # Retriever instances are immutable request descriptions.  Construct
+        # filtered variants per request instead of mutating shared singleton
+        # state, which would leak filters between concurrent API requests.
+        dense_retriever = self._dense_retriever
+        bm25_retriever = self._bm25_retriever
+        hybrid_retriever = self._hybrid_retriever
+        if pinecone_filter:
+            dense_retriever = PineconeLegalRetriever(
+                store=self._legal_store,
+                k=settings.RETRIEVAL_CANDIDATES_K,
+                metadata_filters=pinecone_filter,
+            )
+            bm25_retriever = PineconeLegalBM25Retriever(
+                store=self._legal_store,
+                k=settings.RETRIEVAL_CANDIDATES_K,
+                metadata_filters=pinecone_filter,
+            )
+            hybrid_retriever = PineconeLegalHybridRetriever(
+                store=self._legal_store,
+                k=settings.RETRIEVAL_CANDIDATES_K,
+                dense_weight=settings.DENSE_WEIGHT,
+                sparse_weight=settings.SPARSE_WEIGHT,
+                metadata_filters=pinecone_filter,
+            )
 
         # 1. Determine base retriever
-        if disable_bm25 and disable_dense:
-            return []
-        elif disable_dense and self._bm25_retriever:
-            base_retriever = self._bm25_retriever
+        if disable_dense:
+            base_retriever = bm25_retriever
         elif disable_bm25:
-            base_retriever = self._dense_retriever
+            base_retriever = dense_retriever
         else:
-            base_retriever = self._hybrid_retriever or self._dense_retriever
+            base_retriever = hybrid_retriever or dense_retriever
 
         # 2. Execute retrieval
         candidates: list[Document] = []
         try:
             candidates = base_retriever.invoke(query)
-        except Exception:
-            logger.exception("Base retrieval failed. Falling back to dense.")
-            if base_retriever != self._dense_retriever:
-                candidates = self._dense_retriever.invoke(query)
+        except Exception as exc:
+            if disable_dense:
+                raise AblationConfigurationError(
+                    "Sparse-only retrieval failed; refusing to fall back to dense "
+                    "because that would invalidate the ablation"
+                ) from exc
+            # The hybrid retriever already degrades to either healthy channel
+            # and raises only when both fail. Retrying dense here duplicates a
+            # known failed embedding/network call and inflates tail latency.
+            logger.exception("Legal retrieval failed.")
+            raise
 
         # 3. Optionally re-rank
-        if not disable_reranking and self._reranked_retriever and candidates:
+        if not disable_reranking and candidates:
             try:
-                # Use the configured compressor directly to re-rank the candidates.
-                candidates = (
-                    self._reranked_retriever.base_compressor.compress_documents(
-                        candidates, query
-                    )
-                )
+                candidates = self._get_reranker().compress_documents(candidates, query)
                 candidates = self._prune_low_relevance(candidates)
             except Exception:
                 logger.exception("Re-ranking failed. Falling back to base ranking.")
@@ -156,36 +176,46 @@ class RetrievalService:
             seen_content.add(content_key)
             unique.append(doc)
 
-        # 5. Post-filter by metadata (entity-aware, with fallback)
+        # 5. Defence-in-depth metadata check (fail closed)
         if year_filter or act_name_filter:
-            y_filters = [year_filter] if isinstance(year_filter, int) else year_filter
-            a_filters = (
-                [act_name_filter]
-                if isinstance(act_name_filter, str)
-                else act_name_filter
-            )
             unique = self._post_filter_metadata(
                 unique,
                 y_filters,
                 a_filters,
             )
 
-        # 6. Expand to parents
+        # 6. Expand to parents with deduplication
         results: list[dict] = []
-        for child in unique[:top_k]:
+        seen_parent_ids: set[str] = set()
+        seen_parent_contents: set[str] = set()
+
+        for child in unique:
             parent = None
             if expand_parents:
-                parent_id = child.metadata.get("parent_id")
+                parent_id = child.metadata.get("parent_id") or child.metadata.get(
+                    "parent_chunk_id"
+                )
                 if parent_id:
+                    if parent_id in seen_parent_ids:
+                        continue
                     parent = self._legal_store.fetch_parent(parent_id)
+                    if parent:
+                        parent_text = parent.page_content.strip()
+                        if parent_text in seen_parent_contents:
+                            continue
+                        seen_parent_ids.add(parent_id)
+                        seen_parent_contents.add(parent_text)
 
             results.append(
                 {
                     "child": child,
                     "parent": parent,
                     "metadata": child.metadata,
+                    "retrieval_effects": effects,
                 }
             )
+            if len(results) >= top_k:
+                break
 
         logger.info(
             "Retrieved %d results for query: '%s'",
@@ -193,6 +223,40 @@ class RetrievalService:
             query[:80],
         )
         return results
+
+    def describe_ablation_effects(self, config: dict | None = None) -> dict:
+        """Validate and describe the retrieval behavior for an ablation.
+
+        Requested component removals must change the configured pipeline.  An
+        unavailable BM25 or reranker therefore fails preflight instead of
+        producing a misleading comparison against an identical baseline.
+        """
+        return describe_pinecone_effects(
+            config,
+            bm25_available=self._bm25_retriever is not None,
+            reranking_available=bool(settings.RERANKER_MODEL),
+        )
+
+    def _get_reranker(self):
+        """Construct and cache the optional cross-encoder on first use."""
+        if self._reranker is not None:
+            return self._reranker
+
+        with self._reranker_lock:
+            if self._reranker is None:
+                from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+                from langchain_classic.retrievers.document_compressors.cross_encoder_rerank import (
+                    CrossEncoderReranker,
+                )
+
+                cross_encoder = HuggingFaceCrossEncoder(
+                    model_name=settings.RERANKER_MODEL,
+                )
+                self._reranker = CrossEncoderReranker(
+                    model=cross_encoder,
+                    top_n=settings.RERANKER_TOP_N,
+                )
+        return self._reranker
 
     def _prune_low_relevance(self, candidates: list[Document]) -> list[Document]:
         """Drop candidates whose cross-encoder score falls below the threshold.
@@ -220,6 +284,38 @@ class RetrievalService:
         return pruned if pruned else candidates[:1]
 
     @staticmethod
+    def _build_pinecone_filter(
+        year_filters: list[int] | None,
+        act_name_filters: list[str] | None,
+    ) -> dict | None:
+        """Translate route constraints into pre-scoring document filters."""
+        clauses: list[dict] = []
+
+        years = sorted({int(year) for year in (year_filters or [])})
+        if len(years) == 1:
+            clauses.append({"year": {"$eq": years[0]}})
+        elif years:
+            clauses.append({"year": {"$in": years}})
+
+        titles = [
+            str(value).strip()
+            for value in (act_name_filters or [])
+            if str(value).strip()
+        ]
+        title_filters: list[dict] = []
+        for title in titles:
+            title_filters.append({"title": {"$eq": title}})
+            title_filters.append({"case_name": {"$eq": title}})
+        if len(title_filters) == 1:
+            clauses.append(title_filters[0])
+        elif title_filters:
+            clauses.append({"$or": title_filters})
+
+        if not clauses:
+            return None
+        return clauses[0] if len(clauses) == 1 else {"$and": clauses}
+
+    @staticmethod
     def _post_filter_metadata(
         candidates: list[Document],
         year_filters: list[int] | None,
@@ -227,8 +323,9 @@ class RetrievalService:
     ) -> list[Document]:
         """Filter already-retrieved candidates by metadata constraints.
 
-        If filtering would produce an empty result set, return the original
-        unfiltered list as a safety fallback.
+        This is a defence-in-depth check after Pinecone's pre-scoring filter.
+        Constraints are fail-closed: missing metadata never silently broadens a
+        legal query, and year/title constraints are combined with AND.
         """
         if not year_filters and not act_name_filters:
             return candidates
@@ -247,7 +344,7 @@ class RetrievalService:
                     if int(doc_year) not in year_filters:
                         year_match = False
                 except (TypeError, ValueError):
-                    pass  # Keep if no parseable year
+                    year_match = False
 
             # Title / Case Name check
             title_match = True
@@ -269,18 +366,8 @@ class RetrievalService:
                         title_match = True
                         break
 
-            # If either match holds, we keep the document. This is a soft filter.
-            if year_match or title_match:
-                if year_filters and not act_name_filters:
-                    if year_match:
-                        filtered.append(doc)
-                elif act_name_filters and not year_filters:
-                    if title_match:
-                        filtered.append(doc)
-                else:
-                    # Both provided. If either matches, it is a good candidate.
-                    if year_match or title_match:
-                        filtered.append(doc)
+            if year_match and title_match:
+                filtered.append(doc)
 
         if filtered:
             logger.debug(
@@ -292,19 +379,24 @@ class RetrievalService:
             )
             return filtered
 
-        logger.debug(
-            "Metadata filter matched 0/%d candidates; falling back to unfiltered.",
-            len(candidates),
-        )
-        return candidates
+        logger.debug("Metadata filter matched 0/%d candidates.", len(candidates))
+        return []
 
 
 _instance: RetrievalService | None = None
 
 
-def get_retrieval_service() -> RetrievalService:
-    """Singleton factory for RetrievalService."""
+def get_retrieval_service() -> Any:
+    """Singleton factory for RetrievalService, routing dynamically by configuration."""
     global _instance
+    backend = getattr(settings, "RETRIEVAL_BACKEND", "pinecone").lower()
+    if backend == "neo4j":
+        from app.services.retrieval.neo4j_retrieval_service import (
+            get_neo4j_retrieval_service,
+        )
+
+        return get_neo4j_retrieval_service()
+
     if _instance is None:
         _instance = RetrievalService()
     return _instance

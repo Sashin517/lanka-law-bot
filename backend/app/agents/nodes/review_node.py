@@ -8,7 +8,7 @@ Pipeline:
   5. Generate clause-by-clause risk report (hybrid JSON + markdown)
   6. Verify citations via existing CitationVerifier
 
-Requires user-uploaded documents.  If none are attached, the router
+Requires user-uploaded documents. If none are attached, the router
 should have already handled this, but a guard is included for safety.
 """
 
@@ -37,6 +37,8 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
+from app.agents.message_bus import emit_message
+from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -51,18 +53,12 @@ _review_chain = (
     ChatPromptTemplate.from_template(REVIEW_PROMPT) | _review_llm | JsonOutputParser()
 )
 
-# Broader user-doc retrieval for thorough review
 _REVIEW_USER_DOC_TOP_K = 8
 
 
 @traceable(name="ReviewNode")
 async def review_node(state: AgentState) -> dict:
-    """Execute the document review pipeline.
-
-    Retrieves user doc chunks → cross-references legal corpus →
-    generates risk report in markdown.
-    """
-
+    """Execute the document review pipeline."""
     # ── Guard: require document_ids ──
     if not state.document_ids:
         logger.warning("Review node invoked without document_ids.")
@@ -100,8 +96,7 @@ async def review_node(state: AgentState) -> dict:
         legal_results = _retrieval.search(
             query=state.question,
             top_k=state.legal_top_k,
-            expand_parents=state.ablation_config.get("expand_parents", True),
-            **state.ablation_config,
+            **retrieval_search_kwargs(state.ablation_config),
         )
 
     # Handle empty retrieval
@@ -130,9 +125,18 @@ async def review_node(state: AgentState) -> dict:
     )
 
     # ── Step 4: Generate risk report (hybrid JSON) ──
+    question_for_llm = state.question
+    grounding_feedback = state.working_memory.get("grounding_feedback")
+    if grounding_feedback:
+        logger.info("Retrying review with grounding feedback: %s", grounding_feedback)
+        question_for_llm += (
+            f"\n\n[RETRY NOTICE: Previous review report contained ungrounded claims: {grounding_feedback}. "
+            f"Ensure every risk assessment point is strictly supported by the context.]"
+        )
+
     try:
         raw: dict = await _review_chain.ainvoke({
-            "question": state.question,
+            "question": question_for_llm,
             "context": context_str,
         })
     except Exception:
@@ -152,7 +156,9 @@ async def review_node(state: AgentState) -> dict:
     sources_used = raw.get("sources_used", [])
 
     if not state.ablation_config.get("skip_verification"):
-        valid_ids = build_and_verify_sources(sources_used, citation_map, _verifier)
+        valid_ids = build_and_verify_sources(
+            sources_used, citation_map, _verifier, markdown_content=markdown
+        )
         markdown = strip_invalid_anchors(markdown, valid_ids)
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
@@ -163,10 +169,16 @@ async def review_node(state: AgentState) -> dict:
         len(sources), raw.get("risk_count", 0), confidence,
     )
 
-    return {
-        "retrieved_sources": sources,
-        "context_str": context_str,
-        "summary": extract_first_paragraph(markdown),
-        "markdown_content": markdown,
-        "confidence": confidence,
-    }
+    return emit_message(
+        state=state,
+        state_update={
+            "retrieved_sources": sources,
+            "context_str": context_str,
+            "summary": extract_first_paragraph(markdown),
+            "markdown_content": markdown,
+            "confidence": confidence,
+        },
+        sender="review",
+        msg_type="review_report",
+        content=markdown,
+    )

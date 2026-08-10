@@ -50,11 +50,11 @@ logger = logging.getLogger(__name__)
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 CACHE_DIR = BACKEND_DIR / "benchmarks" / "results" / "_ragas_cache"
 
-# ── Configuration ────────────────────────────────────────────────
+# Configuration
 
-# Stratified selection: 4 per mode × 5 modes = 20 total
-SAMPLES_PER_MODE = 4
-TARGET_MODES = ["quick_qa", "deep_research", "drafting", "review", "reasoning"]
+# Stratified selection: 5 per mode × 4 modes = 20 total
+SAMPLES_PER_MODE = 5
+TARGET_MODES = ["quick_qa", "deep_research", "drafting", "reasoning"]
 
 # Gemini free-tier: 15 RPM for gemini-3.1-flash-lite
 # Pipeline makes ~1-2 LLM calls per sample during collection.
@@ -64,9 +64,7 @@ COLLECTION_DELAY_S = 5  # Between pipeline calls during collection
 EVAL_DELAY_S = 4  # Between RAGAS evaluator calls (via RunConfig)
 
 
-# ── Stratified selection ─────────────────────────────────────────
-
-
+# Stratified selection
 def select_stratified_subset(
     benchmark: list[dict],
     per_mode: int = SAMPLES_PER_MODE,
@@ -92,6 +90,10 @@ def select_stratified_subset(
         doc_ids = entry.get("request", {}).get("document_ids", [])
         real_docs = [d for d in doc_ids if d and not d.startswith("<")]
         if entry.get("requires_user_document") and not real_docs:
+            continue
+
+        # Skip multi-agent planned queries to ensure fair single-agent evaluation
+        if entry.get("expected_plan_type") == "planned":
             continue
 
         if mode in modes:
@@ -125,13 +127,12 @@ def select_stratified_subset(
     return selected
 
 
-# ── Collection phase ─────────────────────────────────────────────
-
-
+# Collection phase
 async def collect_samples(entries: list[dict]) -> list[dict]:
     """Run each entry through the LangGraph pipeline, capturing retrieval context.
 
     Returns serializable dicts suitable for caching and later RAGAS evaluation.
+    Also captures execution_trace and timing data for multi-agent evaluation.
     """
     from evaluation.eval_pipeline import run_pipeline
 
@@ -153,17 +154,21 @@ async def collect_samples(entries: list[dict]) -> list[dict]:
             await asyncio.sleep(COLLECTION_DELAY_S)
 
         try:
+            start_time = time.time()
             final_state = await run_pipeline(
                 question=question,
                 mode=mode,
                 document_ids=doc_ids,
                 matter_id=matter_id,
+                ablation_config={"force_fast_path": True},
             )
+            e2e_seconds = time.time() - start_time
 
-            # ── Extract retrieved contexts ──
+            # ── Extract retrieved contexts (with deduplication) ──
             # Worker nodes populate state.retrieved_sources with SourceChunk objects
             retrieved_sources = final_state.get("retrieved_sources", [])
             retrieved_contexts: list[str] = []
+            seen_contexts: set[str] = set()
             for src in retrieved_sources:
                 if hasattr(src, "content"):
                     text = src.content or src.excerpt or ""
@@ -171,8 +176,10 @@ async def collect_samples(entries: list[dict]) -> list[dict]:
                     text = src.get("content", "") or src.get("excerpt", "")
                 else:
                     text = str(src)
-                if text.strip():
-                    retrieved_contexts.append(text.strip())
+                clean_text = text.strip()
+                if clean_text and clean_text not in seen_contexts:
+                    seen_contexts.add(clean_text)
+                    retrieved_contexts.append(clean_text)
 
             if not retrieved_contexts:
                 logger.warning("  → No contexts retrieved, skipping %s", item["id"])
@@ -192,21 +199,33 @@ async def collect_samples(entries: list[dict]) -> list[dict]:
                 logger.warning("  → Empty/error response, skipping %s", item["id"])
                 continue
 
+            # ── Extract execution trace (multi-agent observability) ──
+            execution_trace = {}
+            fr = final_state.get("final_response")
+            if isinstance(fr, dict):
+                execution_trace = fr.get("execution_trace", {})
+
             samples.append(
                 {
                     "id": item["id"],
                     "mode": mode,
                     "category": item.get("category", ""),
+                    "hop_type": item.get("hop_type", "single_hop"),
                     "user_input": question,
                     "retrieved_contexts": retrieved_contexts,
                     "response": response_text,
                     "reference": item["ground_truth_answer"],
+                    "execution_trace": execution_trace,
+                    "e2e_seconds": round(e2e_seconds, 3),
+                    "expected_plan_type": item.get("expected_plan_type", "fast_path"),
+                    "expected_agents": item.get("expected_agents", []),
                 }
             )
             logger.info(
-                "  ✓ Collected (%d contexts, %d char response)",
+                "  ✓ Collected (%d contexts, %d char response, %.1fs)",
                 len(retrieved_contexts),
                 len(response_text),
+                e2e_seconds,
             )
 
         except Exception as e:
@@ -216,9 +235,7 @@ async def collect_samples(entries: list[dict]) -> list[dict]:
     return samples
 
 
-# ── Cache management ─────────────────────────────────────────────
-
-
+# Cache management
 def save_cache(samples: list[dict], cache_path: Path) -> None:
     """Persist collected samples to disk."""
     cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -233,27 +250,28 @@ def load_cache(cache_path: Path) -> list[dict]:
         return json.load(f)
 
 
-# ── RAGAS evaluation ─────────────────────────────────────────────
-
-
+# RAGAS evaluation
 def run_ragas_evaluation(sample_dicts: list[dict], output_path: Path) -> None:
     """Run RAGAS metrics on collected samples.
 
-    Metrics (3 core):
+    Metrics (4 core):
     - **Faithfulness**: Is the response grounded in retrieved contexts?
       (~3-5 LLM calls/sample: decomposes answer → verifies each claim)
     - **FactualCorrectness**: Does the response match the ground truth?
       (~1-2 LLM calls/sample)
     - **LLMContextRecall**: Did the retriever fetch the right information?
       (~1 LLM call/sample)
+    - **LLMContextPrecisionWithReference**: Are retrieved chunks mostly relevant?
+      (~1 LLM call/sample)
 
-    Total budget: 20 samples × ~8 calls = ~160 LLM calls.
-    At 15 RPM with 4s spacing → ~11 minutes total.
+    Total budget: 20 samples × ~10 calls = ~200 LLM calls.
+    At 15 RPM with 4s spacing → ~14 minutes total.
     """
     from ragas import evaluate, EvaluationDataset, SingleTurnSample
     from ragas.metrics import (
         Faithfulness,
         FactualCorrectness,
+        LLMContextPrecisionWithReference,
         LLMContextRecall,
     )
     from ragas.llms import LangchainLLMWrapper
@@ -262,7 +280,16 @@ def run_ragas_evaluation(sample_dicts: list[dict], output_path: Path) -> None:
     from langchain_google_genai import ChatGoogleGenerativeAI
     from langchain_huggingface import HuggingFaceEmbeddings
 
-    # Convert to RAGAS SingleTurnSample objects
+    import pandas as pd
+
+    # ── Separate Drafting vs. Non-Drafting Samples ──
+    non_drafting_dicts = [s for s in sample_dicts if s.get("mode") != "drafting"]
+    drafting_dicts = [s for s in sample_dicts if s.get("mode") == "drafting"]
+
+    # Reassign sample_dicts so the order matches our dataframe concatenation
+    sample_dicts = non_drafting_dicts + drafting_dicts
+
+    # Convert non-drafting to RAGAS SingleTurnSample objects
     samples = [
         SingleTurnSample(
             user_input=s["user_input"],
@@ -270,14 +297,24 @@ def run_ragas_evaluation(sample_dicts: list[dict], output_path: Path) -> None:
             response=s["response"],
             reference=s["reference"],
         )
-        for s in sample_dicts
+        for s in non_drafting_dicts
     ]
+
+    # Try to load LangChain's native rate limiter to prevent Ragas from overwhelming Gemini
+    try:
+        from langchain_core.rate_limiters import InMemoryRateLimiter
+
+        # Limit to 14 requests per minute to stay safely under the 15 RPM threshold
+        rate_limiter = InMemoryRateLimiter(requests_per_second=14 / 60.0)
+    except ImportError:
+        rate_limiter = None
 
     # ── Evaluator LLM (same model as pipeline, temperature=0 for reproducibility)
     evaluator_llm = LangchainLLMWrapper(
         ChatGoogleGenerativeAI(
-            model="gemini-3.1-flash-lite",
+            model="gemini-3.1-flash-lite-preview",
             temperature=0,
+            rate_limiter=rate_limiter,
             google_api_key=os.environ.get("GOOGLE_API_KEY"),
         )
     )
@@ -291,6 +328,7 @@ def run_ragas_evaluation(sample_dicts: list[dict], output_path: Path) -> None:
         Faithfulness(),
         FactualCorrectness(),
         LLMContextRecall(),
+        LLMContextPrecisionWithReference(),
     ]
 
     # ── Rate-limit enforcement ──
@@ -306,7 +344,7 @@ def run_ragas_evaluation(sample_dicts: list[dict], output_path: Path) -> None:
     )
 
     # Budget estimates
-    est_calls = len(samples) * 8  # ~8 LLM calls per sample across 3 metrics
+    est_calls = len(samples) * 10  # ~10 LLM calls per sample across 4 metrics
     est_minutes = max(1, est_calls * EVAL_DELAY_S // 60)
 
     print(f"\n{'='*60}")
@@ -331,20 +369,62 @@ def run_ragas_evaluation(sample_dicts: list[dict], output_path: Path) -> None:
     # ── Run RAGAS ──
     start_time = time.time()
 
-    results = evaluate(
-        dataset=EvaluationDataset(samples=samples),
-        metrics=metrics,
-        llm=evaluator_llm,
-        embeddings=evaluator_embeddings,
-        run_config=run_config,
-    )
+    if samples:
+        ragas_results = evaluate(
+            dataset=EvaluationDataset(samples=samples),
+            metrics=metrics,
+            llm=evaluator_llm,
+            embeddings=evaluator_embeddings,
+            run_config=run_config,
+        )
+        results_df = ragas_results.to_pandas()
+    else:
+        results_df = pd.DataFrame()
+
+    # ── Run Custom LLM-as-a-Judge (for drafting) ──
+    if drafting_dicts:
+        print("\n  Evaluating Drafting samples with Custom Rubric Evaluator...")
+        from evaluation.custom_metrics import DraftingRubricEvaluator
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        drafting_eval_model = ChatGoogleGenerativeAI(
+            model="gemini-3.1-flash-lite-preview",
+            temperature=0,
+            rate_limiter=rate_limiter,
+            google_api_key=os.environ.get("GOOGLE_API_KEY"),
+        )
+        drafting_evaluator = DraftingRubricEvaluator(llm=drafting_eval_model)
+
+        drafting_results = []
+        for s in drafting_dicts:
+            res = drafting_evaluator.evaluate_sample(
+                draft=s["response"],
+                rubric=s["reference"],
+                contexts=s["retrieved_contexts"],
+            )
+            # Match the dataframe structure
+            drafting_results.append(
+                {
+                    "user_input": s["user_input"],
+                    "response": s["response"],
+                    "reference": s["reference"],
+                    "retrieved_contexts": s["retrieved_contexts"],
+                    "drafting_rubric_score": res["score"],
+                    "drafting_reasoning": res["reasoning"],
+                }
+            )
+
+        drafting_df = pd.DataFrame(drafting_results)
+
+        if results_df.empty:
+            results_df = drafting_df
+        else:
+            results_df = pd.concat([results_df, drafting_df], ignore_index=True)
 
     elapsed = time.time() - start_time
 
     # ── Save results ──
     output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    results_df = results.to_pandas()
 
     # Inject metadata columns
     ids = [s["id"] for s in sample_dicts]
@@ -380,7 +460,7 @@ def run_ragas_evaluation(sample_dicts: list[dict], output_path: Path) -> None:
             "samples_per_mode": SAMPLES_PER_MODE,
             "modes": TARGET_MODES,
             "metrics": [type(m).__name__ for m in metrics],
-            "model": "gemini-3.1-flash-lite",
+            "model": "gemini-3.1-flash-lite-preview",
             "elapsed_seconds": round(elapsed, 1),
         },
     }

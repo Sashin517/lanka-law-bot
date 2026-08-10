@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 from types import SimpleNamespace
+
+from langchain_core.documents import Document
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -15,6 +18,7 @@ def _load_module(module_name: str, relative_path: str):
     )
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -24,78 +28,214 @@ legal_vector_store = _load_module(
     "app/services/retrieval/legal_vector_store.py",
 )
 LegalVectorStore = legal_vector_store.LegalVectorStore
+PineconeLegalHybridRetriever = legal_vector_store.PineconeLegalHybridRetriever
+retrieval_service = _load_module(
+    "retrieval_service_under_test",
+    "app/services/retrieval/retrieval_service.py",
+)
+RetrievalService = retrieval_service.RetrievalService
 
 
-class _FakeBM25Match:
-    id = "record-1"
+class _FakeDocument:
+    def __init__(self, payload: dict) -> None:
+        self.payload = payload
 
     def to_dict(self) -> dict:
-        return {
-            "_id": "record-1",
-            "_score": 0.42,
-            "text": "The buyer may recover damages for breach of contract.",
-            "chunk_id": "chunk-1",
-            "parent_id": "parent-1",
-            "chunk_type": "child",
-            "source_filename": "contract.md",
-            "year": 2003,
-        }
+        return dict(self.payload)
 
 
 class _FakeDocumentsClient:
     def __init__(self) -> None:
-        self.calls: list[dict] = []
+        self.search_calls: list[dict] = []
+        self.fetch_calls: list[dict] = []
 
     def search(self, **kwargs):
-        self.calls.append(kwargs)
-        return SimpleNamespace(matches=[_FakeBM25Match()])
+        self.search_calls.append(kwargs)
+        return SimpleNamespace(
+            matches=[
+                _FakeDocument(
+                    {
+                        "_id": "chunk-1",
+                        "_score": 0.42,
+                        "body": "The buyer may recover damages for breach.",
+                        "title": "Sale of Goods Ordinance",
+                        "citation": "Ordinance No. 11 of 1896",
+                        "section_label": "Section 51",
+                        "chunk_id": "chunk-1",
+                        "parent_id": "parent-1",
+                        "chunk_type": "child",
+                        "year": 1896,
+                    }
+                )
+            ]
+        )
+
+    def fetch(self, **kwargs):
+        self.fetch_calls.append(kwargs)
+        return SimpleNamespace(
+            documents={
+                "parent-1": _FakeDocument(
+                    {
+                        "_id": "parent-1",
+                        "body": "Parent statutory context.",
+                        "chunk_id": "parent-1",
+                        "chunk_type": "parent",
+                        "title": "Sale of Goods Ordinance",
+                    }
+                )
+            }
+        )
 
 
-class _FakeBM25Index:
+class _FakeIndex:
     def __init__(self) -> None:
         self.documents = _FakeDocumentsClient()
 
 
-def test_search_children_bm25_uses_pinecone_fts_and_preserves_metadata():
+def test_bm25_search_uses_same_document_index_and_all_legal_text_fields():
     store = object.__new__(LegalVectorStore)
-    store._bm25_index = _FakeBM25Index()
-    store.bm25_namespace = "legal_corpus"
+    store._index = _FakeIndex()
+    store.namespace = "legal_corpus_release"
 
     documents = store.search_children_bm25(
-        query="contract damages",
+        query="section 51 damages",
         limit=7,
-        metadata_filters={"year": {"$eq": 2003}},
+        metadata_filters={"year": {"$eq": 1896}},
     )
 
-    call = store._bm25_index.documents.calls[0]
-    assert call["namespace"] == "legal_corpus"
+    call = store._index.documents.search_calls[0]
+    assert call["namespace"] == "legal_corpus_release"
     assert call["top_k"] == 7
     assert call["score_by"] == [
-        {"type": "text", "field": "text", "query": "contract damages"}
+        {"type": "text", "field": "title", "query": "section 51 damages"},
+        {"type": "text", "field": "citation", "query": "section 51 damages"},
+        {"type": "text", "field": "section_label", "query": "section 51 damages"},
+        {"type": "text", "field": "body", "query": "section 51 damages"},
     ]
-    assert call["include_fields"] == ["*"]
     assert call["filter"] == {
-        "chunk_type": {"$eq": "child"},
-        "year": {"$eq": 2003},
+        "$and": [
+            {"chunk_type": {"$eq": "child"}},
+            {"year": {"$eq": 1896}},
+        ]
     }
+    assert "dense_vector" not in call["include_fields"]
+    assert documents[0].page_content == "The buyer may recover damages for breach."
+    assert documents[0].metadata["point_id"] == "chunk-1"
+    assert documents[0].metadata["retrieval_channel"] == "bm25"
+    assert documents[0].metadata["retrieval_score"] == 0.42
 
-    assert len(documents) == 1
-    assert documents[0].page_content == (
-        "The buyer may recover damages for breach of contract."
+
+def test_parent_is_fetched_directly_by_shared_document_id():
+    store = object.__new__(LegalVectorStore)
+    store._index = _FakeIndex()
+    store.namespace = "legal_corpus_release"
+
+    parent = store.fetch_parent("parent-1")
+
+    assert store._index.documents.fetch_calls[0]["ids"] == ["parent-1"]
+    assert parent is not None
+    assert parent.page_content == "Parent statutory context."
+    assert parent.metadata["chunk_type"] == "parent"
+
+
+class _HybridStore(LegalVectorStore):
+    def __init__(self) -> None:
+        # Avoid remote client construction; search methods are fully stubbed.
+        pass
+
+    def search_children(self, *_args, **_kwargs):
+        return [
+            Document(
+                page_content="shared",
+                metadata={
+                    "chunk_id": "shared-id",
+                    "retrieval_channel": "dense",
+                    "retrieval_score": 0.9,
+                },
+            ),
+            Document(page_content="dense", metadata={"chunk_id": "dense-id"}),
+        ]
+
+    def search_children_bm25(self, *_args, **_kwargs):
+        return [
+            Document(
+                page_content="shared",
+                metadata={
+                    "chunk_id": "shared-id",
+                    "retrieval_channel": "bm25",
+                    "retrieval_score": 12.0,
+                },
+            ),
+            Document(page_content="lexical", metadata={"chunk_id": "lexical-id"}),
+        ]
+
+
+def test_hybrid_retriever_fuses_by_chunk_id_and_preserves_channel_diagnostics():
+    retriever = PineconeLegalHybridRetriever(
+        store=_HybridStore(),
+        k=5,
+        dense_weight=0.6,
+        sparse_weight=0.4,
     )
-    assert documents[0].metadata["point_id"] == "record-1"
-    assert documents[0].metadata["chunk_id"] == "chunk-1"
-    assert documents[0].metadata["parent_id"] == "parent-1"
-    assert documents[0].metadata["source_filename"] == "contract.md"
-    assert "_score" not in documents[0].metadata
+
+    documents = retriever._get_relevant_documents("damages", run_manager=None)  # type: ignore[arg-type]
+
+    assert documents[0].metadata["chunk_id"] == "shared-id"
+    assert set(documents[0].metadata["retrieval_channels"]) == {"dense", "bm25"}
+    assert documents[0].metadata["rrf_score"] > documents[1].metadata["rrf_score"]
 
 
-def test_retrieval_service_no_longer_imports_or_builds_local_bm25():
+def test_retrieval_service_uses_single_index_hybrid_retriever():
     source = (BACKEND_DIR / "app/services/retrieval/retrieval_service.py").read_text(
         encoding="utf-8"
     )
+    assert "EnsembleRetriever" not in source
+    assert "PINECONE_LEGAL_BM25_INDEX_HOST" not in source
+    assert "PineconeLegalHybridRetriever" in source
+    assert "self._reranked_retriever" not in source
 
-    assert "from langchain_community.retrievers import BM25Retriever" not in source
-    assert "BM25Retriever.from_documents" not in source
-    assert "load_children_for_bm25" not in source
-    assert "PineconeLegalBM25Retriever" in source
+
+def test_route_constraints_become_pre_scoring_pinecone_filters():
+    assert RetrievalService._build_pinecone_filter([1896], None) == {
+        "year": {"$eq": 1896}
+    }
+    assert RetrievalService._build_pinecone_filter(None, ["Sale of Goods Ordinance"]) == {
+        "title": {"$match_all": "Sale of Goods Ordinance"}
+    }
+    assert RetrievalService._build_pinecone_filter(
+        [1896, 2007], ["Sale of Goods Ordinance", "Companies Act"]
+    ) == {
+        "$and": [
+            {"year": {"$in": [1896, 2007]}},
+            {
+                "$or": [
+                    {"title": {"$match_all": "Sale of Goods Ordinance"}},
+                    {"title": {"$match_all": "Companies Act"}},
+                ]
+            },
+        ]
+    }
+
+
+def test_post_filter_is_fail_closed_and_combines_constraints_with_and():
+    candidates = [
+        Document(
+            page_content="match",
+            metadata={"year": 1896, "title": "Sale of Goods Ordinance"},
+        ),
+        Document(
+            page_content="wrong title",
+            metadata={"year": 1896, "title": "Companies Act"},
+        ),
+        Document(
+            page_content="missing year",
+            metadata={"title": "Sale of Goods Ordinance"},
+        ),
+    ]
+
+    filtered = RetrievalService._post_filter_metadata(
+        candidates, [1896], ["Sale of Goods Ordinance"]
+    )
+
+    assert [doc.page_content for doc in filtered] == ["match"]
+    assert RetrievalService._post_filter_metadata(candidates, [2025], None) == []

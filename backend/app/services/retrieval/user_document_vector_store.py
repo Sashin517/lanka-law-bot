@@ -58,15 +58,13 @@ class UserDocumentVectorStore:
         self,
         chunks: list[LegalChunk],
     ) -> list[str]:
-        """Upsert chunks into Pinecone using integrated inference.
-
-        Pinecone will automatically embed the ``text`` field via the
-        ``llama-text-embed-v2`` model configured on the index.
+        """Upsert chunks into Pinecone using client-side Jina API embeddings.
 
         Returns the list of record IDs (one per chunk).
         """
-        records: list[dict] = []
         record_ids: list[str] = []
+        texts_to_embed: list[str] = []
+        chunk_metadatas: list[dict] = []
 
         for chunk in chunks:
             record_id = self.record_id(
@@ -75,23 +73,31 @@ class UserDocumentVectorStore:
                 chunk.metadata.text_hash,
             )
             record_ids.append(record_id)
+            texts_to_embed.append(chunk.text)
 
-            # Build the record payload.  The ``text`` field is the one
-            # mapped in Pinecone's field_map for integrated embedding.
             metadata = self._pinecone_metadata(chunk.metadata.model_dump())
-            record = {
-                "_id": record_id,
-                "text": chunk.text,
-                **metadata,
-            }
-            records.append(record)
+            metadata["text"] = chunk.text
+            chunk_metadatas.append(metadata)
+
+        # Generate Jina embeddings
+        from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
+        embed_service = get_jina_embedding_service()
+        vectors = embed_service.embed_documents(texts_to_embed)
+
+        records: list[dict] = []
+        for r_id, vector, metadata in zip(record_ids, vectors, chunk_metadatas):
+            records.append({
+                "id": r_id,
+                "values": vector,
+                "metadata": metadata
+            })
 
         namespace = settings.PINECONE_NAMESPACE
         for start in range(0, len(records), settings.INGESTION_BATCH_SIZE):
             batch = records[start: start + settings.INGESTION_BATCH_SIZE]
-            self._index.upsert_records(
+            self._index.upsert(
                 namespace=namespace,
-                records=batch,
+                vectors=batch,
             )
 
         return record_ids
@@ -139,13 +145,19 @@ class UserDocumentVectorStore:
             matter_id=matter_id,
         )
 
-        results = self._index.search_records(
+        # Generate Jina embedding for the search query
+        from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
+        embed_service = get_jina_embedding_service()
+        query_vector = embed_service.embed_query(query)
+
+        results = self._index.query(
             namespace=settings.PINECONE_NAMESPACE,
-            inputs={"text": query},
+            vector=query_vector,
             top_k=limit,
             filter=query_filter,
+            include_metadata=True,
         )
-        return [self._hit_to_document(hit) for hit in (results.result.hits if results.result else [])]
+        return [self._query_match_to_document(match) for match in (results.matches or [])]
 
     def load_child_documents_for_bm25(
         self,
@@ -213,17 +225,17 @@ class UserDocumentVectorStore:
             "chunk_id": {"$eq": parent_id},
         }
 
-        # Use search_records with a minimal query to fetch the parent.
-        # The query text is set to a generic legal phrase; the filter
-        # guarantees we get the exact parent record back.
-        results = self._index.search_records(
+        # Query using a zero vector for a metadata-only exact match filter
+        zero_vector = [0.0] * settings.PINECONE_EMBEDDING_DIMENSION
+        results = self._index.query(
             namespace=settings.PINECONE_NAMESPACE,
-            inputs={"text": "legal clause section"},
+            vector=zero_vector,
             top_k=1,
             filter=query_filter,
+            include_metadata=True,
         )
-        hits = results.result.hits if results.result else []
-        return self._hit_to_document(hits[0]) if hits else None
+        matches = results.matches or []
+        return self._query_match_to_document(matches[0]) if matches else None
 
     # ------------------------------------------------------------------
     # Helpers
@@ -267,6 +279,14 @@ class UserDocumentVectorStore:
         text = fields.pop("text", "") or ""
         fields["point_id"] = hit.id
         return Document(page_content=text, metadata=fields)
+
+    @staticmethod
+    def _query_match_to_document(match) -> Document:
+        """Convert a standard Pinecone query match to a LangChain Document."""
+        metadata = dict(match.metadata or {})
+        text = metadata.pop("text", "") or ""
+        metadata["point_id"] = match.id
+        return Document(page_content=text, metadata=metadata)
 
     @staticmethod
     def _is_missing_namespace_error(exc: Exception) -> bool:

@@ -1,0 +1,39 @@
+{
+  "aggregate": {
+    "faithfulness": 0.7949796363392378,
+    "factual_correctness(mode=f1)": 0.32911666666666665,
+    "context_recall": 0.49691761363636365,
+    "llm_context_precision_with_reference": 0.27755173259722803,
+    "drafting_rubric_score": 0.5733
+  },
+  "per_mode_aggregate": {
+    "quick_qa": {
+      "faithfulness": 0.91,
+      "factual_correctness(mode=f1)": 0.5187,
+      "context_recall": 0.91,
+      "llm_context_precision_with_reference": 0.688879629611197,
+      "drafting_rubric_score": NaN
+    },
+    "deep_research": {
+      "faithfulness": 0.7939988518518518,
+      "factual_correctness(mode=f1)": 0.18382,
+      "context_recall": 0.26215025252525255,
+      "llm_context_precision_with_reference": 0.0,
+      "drafting_rubric_score": NaN
+    },
+    "drafting": {
+      "faithfulness": NaN,
+      "factual_correctness(mode=f1)": NaN,
+      "context_recall": NaN,
+      "llm_context_precision_with_reference": NaN,
+      "drafting_rubric_score": 0.5733
+    },
+    "reasoning": {
+      "faithfulness": 0.7499492753623188,
+      "factual_correctness(mode=f1)": 0.39858,
+      "context_recall": 0.5664520202020202,
+      "llm_context_precision_with_reference": 0.3905723063888685,
+      "drafting_rubric_score": NaN
+    }
+  }
+}
