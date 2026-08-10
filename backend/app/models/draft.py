@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -9,7 +9,8 @@ from app.database.session import Base
 
 
 def utcnow() -> datetime:
-    return datetime.utcnow()
+    # SQLite stores naive timestamps; derive them from an explicit UTC clock.
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class DraftDocument(Base):
@@ -59,8 +60,15 @@ class DraftDocumentVersion(Base):
     version_number: Mapped[int] = mapped_column(Integer)
     editor_json: Mapped[str] = mapped_column(Text, default="{}")
     markdown_content: Mapped[str] = mapped_column(Text, default="")
+    source_refs: Mapped[str] = mapped_column(Text, default="[]")
     change_summary: Mapped[str] = mapped_column(Text, default="")
     changed_by: Mapped[str] = mapped_column(String(32), index=True)
+    parent_version_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("draft_document_versions.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    )
     agent_run_id: Mapped[str | None] = mapped_column(String(128), index=True, nullable=True)
     context_snapshot_id: Mapped[str | None] = mapped_column(
         String(64),

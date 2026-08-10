@@ -1,5 +1,7 @@
 from __future__ import annotations
 from enum import Enum
+from typing import Any, Literal
+
 from pydantic import BaseModel, Field
 
 class CitedClaim(BaseModel):
@@ -63,3 +65,32 @@ class ImprovePromptResponse(BaseModel):
 
     improved_prompt: str
     intent_summary: str | None = None
+
+
+class DraftEditResponse(BaseModel):
+    """Edited document content returned by either draft-edit path."""
+
+    edit_type: Literal["replace", "insert", "full_rewrite"]
+    original_text: str
+    edited_text: str
+    markdown_content: str
+    sources: list[SourceReference] = Field(default_factory=list)
+    edit_summary: str
+    confidence: Literal["high", "medium", "low"] = "medium"
+    edit_path: Literal["light", "heavy"] = "light"
+    execution_trace: dict[str, Any] | None = None
+
+
+class DraftVersionSnapshot(BaseModel):
+    """An immutable document snapshot in the draft version chain."""
+
+    id: str = Field(min_length=1, max_length=128)
+    draft_id: str = Field(min_length=1, max_length=128)
+    version_number: int = Field(ge=1)
+    content_json: dict[str, Any]
+    content_markdown: str
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    created_at: str
+    created_by: Literal["ai", "user"]
+    edit_summary: str
+    parent_version_id: str | None = Field(default=None, max_length=128)

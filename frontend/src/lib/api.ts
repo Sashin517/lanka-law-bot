@@ -16,6 +16,7 @@ export interface SourceRef {
   excerpt: string;
   content?: string;
   source_type?: string;
+  document_id?: string | null;
   filename?: string | null;
   page_start?: number | null;
   page_end?: number | null;

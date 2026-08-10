@@ -87,6 +87,12 @@ export function EditorToolbar({
           label="Zoom in"
           id="editor-toolbar-zoom-in"
         />
+        <span
+          className="min-w-12 text-center text-xs tabular-nums text-slate-400"
+          aria-live="polite"
+        >
+          {zoomLevel}%
+        </span>
         <ToolbarButton
           icon={<Maximize2 size={15} />}
           onClick={onToggleFullWidth}

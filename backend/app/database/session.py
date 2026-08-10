@@ -61,6 +61,34 @@ def _apply_sqlite_compat_migrations() -> None:
                     )
                 )
 
+    if "draft_document_versions" in tables:
+        columns = {
+            column["name"]
+            for column in inspector.get_columns("draft_document_versions")
+        }
+        with engine.begin() as conn:
+            if "source_refs" not in columns:
+                conn.execute(
+                    text(
+                        "ALTER TABLE draft_document_versions "
+                        "ADD COLUMN source_refs TEXT DEFAULT '[]'"
+                    )
+                )
+            if "parent_version_id" not in columns:
+                conn.execute(
+                    text(
+                        "ALTER TABLE draft_document_versions "
+                        "ADD COLUMN parent_version_id VARCHAR(64)"
+                    )
+                )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS "
+                    "ix_draft_document_versions_parent_version_id "
+                    "ON draft_document_versions (parent_version_id)"
+                )
+            )
+
 
 def _rebuild_document_chunks_table(conn: Connection, columns: set[str]) -> None:
     select_vector_record_id = (

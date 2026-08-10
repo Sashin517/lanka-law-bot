@@ -14,18 +14,12 @@
  */
 
 import type { SourceRef } from "@/lib/api";
+import {
+  buildSourcesById,
+  citationIdsFromGroup,
+  CITATION_RE,
+} from "@/lib/sources";
 import type { TiptapDocument, TiptapNode, TiptapMark } from "@/types/drafting";
-
-// ─── Citation Regex (mirrors MarkdownRenderer.tsx) ──────────────
-
-/** Matches [LAW-1], [DOC-2], etc. — same regex used by MarkdownRenderer. */
-const CITATION_RE = /\[(?:LAW|DOC)-\d+\]/g;
-
-// ─── Source Lookup Helper ───────────────────────────────────────
-
-function buildSourceMap(sources: SourceRef[]): Map<string, SourceRef> {
-  return new Map(sources.map((s) => [s.citation_id, s]));
-}
 
 // ─── Inline Parsing ─────────────────────────────────────────────
 
@@ -56,29 +50,38 @@ function parseInlineText(
       }
     }
 
-    // The citation itself
-    const citationId = match[0];
-    const source = sourceMap.get(citationId);
-    const isDoc = citationId.startsWith("[DOC");
+    citationIdsFromGroup(match[0]).forEach((citationId, groupIndex) => {
+      if (groupIndex > 0) {
+        nodes.push({ type: "text", text: ", " });
+      }
+      const source = sourceMap.get(citationId);
+      const isDoc = citationId.startsWith("[DOC");
+      const citationMark: TiptapMark = {
+        type: "citationMark",
+        attrs: {
+          citationId,
+          sourceType: isDoc ? "user_document" : "legal_authority",
+          title: source?.title ?? citationId,
+          section: source?.section ?? null,
+          excerpt: source?.excerpt ?? "",
+          pageStart: source?.page_start ?? null,
+          pageEnd: source?.page_end ?? null,
+          sourceUri: source?.source_uri ?? null,
+          court: source?.court ?? null,
+          reporterCitation: source?.reporter_citation ?? null,
+          docketNumber: source?.docket_number ?? null,
+          authoritative: source?.authoritative ?? null,
+        },
+      };
 
-    const citationMark: TiptapMark = {
-      type: "citationMark",
-      attrs: {
-        citationId,
-        sourceType: isDoc ? "user_document" : "legal_authority",
-        title: source?.title ?? citationId,
-        section: source?.section ?? null,
-        excerpt: source?.excerpt ?? "",
-      },
-    };
-
-    nodes.push({
-      type: "text",
-      text: citationId,
-      marks: [...baseMarks, citationMark],
+      nodes.push({
+        type: "text",
+        text: citationId,
+        marks: [...baseMarks, citationMark],
+      });
     });
 
-    lastIndex = start + citationId.length;
+    lastIndex = start + match[0].length;
   }
 
   // Remaining text after the last citation
@@ -147,60 +150,122 @@ function parseInlineFormatting(
   text: string,
   sourceMap: Map<string, SourceRef>,
 ): TiptapNode[] {
-  // Handle bold (**text** or __text__)
-  const boldRe = /\*\*(.+?)\*\*|__(.+?)__/g;
   const parts: TiptapNode[] = [];
-  let remaining = text;
-  let match: RegExpExecArray | null;
+  const formatRe = /(\*\*\*|___)(.+?)\1|\*\*(.+?)\*\*|__(.+?)__|\*([^*]+?)\*|_([^_]+?)_/g;
+  let lastIndex = 0;
 
-  // Simple two-pass approach: bold first, then italic
-  const segments: Array<{ text: string; bold: boolean; italic: boolean }> = [];
-  let lastIdx = 0;
-
-  // Extract bold segments
-  const boldMatches = [...remaining.matchAll(boldRe)];
-  if (boldMatches.length === 0) {
-    // No bold — check for italic
-    const italicRe = /\*(.+?)\*|_(.+?)_/g;
-    const italicMatches = [...remaining.matchAll(italicRe)];
-    if (italicMatches.length === 0) {
-      return parseInlineText(text, sourceMap);
+  for (const match of text.matchAll(formatRe)) {
+    const start = match.index ?? 0;
+    if (start > lastIndex) {
+      parts.push(...parseInlineText(text.slice(lastIndex, start), sourceMap));
     }
 
-    for (const im of italicMatches) {
-      const start = im.index!;
-      if (start > lastIdx) {
-        segments.push({ text: remaining.slice(lastIdx, start), bold: false, italic: false });
-      }
-      segments.push({ text: im[1] ?? im[2], bold: false, italic: true });
-      lastIdx = start + im[0].length;
-    }
-    if (lastIdx < remaining.length) {
-      segments.push({ text: remaining.slice(lastIdx), bold: false, italic: false });
-    }
-  } else {
-    for (const bm of boldMatches) {
-      const start = bm.index!;
-      if (start > lastIdx) {
-        segments.push({ text: remaining.slice(lastIdx, start), bold: false, italic: false });
-      }
-      segments.push({ text: bm[1] ?? bm[2], bold: true, italic: false });
-      lastIdx = start + bm[0].length;
-    }
-    if (lastIdx < remaining.length) {
-      segments.push({ text: remaining.slice(lastIdx), bold: false, italic: false });
-    }
-  }
-
-  // Convert segments to Tiptap nodes
-  for (const seg of segments) {
+    const isBoldItalic = Boolean(match[1]);
+    const segment = match[2] ?? match[3] ?? match[4] ?? match[5] ?? match[6] ?? "";
     const marks: TiptapMark[] = [];
-    if (seg.bold) marks.push({ type: "bold" });
-    if (seg.italic) marks.push({ type: "italic" });
-    parts.push(...parseInlineText(seg.text, sourceMap, marks));
+    if (isBoldItalic || match[3] !== undefined || match[4] !== undefined) {
+      marks.push({ type: "bold" });
+    }
+    if (isBoldItalic || match[5] !== undefined || match[6] !== undefined) {
+      marks.push({ type: "italic" });
+    }
+    parts.push(...parseInlineText(segment, sourceMap, marks));
+    lastIndex = start + match[0].length;
   }
 
-  return parts;
+  if (lastIndex < text.length) {
+    parts.push(...parseInlineText(text.slice(lastIndex), sourceMap));
+  }
+
+  return parts.length > 0 ? parts : parseInlineText(text, sourceMap);
+}
+
+function textFromNode(node: TiptapNode): string {
+  if (node.type === "hardBreak") return "\n";
+  if (node.type !== "text") {
+    return (node.content ?? []).map(textFromNode).join("");
+  }
+
+  let text = node.text ?? "";
+  const marks = node.marks ?? [];
+
+  if (marks.some((mark) => mark.type === "citationMark")) {
+    return text;
+  }
+  if (marks.some((mark) => mark.type === "code")) text = `\`${text}\``;
+  if (marks.some((mark) => mark.type === "bold")) text = `**${text}**`;
+  if (marks.some((mark) => mark.type === "italic")) text = `*${text}*`;
+  if (marks.some((mark) => mark.type === "strike")) text = `~~${text}~~`;
+  if (marks.some((mark) => mark.type === "underline")) text = `<u>${text}</u>`;
+
+  return text;
+}
+
+function serializeListItem(node: TiptapNode, marker: string): string {
+  const children = node.content ?? [];
+  const firstBlock = children[0];
+  const firstLine = firstBlock ? textFromNode(firstBlock) : "";
+  const nested = children
+    .slice(1)
+    .map((child) => serializeBlock(child))
+    .filter(Boolean)
+    .map((value) => value.split("\n").map((line) => `  ${line}`).join("\n"));
+
+  return [`${marker} ${firstLine}`, ...nested].join("\n");
+}
+
+function serializeTable(node: TiptapNode): string {
+  const rows = (node.content ?? []).map((row) =>
+    (row.content ?? []).map((cell) => textFromNode(cell).replace(/\|/g, "\\|").trim()),
+  );
+  if (rows.length === 0) return "";
+
+  const columnCount = Math.max(...rows.map((row) => row.length), 1);
+  const normalizeRow = (row: string[]) =>
+    `| ${Array.from({ length: columnCount }, (_, index) => row[index] ?? "").join(" | ")} |`;
+  const [header, ...body] = rows;
+  return [
+    normalizeRow(header),
+    normalizeRow(Array.from({ length: columnCount }, () => "---")),
+    ...body.map(normalizeRow),
+  ].join("\n");
+}
+
+function serializeBlock(node: TiptapNode): string {
+  switch (node.type) {
+    case "heading": {
+      const rawLevel = Number(node.attrs?.level ?? 1);
+      const level = Math.min(Math.max(rawLevel, 1), 6);
+      return `${"#".repeat(level)} ${textFromNode(node)}`;
+    }
+    case "paragraph":
+      return textFromNode(node);
+    case "blockquote":
+      return (node.content ?? [])
+        .map(serializeBlock)
+        .join("\n\n")
+        .split("\n")
+        .map((line) => `> ${line}`)
+        .join("\n");
+    case "bulletList":
+      return (node.content ?? [])
+        .map((item) => serializeListItem(item, "-"))
+        .join("\n");
+    case "orderedList":
+      return (node.content ?? [])
+        .map((item, index) => serializeListItem(item, `${index + 1}.`))
+        .join("\n");
+    case "horizontalRule":
+      return "---";
+    case "codeBlock": {
+      const language = String(node.attrs?.language ?? "");
+      return `\`\`\`${language}\n${textFromNode(node)}\n\`\`\``;
+    }
+    case "table":
+      return serializeTable(node);
+    default:
+      return textFromNode(node);
+  }
 }
 
 // ─── DocumentBuilder Class ──────────────────────────────────────
@@ -217,7 +282,7 @@ export class DocumentBuilder {
    */
   fromMarkdown(markdown: string, sources: SourceRef[]): TiptapDocument {
     this.doc = { type: "doc", content: [] };
-    this.sourceMap = buildSourceMap(sources);
+    this.sourceMap = buildSourcesById(sources);
 
     if (!markdown.trim()) {
       // Return empty doc with a single empty paragraph
@@ -327,8 +392,13 @@ export class DocumentBuilder {
    * only a text fragment (not a full document) needs to be parsed.
    */
   parseInline(text: string, sources: SourceRef[]): TiptapNode[] {
-    const sourceMap = buildSourceMap(sources);
+    const sourceMap = buildSourcesById(sources);
     return parseInlineFormatting(text, sourceMap);
+  }
+
+  /** Serialize the editable Tiptap tree back to Markdown for API requests. */
+  toMarkdown(document: TiptapDocument): string {
+    return document.content.map(serializeBlock).join("\n\n").trim();
   }
 
   // ─── Fluent Builder Methods ─────────────────────────────────

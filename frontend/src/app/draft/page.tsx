@@ -14,13 +14,13 @@
  *   │ (left)   │                          │                   │
  *   └──────────┴──────────────────────────┴───────────────────┘
  *
- * Phase 1 delivers: NavBar + DraftToolbar + Editor (center panel).
+ * Phase 2 delivers interactive citations and source verification.
  * Version History and Chat Panel are placeholder stubs for Phase 3/4.
  *
  * @module app/draft/page
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Scale,
@@ -36,6 +36,7 @@ import Link from "next/link";
 import { DraftToolbar } from "@/components/drafting/DraftToolbar";
 import { EditorToolbar } from "@/components/drafting/EditorToolbar";
 import { TiptapEditor } from "@/components/drafting/TiptapEditor";
+import { SourceVerificationPanel } from "@/components/drafting/SourceVerificationPanel";
 import { documentBuilder } from "@/lib/drafting/documentBuilder";
 import { useDraftDocumentStore } from "@/store/draftDocumentStore";
 import { useVersionStore } from "@/store/versionStore";
@@ -52,9 +53,9 @@ export default function DraftPage() {
 
   // ── Stores ──
   const {
-    draftId,
     title,
     originalPrompt,
+    documentJson,
     markdownContent,
     sources,
     isLoading,
@@ -65,7 +66,6 @@ export default function DraftPage() {
   const {
     showEditsMode,
     toggleShowEdits,
-    currentVersionId,
     getVersionCount,
   } = useVersionStore();
 
@@ -74,23 +74,13 @@ export default function DraftPage() {
   // ── Local UI state ──
   const [chatPanelOpen, setChatPanelOpen] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(100);
-  const [editorContent, setEditorContent] = useState<TiptapDocument | null>(
-    null,
-  );
-
-  // ── Build Tiptap JSON from markdown when content changes ──
-  useEffect(() => {
-    if (markdownContent) {
-      const doc = documentBuilder.fromMarkdown(markdownContent, sources);
-      setEditorContent(doc);
-    }
-  }, [markdownContent, sources]);
-
+  const [sourcePanelOpen, setSourcePanelOpen] = useState(false);
+  const [activeCitationId, setActiveCitationId] = useState<string | null>(null);
   // ── Editor callbacks ──
   const handleEditorUpdate = useCallback(
-    (json: TiptapDocument, html: string) => {
+    (json: TiptapDocument) => {
       // Sync to Zustand store (Phase 4 will also trigger version snapshot)
-      updateContent(json, html);
+      updateContent(json, documentBuilder.toMarkdown(json));
     },
     [updateContent],
   );
@@ -119,11 +109,22 @@ export default function DraftPage() {
     setZoomLevel(100);
   }, []);
 
-  // Placeholder callbacks for future phases
   const handleVerifySources = useCallback(() => {
-    // Phase 2: Open source verification panel
+    setActiveCitationId(null);
+    setSourcePanelOpen(true);
   }, []);
 
+  const handleViewCitationSource = useCallback((citationId: string) => {
+    setActiveCitationId(citationId);
+    setSourcePanelOpen(true);
+  }, []);
+
+  const handleCloseSourcePanel = useCallback(() => {
+    setSourcePanelOpen(false);
+    setActiveCitationId(null);
+  }, []);
+
+  // Placeholder callbacks for future phases
   const handleExport = useCallback(() => {
     // Phase 6: Open export modal
   }, []);
@@ -334,10 +335,12 @@ export default function DraftPage() {
                 style={{ zoom: `${zoomLevel}%` }}
               >
                 <TiptapEditor
-                  content={editorContent}
+                  content={documentJson}
                   editable={!showEditsMode}
                   onUpdate={handleEditorUpdate}
                   onSelectionUpdate={handleSelectionUpdate}
+                  sources={sources}
+                  onViewCitationSource={handleViewCitationSource}
                 />
               </div>
             )}
@@ -410,6 +413,14 @@ export default function DraftPage() {
           </aside>
         )}
       </div>
+
+      <SourceVerificationPanel
+        open={sourcePanelOpen}
+        document={documentJson}
+        sources={sources}
+        activeCitationId={activeCitationId}
+        onClose={handleCloseSourcePanel}
+      />
     </div>
   );
 }

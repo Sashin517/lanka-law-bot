@@ -7,9 +7,13 @@ import type { Components } from "react-markdown";
 
 import { CitationPill } from "@/components/CitationPill";
 import type { SourceRef } from "@/lib/api";
-import { buildSourcesById } from "@/lib/sources";
+import {
+  buildSourcesById,
+  citationIdsFromGroup,
+  CITATION_RE,
+} from "@/lib/sources";
 
-export const CITATION_RE = /\[(?:LAW|DOC)-\d+\]/g;
+export { CITATION_RE } from "@/lib/sources";
 
 function renderCitations(
   text: string,
@@ -24,20 +28,22 @@ function renderCitations(
     if (start > lastIndex) {
       parts.push(text.slice(lastIndex, start));
     }
-    const citationId = match[0];
-    parts.push(
-      <CitationPill
-        key={`${citationId}-${start}`}
-        citationId={citationId}
-        source={sourcesById.get(citationId)}
-        onViewInSources={
-          onViewInSources
-            ? () => onViewInSources(citationId)
-            : undefined
-        }
-      />,
-    );
-    lastIndex = start + citationId.length;
+    citationIdsFromGroup(match[0]).forEach((citationId, groupIndex) => {
+      if (groupIndex > 0) parts.push(", ");
+      parts.push(
+        <CitationPill
+          key={`${citationId}-${start}-${groupIndex}`}
+          citationId={citationId}
+          source={sourcesById.get(citationId)}
+          onViewInSources={
+            onViewInSources
+              ? () => onViewInSources(citationId)
+              : undefined
+          }
+        />,
+      );
+    });
+    lastIndex = start + match[0].length;
   }
   if (lastIndex < text.length) {
     parts.push(text.slice(lastIndex));

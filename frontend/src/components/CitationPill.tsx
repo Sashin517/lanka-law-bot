@@ -1,24 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { CitationPreviewPopover } from "@/components/CitationPreviewPopover";
 import type { SourceRef } from "@/lib/api";
 
 const CLOSE_DELAY_MS = 150;
+const HOVER_MEDIA_QUERY = "(hover: hover)";
+
+function subscribeToHoverPreference(onStoreChange: () => void): () => void {
+  const mediaQuery = window.matchMedia(HOVER_MEDIA_QUERY);
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => mediaQuery.removeEventListener("change", onStoreChange);
+}
+
+function getHoverPreference(): boolean {
+  return window.matchMedia(HOVER_MEDIA_QUERY).matches;
+}
 
 function usePrefersHover(): boolean {
-  const [prefersHover, setPrefersHover] = useState(true);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: hover)");
-    setPrefersHover(mq.matches);
-    const handler = () => setPrefersHover(mq.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  return prefersHover;
+  return useSyncExternalStore(
+    subscribeToHoverPreference,
+    getHoverPreference,
+    () => true,
+  );
 }
 
 interface CitationPillProps {
@@ -166,23 +177,25 @@ export function CitationPill({
       >
         {citationId}
       </span>
-      <CitationPreviewPopover
-        citationId={citationId}
-        source={source}
-        anchorRect={anchorRect}
-        open={open}
-        isDoc={isDoc}
-        onMouseEnter={handlePopoverMouseEnter}
-        onMouseLeave={handlePopoverMouseLeave}
-        onViewInSources={
-          onViewInSources
-            ? () => {
-                setOpen(false);
-                onViewInSources();
-              }
-            : undefined
-        }
-      />
+      {open && (
+        <CitationPreviewPopover
+          citationId={citationId}
+          source={source}
+          anchorRect={anchorRect}
+          open={open}
+          isDoc={isDoc}
+          onMouseEnter={handlePopoverMouseEnter}
+          onMouseLeave={handlePopoverMouseLeave}
+          onViewInSources={
+            onViewInSources
+              ? () => {
+                  setOpen(false);
+                  onViewInSources();
+                }
+              : undefined
+          }
+        />
+      )}
     </>
   );
 }

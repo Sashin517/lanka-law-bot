@@ -17,10 +17,79 @@ from app.schemas.drafts import (
     GenerateDocumentsResponse,
     UpdateDraftDocumentRequest,
 )
+from app.schemas.requests import DraftEditRequest
+from app.schemas.responses import DraftEditResponse, DraftVersionSnapshot
+from app.services.draft_versions import (
+    DraftVersionConflictError,
+    DraftVersionNotFoundError,
+    DraftVersionService,
+)
 from app.services.drafts import DraftNotFoundError, DraftWorkspaceService
+from app.services.generation.edit_classifier import classify_edit_complexity
 
 router = APIRouter()
+edit_router = APIRouter()
 service = DraftWorkspaceService()
+version_service = DraftVersionService()
+
+
+@edit_router.post("/edit", response_model=DraftEditResponse)
+async def edit_draft(request: DraftEditRequest) -> DraftEditResponse:
+    """Route a draft edit to the targeted or full multi-agent pipeline."""
+
+    from app.services.generation.draft_edit_service import (
+        DraftEditConflictError,
+        DraftEditError,
+        process_heavy_edit,
+        process_light_edit,
+    )
+
+    edit_path = classify_edit_complexity(
+        instruction=request.instruction,
+        selected_text=request.selected_text,
+        current_content=request.current_content,
+    )
+    try:
+        if edit_path == "heavy":
+            return await process_heavy_edit(request)
+        return await process_light_edit(request)
+    except DraftEditConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except DraftEditError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@edit_router.post("/versions", response_model=DraftVersionSnapshot, status_code=201)
+def save_draft_version(
+    request: DraftVersionSnapshot,
+    db: Session = Depends(get_db),
+) -> DraftVersionSnapshot:
+    """Append an immutable snapshot to a persisted draft version chain."""
+
+    init_db()
+    try:
+        return version_service.save(db, request)
+    except DraftVersionNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except DraftVersionConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@edit_router.get(
+    "/versions/{draft_id}",
+    response_model=list[DraftVersionSnapshot],
+)
+def get_draft_versions(
+    draft_id: str,
+    db: Session = Depends(get_db),
+) -> list[DraftVersionSnapshot]:
+    """Return a draft's immutable snapshots in ascending version order."""
+
+    init_db()
+    try:
+        return version_service.list_for_draft(db, draft_id)
+    except DraftVersionNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("", response_model=DraftDocumentResponse)

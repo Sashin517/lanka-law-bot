@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -9,6 +9,34 @@ import type { SourceRef } from "@/lib/api";
 const POPOVER_WIDTH = 320;
 const POPOVER_MAX_HEIGHT = 280;
 const VIEWPORT_MARGIN = 8;
+const subscribeToHydration = () => () => {};
+
+function calculatePosition(anchorRect: DOMRect): { top: number; left: number } {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  let left = anchorRect.left + anchorRect.width / 2 - POPOVER_WIDTH / 2;
+  left = Math.max(
+    VIEWPORT_MARGIN,
+    Math.min(left, viewportWidth - POPOVER_WIDTH - VIEWPORT_MARGIN),
+  );
+
+  const spaceBelow = viewportHeight - anchorRect.bottom - VIEWPORT_MARGIN;
+  const spaceAbove = anchorRect.top - VIEWPORT_MARGIN;
+  const placeAbove =
+    spaceBelow < POPOVER_MAX_HEIGHT + 12 && spaceAbove > spaceBelow;
+  const candidateTop = placeAbove
+    ? anchorRect.top - POPOVER_MAX_HEIGHT - 8
+    : anchorRect.bottom + 8;
+  const top = Math.max(
+    VIEWPORT_MARGIN,
+    Math.min(
+      candidateTop,
+      viewportHeight - POPOVER_MAX_HEIGHT - VIEWPORT_MARGIN,
+    ),
+  );
+
+  return { top, left };
+}
 
 interface CitationPreviewPopoverProps {
   citationId: string;
@@ -32,47 +60,13 @@ export function CitationPreviewPopover({
   onViewInSources,
 }: CitationPreviewPopoverProps) {
   const [expanded, setExpanded] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!open) setExpanded(false);
-  }, [open]);
-
-  useLayoutEffect(() => {
-    if (!open || !anchorRect) return;
-
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    let left = anchorRect.left + anchorRect.width / 2 - POPOVER_WIDTH / 2;
-    left = Math.max(
-      VIEWPORT_MARGIN,
-      Math.min(left, vw - POPOVER_WIDTH - VIEWPORT_MARGIN),
-    );
-
-    const spaceBelow = vh - anchorRect.bottom - VIEWPORT_MARGIN;
-    const spaceAbove = anchorRect.top - VIEWPORT_MARGIN;
-    const placeAbove =
-      spaceBelow < POPOVER_MAX_HEIGHT + 12 && spaceAbove > spaceBelow;
-
-    let top: number;
-    if (placeAbove) {
-      top = anchorRect.top - POPOVER_MAX_HEIGHT - 8;
-      top = Math.max(VIEWPORT_MARGIN, top);
-    } else {
-      top = anchorRect.bottom + 8;
-      top = Math.min(top, vh - POPOVER_MAX_HEIGHT - VIEWPORT_MARGIN);
-    }
-
-    setPosition({ top, left });
-  }, [open, anchorRect]);
-
-  if (!mounted || !open) return null;
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
+  if (!isHydrated || !open || !anchorRect) return null;
+  const position = calculatePosition(anchorRect);
 
   const fullText = source?.content || source?.excerpt || "";
   const hasExpandable =

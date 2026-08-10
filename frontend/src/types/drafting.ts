@@ -58,6 +58,17 @@ export interface CitationMarkAttrs {
   authoritative: boolean | null;
 }
 
+/** Result of resolving a unique in-document citation against source metadata. */
+export interface ResolvedCitation {
+  citationId: string;
+  attrs: CitationMarkAttrs;
+  source: SourceRef | null;
+  status: "linked" | "unresolved";
+  occurrenceCount: number;
+  /** Index path to the first text node containing this citation mark. */
+  firstDocumentPath: number[];
+}
+
 // ─── Version Tracking ───────────────────────────────────────────
 
 /**

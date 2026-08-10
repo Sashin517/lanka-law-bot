@@ -31,24 +31,13 @@ from app.schemas.drafts import (
 from app.services.agent_edit_operations import AgentEditOperationService
 from app.services.document_converter import DocumentConverter
 from app.services.draft_coordinator import DraftGenerationCoordinator
+from app.agents.runtime import get_graph
 
 LOCAL_TENANT_ID = "local"
 LOCAL_USER_ID = "local_user"
 
-_GRAPH = None
-
-
 class DraftNotFoundError(ValueError):
     pass
-
-
-def get_graph():
-    global _GRAPH
-    if _GRAPH is None:
-        from app.agents.graph import build_graph
-
-        _GRAPH = build_graph()
-    return _GRAPH
 
 
 class DraftWorkspaceService:
@@ -491,15 +480,23 @@ class DraftWorkspaceService:
         context_snapshot_id: str | None = None,
         agent_run_id: str | None = None,
     ) -> DraftDocumentVersion:
-        version_number = self._current_version_number(db, document.id) + 1
+        parent = (
+            db.query(DraftDocumentVersion)
+            .filter(DraftDocumentVersion.document_id == document.id)
+            .order_by(DraftDocumentVersion.version_number.desc())
+            .first()
+        )
+        version_number = (parent.version_number if parent else 0) + 1
         version = DraftDocumentVersion(
             id=str(uuid4()),
             document_id=document.id,
             version_number=version_number,
             editor_json=document.editor_json,
             markdown_content=document.markdown_content,
+            source_refs="[]",
             change_summary=change_summary,
             changed_by=changed_by,
+            parent_version_id=parent.id if parent else None,
             agent_run_id=agent_run_id,
             context_snapshot_id=context_snapshot_id,
         )

@@ -12,3 +12,6 @@ export type { DraftToolbarProps } from "./DraftToolbar";
 
 export { EditorToolbar } from "./EditorToolbar";
 export type { EditorToolbarProps } from "./EditorToolbar";
+
+export { SourceVerificationPanel } from "./SourceVerificationPanel";
+export type { SourceVerificationPanelProps } from "./SourceVerificationPanel";

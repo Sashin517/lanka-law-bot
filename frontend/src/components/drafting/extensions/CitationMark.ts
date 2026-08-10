@@ -27,6 +27,13 @@ declare module "@tiptap/core" {
         title: string;
         section?: string | null;
         excerpt?: string;
+        pageStart?: number | null;
+        pageEnd?: number | null;
+        sourceUri?: string | null;
+        court?: string | null;
+        reporterCitation?: string | null;
+        docketNumber?: string | null;
+        authoritative?: boolean | null;
       }) => ReturnType;
       /**
        * Remove citation mark from the current selection.
@@ -44,6 +51,7 @@ export const CitationMark = Mark.create<CitationMarkOptions>({
 
   // Allow citations inside other inline marks (bold, italic, etc.)
   inclusive: false,
+  spanning: false,
 
   addOptions() {
     return {
@@ -88,6 +96,67 @@ export const CitationMark = Mark.create<CitationMarkOptions>({
           "data-excerpt": attrs.excerpt as string,
         }),
       },
+      pageStart: {
+        default: null,
+        parseHTML: (el) => {
+          const value = el.getAttribute("data-page-start");
+          return value === null ? null : Number(value);
+        },
+        renderHTML: (attrs) =>
+          attrs.pageStart === null
+            ? {}
+            : { "data-page-start": String(attrs.pageStart) },
+      },
+      pageEnd: {
+        default: null,
+        parseHTML: (el) => {
+          const value = el.getAttribute("data-page-end");
+          return value === null ? null : Number(value);
+        },
+        renderHTML: (attrs) =>
+          attrs.pageEnd === null
+            ? {}
+            : { "data-page-end": String(attrs.pageEnd) },
+      },
+      sourceUri: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-source-uri"),
+        renderHTML: (attrs) =>
+          attrs.sourceUri ? { "data-source-uri": String(attrs.sourceUri) } : {},
+      },
+      court: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-court"),
+        renderHTML: (attrs) =>
+          attrs.court ? { "data-court": String(attrs.court) } : {},
+      },
+      reporterCitation: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-reporter-citation"),
+        renderHTML: (attrs) =>
+          attrs.reporterCitation
+            ? { "data-reporter-citation": String(attrs.reporterCitation) }
+            : {},
+      },
+      docketNumber: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-docket-number"),
+        renderHTML: (attrs) =>
+          attrs.docketNumber
+            ? { "data-docket-number": String(attrs.docketNumber) }
+            : {},
+      },
+      authoritative: {
+        default: null,
+        parseHTML: (el) => {
+          const value = el.getAttribute("data-authoritative");
+          return value === null ? null : value === "true";
+        },
+        renderHTML: (attrs) =>
+          attrs.authoritative === null
+            ? {}
+            : { "data-authoritative": String(attrs.authoritative) },
+      },
     };
   },
 
@@ -100,10 +169,15 @@ export const CitationMark = Mark.create<CitationMarkOptions>({
   },
 
   renderHTML({ HTMLAttributes }) {
+    const citationId = String(HTMLAttributes["data-citation-id"] ?? "");
     return [
       "span",
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
         class: "citation-mark",
+        role: "button",
+        tabindex: "0",
+        "aria-expanded": "false",
+        "aria-label": `Citation ${citationId}, show source preview`,
       }),
       0,
     ];

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
   ChevronDown,
@@ -33,6 +34,7 @@ import {
 import { logOut } from "@/lib/firebase/auth";
 import { sourceCardId } from "@/lib/sources";
 import { useAuth } from "@/contexts/AuthProvider";
+import { useDraftDocumentStore } from "@/store/draftDocumentStore";
 import type { AttachedDocument, UploadedDocument } from "@/types/documents";
 import type { QueryMode } from "@/types/QueryMode";
 
@@ -57,6 +59,8 @@ interface ChatMessage {
 /* ------------------------------------------------------------------ */
 
 export default function ResearchDashboard() {
+  const router = useRouter();
+  const startDraft = useDraftDocumentStore((state) => state.startDraft);
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState("");
@@ -98,8 +102,6 @@ export default function ResearchDashboard() {
   );
 
   const { user, loading: authLoading } = useAuth();
-
-  console.log(user);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -302,6 +304,16 @@ export default function ResearchDashboard() {
     setInputQuery("");
     setPromptSuggestion(null);
     setImproveError(null);
+
+    if (selectedMode === "drafting") {
+      void startDraft(
+        query,
+        attachedDocuments.map((document) => document.document_id),
+      );
+      router.push("/draft");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -373,7 +385,11 @@ export default function ResearchDashboard() {
   const toggleSources = (id: string) => {
     setExpandedSources((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -434,10 +450,13 @@ export default function ResearchDashboard() {
             <Search size={18} />
             <span>Research</span>
           </button>
-          <button className="flex items-center space-x-2 text-slate-400 hover:text-white transition">
+          <Link
+            href="/draft"
+            className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+          >
             <PenTool size={18} />
             <span>Draft</span>
-          </button>
+          </Link>
           <button className="flex items-center space-x-2 text-slate-400 hover:text-white transition">
             <CheckSquare size={18} />
             <span>Verify</span>

@@ -29,6 +29,7 @@ declare module "@tiptap/core" {
         editType: "insertion" | "deletion" | "modification";
         versionNumber: number;
         timestamp?: string;
+        color?: string;
       }) => ReturnType;
       /**
        * Remove all edit highlight marks from the current selection.
@@ -106,6 +107,12 @@ export const EditHighlightMark = Mark.create<EditHighlightMarkOptions>({
         renderHTML: (attrs) => ({
           "data-timestamp": (attrs.timestamp as string) ?? "",
         }),
+      },
+      color: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-edit-color"),
+        renderHTML: (attrs) =>
+          attrs.color ? { "data-edit-color": String(attrs.color) } : {},
       },
     };
   },

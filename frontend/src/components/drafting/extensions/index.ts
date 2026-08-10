@@ -6,6 +6,8 @@
 
 export { CitationMark } from "./CitationMark";
 export type { CitationMarkOptions } from "./CitationMark";
+export { CitationNodeView } from "./CitationNodeView";
+export type { CitationNodeViewProps } from "./CitationNodeView";
 
 export { EditHighlightMark } from "./EditHighlightMark";
 export type { EditHighlightMarkOptions } from "./EditHighlightMark";

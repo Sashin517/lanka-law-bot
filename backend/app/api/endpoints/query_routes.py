@@ -9,24 +9,12 @@ import logging
 from fastapi import APIRouter
 
 from app.schemas.requests import LegalQuery
+from app.agents.runtime import get_graph
 from app.agents.state import AgentState
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-_graph = None
-
-
-def get_graph():
-    """Compile the graph lazily to avoid model initialization at API import time."""
-    global _graph
-    if _graph is None:
-        from app.agents.graph import build_graph
-
-        _graph = build_graph()
-    return _graph
-
 
 @router.get("/")
 def read_root():

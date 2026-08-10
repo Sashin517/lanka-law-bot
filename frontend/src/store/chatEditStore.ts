@@ -11,7 +11,6 @@
 
 import { create } from "zustand";
 
-import type { SourceRef, ExecutionTrace } from "@/lib/api";
 import type {
   DraftChatMessage,
   EditorSelection,
@@ -19,29 +18,7 @@ import type {
   ChatMode,
 } from "@/types/drafting";
 
-// ─── API Types (matching the plan's DraftEditPayload / Result) ──
-
-export interface DraftEditPayload {
-  draft_id: string;
-  instruction: string;
-  selected_text: string | null;
-  selection_start: number | null;
-  selection_end: number | null;
-  current_content: string;
-  document_ids: string[];
-}
-
-export interface DraftEditResult {
-  edit_type: string;
-  original_text: string;
-  edited_text: string;
-  markdown_content: string;
-  sources: SourceRef[];
-  edit_summary: string;
-  confidence: string;
-  edit_path: "light" | "heavy";
-  execution_trace?: ExecutionTrace | null;
-}
+export type { DraftEditPayload, DraftEditResult } from "@/lib/api";
 
 // ─── Store Interface ────────────────────────────────────────────
 
@@ -114,7 +91,7 @@ const initialState: ChatEditState = {
 
 // ─── Store Implementation ───────────────────────────────────────
 
-export const useChatEditStore = create<ChatEditStore>((set, get) => ({
+export const useChatEditStore = create<ChatEditStore>((set) => ({
   ...initialState,
 
   setSelection: (selection) => {

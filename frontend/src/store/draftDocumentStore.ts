@@ -12,6 +12,7 @@ import { create } from "zustand";
 
 import type { SourceRef, LegalQueryResponse } from "@/lib/api";
 import { sendLegalQuery } from "@/lib/api";
+import { DocumentBuilder } from "@/lib/drafting/documentBuilder";
 import type { TiptapDocument } from "@/types/drafting";
 
 // ─── Store Interface ────────────────────────────────────────────
@@ -89,7 +90,17 @@ const initialState: DraftDocumentState = {
 
 // ─── Store Implementation ───────────────────────────────────────
 
-export const useDraftDocumentStore = create<DraftDocumentStore>((set, get) => ({
+function draftTitle(markdown: string, prompt: string): string {
+  const firstHeading = markdown.match(/^#{1,6}\s+(.+)$/m)?.[1]?.trim();
+  if (firstHeading) return firstHeading;
+
+  const normalizedPrompt = prompt.replace(/\s+/g, " ").trim();
+  return normalizedPrompt.length > 80
+    ? `${normalizedPrompt.slice(0, 77)}…`
+    : normalizedPrompt || "Untitled Draft";
+}
+
+export const useDraftDocumentStore = create<DraftDocumentStore>((set) => ({
   ...initialState,
 
   startDraft: async (question, documentIds) => {
@@ -102,6 +113,7 @@ export const useDraftDocumentStore = create<DraftDocumentStore>((set, get) => ({
       sources: [],
       title: "",
       documentType: "",
+      draftId: crypto.randomUUID(),
     });
 
     try {
@@ -111,16 +123,19 @@ export const useDraftDocumentStore = create<DraftDocumentStore>((set, get) => ({
         document_ids: documentIds.length > 0 ? documentIds : undefined,
       });
 
-      // Generate a stable draft ID for this session
-      const draftId = crypto.randomUUID();
+      const markdownContent =
+        response.markdown_content ?? response.answer ?? "";
+      const documentJson = new DocumentBuilder().fromMarkdown(
+        markdownContent,
+        response.sources ?? [],
+      );
 
       set({
-        draftId,
-        markdownContent: response.markdown_content ?? response.answer ?? "",
+        title: draftTitle(markdownContent, question),
+        markdownContent,
+        documentJson,
         sources: response.sources ?? [],
         isLoading: false,
-        // Title and documentType will be set by the page component
-        // once it parses the response or the formatter node provides them
       });
     } catch (err) {
       const message =

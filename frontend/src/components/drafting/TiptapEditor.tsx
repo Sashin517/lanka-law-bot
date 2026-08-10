@@ -14,13 +14,15 @@
  * @module components/drafting/TiptapEditor
  */
 
-import { useCallback, useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Color from "@tiptap/extension-color";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
 import Highlight from "@tiptap/extension-highlight";
+import TextStyle from "@tiptap/extension-text-style";
 import Table from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
@@ -28,8 +30,10 @@ import TableHeader from "@tiptap/extension-table-header";
 
 import { CitationMark } from "./extensions/CitationMark";
 import { EditHighlightMark } from "./extensions/EditHighlightMark";
-import type { TiptapDocument } from "@/types/drafting";
-import type { EditorSelection } from "@/types/drafting";
+import { CitationNodeView } from "./extensions/CitationNodeView";
+import type { SourceRef } from "@/lib/api";
+import { EditorService, type IEditorService } from "@/lib/drafting/editorService";
+import type { EditorSelection, TiptapDocument } from "@/types/drafting";
 
 // ─── Props ──────────────────────────────────────────────────────
 
@@ -38,10 +42,16 @@ export interface TiptapEditorProps {
   content?: TiptapDocument | null;
   /** Whether the editor allows editing. */
   editable?: boolean;
-  /** Called on every content change (debounced internally by Tiptap). */
+  /** Called after each document-changing editor transaction. */
   onUpdate?: (json: TiptapDocument, html: string) => void;
   /** Called when the user's text selection changes. */
   onSelectionUpdate?: (selection: EditorSelection | null) => void;
+  /** Exposes the editor facade when the instance is ready. */
+  onEditorReady?: (editor: IEditorService | null) => void;
+  /** Source metadata used by interactive citation previews. */
+  sources?: SourceRef[];
+  /** Opens the source verification panel at a selected citation. */
+  onViewCitationSource?: (citationId: string) => void;
   /** Optional CSS class override for the outer container. */
   className?: string;
 }
@@ -53,8 +63,22 @@ export function TiptapEditor({
   editable = true,
   onUpdate,
   onSelectionUpdate,
+  onEditorReady,
+  sources = [],
+  onViewCitationSource,
   className = "",
 }: TiptapEditorProps) {
+  const onUpdateRef = useRef(onUpdate);
+  const onSelectionUpdateRef = useRef(onSelectionUpdate);
+
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
+
+  useEffect(() => {
+    onSelectionUpdateRef.current = onSelectionUpdate;
+  }, [onSelectionUpdate]);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -76,6 +100,8 @@ export function TiptapEditor({
       Highlight.configure({
         multicolor: true,
       }),
+      TextStyle,
+      Color,
       // Table support for legal document tables
       Table.configure({
         resizable: true,
@@ -105,19 +131,20 @@ export function TiptapEditor({
       },
     },
     onUpdate: ({ editor: ed }) => {
-      if (onUpdate) {
-        const json = ed.getJSON() as TiptapDocument;
-        const html = ed.getHTML();
-        onUpdate(json, html);
+      if (onUpdateRef.current) {
+        onUpdateRef.current(
+          ed.getJSON() as TiptapDocument,
+          ed.getHTML(),
+        );
       }
     },
     onSelectionUpdate: ({ editor: ed }) => {
-      if (!onSelectionUpdate) return;
+      if (!onSelectionUpdateRef.current) return;
 
       const { from, to, empty } = ed.state.selection;
 
       if (empty) {
-        onSelectionUpdate(null);
+        onSelectionUpdateRef.current(null);
         return;
       }
 
@@ -126,41 +153,58 @@ export function TiptapEditor({
       const $from = ed.state.doc.resolve(from);
       const nodeContext = $from.parent.type.name;
 
-      onSelectionUpdate({ text, from, to, nodeContext });
+      onSelectionUpdateRef.current({ text, from, to, nodeContext });
     },
     // Prevent SSR hydration mismatch
     immediatelyRender: false,
   });
 
+  const editorService = useMemo(
+    () => (editor ? new EditorService(editor) : null),
+    [editor],
+  );
+
+  useEffect(() => {
+    onEditorReady?.(editorService);
+    return () => onEditorReady?.(null);
+  }, [editorService, onEditorReady]);
+
   // Sync external content changes into the editor
   useEffect(() => {
-    if (editor && content && !editor.isDestroyed) {
+    if (editorService && content && !editorService.getEditor().isDestroyed) {
       // Only update if the content is substantially different
       // (prevents cursor jumping on minor store syncs)
-      const currentJSON = JSON.stringify(editor.getJSON());
+      const currentJSON = JSON.stringify(editorService.getDocument());
       const newJSON = JSON.stringify(content);
       if (currentJSON !== newJSON) {
-        editor.commands.setContent(content);
+        editorService.setDocument(content);
       }
     }
-  }, [editor, content]);
+  }, [editorService, content]);
 
   // Sync editable state
   useEffect(() => {
-    if (editor && !editor.isDestroyed) {
-      editor.setEditable(editable);
+    if (editorService && !editorService.getEditor().isDestroyed) {
+      editorService.setEditable(editable);
     }
-  }, [editor, editable]);
+  }, [editorService, editable]);
 
   return (
     <div
-      className={`tiptap-editor-wrapper relative h-full overflow-auto bg-white rounded-lg ${className}`}
+      className={`tiptap-editor-wrapper relative h-full overflow-auto rounded-lg bg-[#0B1934] ${className}`}
       id="tiptap-editor-container"
     >
       <EditorContent
         editor={editor}
         className="h-full"
       />
+      {editor && (
+        <CitationNodeView
+          editor={editor}
+          sources={sources}
+          onViewInSources={onViewCitationSource}
+        />
+      )}
     </div>
   );
 }

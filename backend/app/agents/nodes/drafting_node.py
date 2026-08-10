@@ -26,6 +26,7 @@ from app.agents.shared import (
     get_user_doc_retrieval,
 )
 from app.agents.prompts.drafting_prompt import DRAFTING_PROMPT
+from app.agents.prompts.draft_revision_context import prepend_revision_context
 from app.agents.templates import TEMPLATE_REGISTRY
 from app.agents.nodes.helpers import (
     extract_first_paragraph,
@@ -35,7 +36,6 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
-from app.agents.message_bus import emit_message
 from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
@@ -132,6 +132,21 @@ async def drafting_node(state: AgentState) -> dict:
             f"{enriched_context}"
         )
 
+    # Revision mode preserves the complete source draft in working memory while
+    # the supervisor sees only a bounded excerpt. Upstream research and legal
+    # analysis remain available beneath the revision instructions.
+    existing_draft = state.working_memory.get("existing_draft", "")
+    if state.working_memory.get("is_revision", False) and existing_draft:
+        enriched_context = prepend_revision_context(
+            enriched_context,
+            existing_draft,
+            state.working_memory.get("revision_instruction", ""),
+        )
+        logger.info(
+            "Drafting in revision mode: existing draft=%d chars.",
+            len(existing_draft),
+        )
+
     logger.info(
         "Drafting context enriched with upstream: research=%d chars, reasoning=%d chars.",
         len(research_output),
@@ -226,24 +241,6 @@ async def drafting_node(state: AgentState) -> dict:
         ],
         "confidence": confidence,
     }
-    return emit_message(
-        state=state,
-        state_update={
-            "retrieved_sources": sources,
-            "context_str": context_str,
-            "summary": extract_first_paragraph(markdown),
-            "markdown_content": markdown,
-            "draft_content": markdown,
-            "confidence": confidence,
-            "working_memory": {
-                **state.working_memory,
-                "draft_output": markdown,
-            },
-        },
-        sender="drafting",
-        msg_type="draft_output",
-        content=markdown,
-    )
 
 
 # ── Helpers ───────────────────────────────────────────────────────
