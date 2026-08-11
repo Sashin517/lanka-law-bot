@@ -146,13 +146,13 @@ export function TiptapEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-slate prose-sm sm:prose-base max-w-none " +
+          "prose prose-neutral prose-sm sm:prose-base max-w-none text-black " +
           "focus:outline-none min-h-full px-12 py-8 " +
-          "prose-headings:text-slate-950 prose-p:text-slate-800 " +
-          "prose-strong:text-slate-950 prose-em:text-slate-700 " +
-          "prose-blockquote:border-l-[#B58B16] prose-blockquote:text-slate-600 " +
+          "prose-headings:text-black prose-p:text-black " +
+          "prose-strong:text-black prose-em:text-black " +
+          "prose-blockquote:border-l-[#B58B16] prose-blockquote:text-black " +
           "prose-a:text-[#8A6910] prose-code:text-[#7A5B0A] " +
-          "prose-li:text-slate-800",
+          "prose-li:text-black",
       },
     },
     onUpdate: ({ editor: ed }) => {

@@ -92,7 +92,7 @@ body {
   .ProseMirror {
     outline: none;
     min-height: 100%;
-    color: #1e293b;
+    color: #000000;
     caret-color: #9a7412;
     font-family: Georgia, "Times New Roman", serif;
     line-height: 1.7;
@@ -112,28 +112,28 @@ body {
     font-weight: 700;
     margin-bottom: 0.5em;
     margin-top: 1em;
-    color: #0f172a;
+    color: #000000;
   }
   .ProseMirror h2 {
     font-size: 1.4em;
     font-weight: 700;
     margin-bottom: 0.4em;
     margin-top: 0.8em;
-    color: #0f172a;
+    color: #000000;
   }
   .ProseMirror h3 {
     font-size: 1.15em;
     font-weight: 600;
     margin-bottom: 0.3em;
     margin-top: 0.6em;
-    color: #172033;
+    color: #000000;
   }
   .ProseMirror h4 {
     font-size: 1em;
     font-weight: 600;
     margin-bottom: 0.25em;
     margin-top: 0.5em;
-    color: #172033;
+    color: #000000;
   }
   .ProseMirror ul,
   .ProseMirror ol {
@@ -148,10 +148,11 @@ body {
   }
   .ProseMirror li {
     margin: 0.25em 0;
+    color: #000000;
   }
   .ProseMirror blockquote {
     border-left: 3px solid #d4af37;
-    color: #475569;
+    color: #000000;
     margin: 1em 0;
     padding-left: 1em;
   }
@@ -168,7 +169,7 @@ body {
     margin: 1em 0;
     overflow-x: auto;
     padding: 0.8em 1em;
-    color: #1e293b;
+    color: #000000;
   }
   .ProseMirror hr {
     border: 0;
@@ -202,7 +203,7 @@ body {
   .tiptap-table th {
     font-weight: 600;
     background: #f1f5f9;
-    color: #0f172a;
+    color: #000000;
   }
 
   /* ── Citation mark styles ── */
@@ -253,4 +254,22 @@ body {
     border-bottom: 2px solid rgba(214, 176, 93, 0.5);
     border-radius: 2px;
   }
+}
+
+/*
+ * Keep the document surface independent from the application's dark shell.
+ * These editor-scoped rules intentionally sit outside Tailwind's cascade
+ * layers so typography utilities cannot reintroduce muted dark-theme colors.
+ * Citation and Show Edits marks retain their own explicitly assigned colors.
+ */
+#draft-editor-area,
+#editor-toolbar,
+.tiptap-editor-wrapper,
+.tiptap-editor-wrapper .ProseMirror {
+  background-color: #ffffff;
+}
+
+.tiptap-editor-wrapper .ProseMirror,
+.tiptap-editor-wrapper .ProseMirror :where(p, h1, h2, h3, h4, li, blockquote, strong, em, td, th) {
+  color: #000000;
 }

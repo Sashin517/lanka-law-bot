@@ -113,7 +113,7 @@ export function EditorToolbar({
 
   return (
     <div
-      className="shrink-0 overflow-hidden rounded-t-xl border-b border-slate-200 bg-gradient-to-b from-white to-slate-50 shadow-[0_2px_12px_rgba(15,23,42,0.08)]"
+      className="shrink-0 overflow-hidden rounded-t-xl border-b border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,0.08)]"
       id="editor-toolbar"
     >
       <div
@@ -251,7 +251,7 @@ export function EditorToolbar({
         </ToolbarGroup>
       </div>
 
-      <div className="flex items-center justify-between bg-slate-50/85 px-3 py-1.5">
+      <div className="flex items-center justify-between bg-white px-3 py-1.5">
         <div className="flex items-center gap-1">
           <ToolbarButton
             icon={<Save size={15} />}

@@ -416,7 +416,7 @@ export default function DraftPage() {
         />
 
         {/* ── CENTER: Document Editor ── */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#2A3241]">
+        <main className="flex-1 flex flex-col min-w-0 bg-white">
           {showEditsMode && (
             <ShowEditsLegend
               currentVersionNumber={visibleVersionCount || 1}
@@ -441,7 +441,7 @@ export default function DraftPage() {
 
           {/* Editor Area */}
           <div
-            className="flex-1 overflow-auto p-6 flex justify-center"
+            className="flex-1 overflow-auto bg-white p-6 flex justify-center"
             id="draft-editor-area"
           >
             {isLoading ? (
