@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import unittest
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 
+from app.database import session as database_session
 from app.database.session import Base
 from app.models.draft import DraftDocument
 from app.schemas.responses import DraftVersionSnapshot
@@ -69,6 +70,33 @@ class TestDraftVersionService(unittest.TestCase):
     def test_out_of_order_version_is_rejected(self):
         with self.assertRaises(DraftVersionConflictError):
             self.service.save(self.session, self._snapshot(2, None))
+
+    def test_legacy_sqlite_version_table_gets_compatibility_columns(self):
+        legacy_engine = create_engine("sqlite:///:memory:")
+        with legacy_engine.begin() as connection:
+            connection.execute(
+                text(
+                    "CREATE TABLE draft_document_versions "
+                    "(id VARCHAR(64) NOT NULL PRIMARY KEY)"
+                )
+            )
+
+        original_engine = database_session.engine
+        database_session.engine = legacy_engine
+        try:
+            database_session._apply_sqlite_compat_migrations()
+            columns = {
+                column["name"]
+                for column in inspect(legacy_engine).get_columns(
+                    "draft_document_versions"
+                )
+            }
+        finally:
+            database_session.engine = original_engine
+            legacy_engine.dispose()
+
+        self.assertIn("source_refs", columns)
+        self.assertIn("parent_version_id", columns)
 
 
 if __name__ == "__main__":

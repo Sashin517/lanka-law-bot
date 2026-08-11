@@ -39,7 +39,7 @@ class ImprovePromptRequest(BaseModel):
 class DraftEditRequest(BaseModel):
     """A document edit request handled by the unified light/heavy pipeline."""
 
-    draft_id: str = Field(min_length=1, max_length=128)
+    draft_id: str = Field(min_length=1, max_length=64)
     instruction: str = Field(min_length=1, max_length=12000)
     selected_text: str | None = None
     selection_start: int | None = Field(default=None, ge=0)

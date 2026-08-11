@@ -96,7 +96,9 @@ class DraftVersionService:
     @staticmethod
     def _require_draft(db: Session, draft_id: str) -> None:
         if db.get(DraftDocument, draft_id) is None:
-            raise DraftVersionNotFoundError(f"Draft document '{draft_id}' was not found.")
+            raise DraftVersionNotFoundError(
+                f"Draft document '{draft_id}' was not found."
+            )
 
     @staticmethod
     def _to_snapshot(version: DraftDocumentVersion) -> DraftVersionSnapshot:
@@ -118,7 +120,9 @@ def _parse_created_at(value: str) -> datetime:
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
-        raise DraftVersionConflictError("created_at must be an ISO-8601 timestamp.") from exc
+        raise DraftVersionConflictError(
+            "created_at must be an ISO-8601 timestamp."
+        ) from exc
     if parsed.tzinfo is not None:
         parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
     return parsed
@@ -156,4 +160,6 @@ def _decode_json_list(value: str) -> list[dict]:
         decoded = json.loads(value or "[]")
     except (TypeError, json.JSONDecodeError):
         return []
-    return [item for item in decoded if isinstance(item, dict)] if isinstance(decoded, list) else []
+    if not isinstance(decoded, list):
+        return []
+    return [item for item in decoded if isinstance(item, dict)]

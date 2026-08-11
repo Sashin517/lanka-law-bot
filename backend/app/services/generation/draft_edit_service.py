@@ -66,15 +66,22 @@ async def process_light_edit(request: DraftEditRequest) -> DraftEditResponse:
     """Apply a localized edit using retrieval and one structured LLM call."""
 
     retrieval, assembler, verifier = _get_light_dependencies()
-    legal_results = retrieval.search(
-        query=request.instruction,
-        top_k=5,
-        **retrieval_search_kwargs({}),
-    )
-    context, citation_map = assembler.assemble(
-        legal_results=legal_results,
-        user_document_results=[],
-    )
+    try:
+        legal_results = retrieval.search(
+            query=request.instruction,
+            top_k=5,
+            **retrieval_search_kwargs({}),
+        )
+        context, citation_map = assembler.assemble(
+            legal_results=legal_results,
+            user_document_results=[],
+        )
+    except Exception as exc:
+        logger.exception(
+            "Legal context retrieval failed for draft %s.",
+            request.draft_id,
+        )
+        raise DraftEditError("Legal context retrieval for the edit failed.") from exc
 
     try:
         raw = await _get_edit_chain().ainvoke(
@@ -86,11 +93,16 @@ async def process_light_edit(request: DraftEditRequest) -> DraftEditResponse:
             }
         )
     except Exception as exc:
-        logger.exception("Targeted draft edit generation failed for draft %s.", request.draft_id)
+        logger.exception(
+            "Targeted draft edit generation failed for draft %s.",
+            request.draft_id,
+        )
         raise DraftEditError("The targeted edit could not be generated.") from exc
 
     if not isinstance(raw, dict):
-        raise DraftEditError("The targeted edit returned an invalid structured response.")
+        raise DraftEditError(
+            "The targeted edit returned an invalid structured response."
+        )
 
     edited_text = raw.get("edited_text")
     if not isinstance(edited_text, str) or not edited_text.strip():
@@ -99,18 +111,27 @@ async def process_light_edit(request: DraftEditRequest) -> DraftEditResponse:
     sources_used = raw.get("sources_used", [])
     if not isinstance(sources_used, list):
         sources_used = []
-    valid_ids = build_and_verify_sources(
-        sources_used,
-        citation_map,
-        verifier,
-        markdown_content=edited_text,
-    )
-    edited_text = strip_invalid_anchors(edited_text.strip(), valid_ids)
+    try:
+        valid_ids = build_and_verify_sources(
+            sources_used,
+            citation_map,
+            verifier,
+            markdown_content=edited_text,
+        )
+        edited_text = strip_invalid_anchors(edited_text.strip(), valid_ids)
+    except Exception as exc:
+        logger.exception(
+            "Citation verification failed for draft %s.",
+            request.draft_id,
+        )
+        raise DraftEditError("Citation verification for the edit failed.") from exc
+    if not edited_text:
+        raise DraftEditError("The targeted edit contained no verified content.")
 
     # The server derives operation semantics from the request instead of
     # trusting an inconsistent model-provided edit_type.
     edit_type = "replace" if request.selected_text else "insert"
-    markdown_content = _apply_local_edit(request, edited_text, edit_type)
+    markdown_content = _apply_local_edit(request, edited_text)
 
     return DraftEditResponse(
         edit_type=edit_type,
@@ -152,10 +173,17 @@ async def process_heavy_edit(request: DraftEditRequest) -> DraftEditResponse:
     try:
         final_state = await get_graph().ainvoke(initial_state.model_dump())
     except Exception as exc:
-        logger.exception("Structural draft revision failed for draft %s.", request.draft_id)
+        logger.exception(
+            "Structural draft revision failed for draft %s.",
+            request.draft_id,
+        )
         raise DraftEditError("The structural revision pipeline failed.") from exc
 
+    if not isinstance(final_state, dict):
+        raise DraftEditError("The structural revision pipeline returned invalid state.")
     final = final_state.get("final_response") or {}
+    if not isinstance(final, dict):
+        raise DraftEditError("The structural revision pipeline returned invalid output.")
     markdown = final.get("markdown_content")
     if not isinstance(markdown, str) or not markdown.strip():
         raise DraftEditError("The structural revision pipeline returned no document.")
@@ -183,7 +211,6 @@ async def process_heavy_edit(request: DraftEditRequest) -> DraftEditResponse:
 def _apply_local_edit(
     request: DraftEditRequest,
     edited_text: str,
-    edit_type: str,
 ) -> str:
     """Merge replacement text without trusting editor offsets blindly.
 
@@ -239,7 +266,9 @@ def _coerce_sources(value: Any) -> list[SourceReference]:
     for item in value:
         try:
             sources.append(
-                item if isinstance(item, SourceReference) else SourceReference.model_validate(item)
+                item
+                if isinstance(item, SourceReference)
+                else SourceReference.model_validate(item)
             )
         except (TypeError, ValueError):
             logger.warning("Ignoring malformed source in structural edit response.")

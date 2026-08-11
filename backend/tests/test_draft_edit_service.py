@@ -110,7 +110,7 @@ class TestLightDraftEdit(unittest.TestCase):
             current_content="same and same",
         )
         with self.assertRaises(draft_edit_service.DraftEditConflictError):
-            draft_edit_service._apply_local_edit(request, "better", "replace")
+            draft_edit_service._apply_local_edit(request, "better")
 
 
 class TestHeavyDraftEdit(unittest.TestCase):

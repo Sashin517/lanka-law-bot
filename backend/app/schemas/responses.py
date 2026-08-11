@@ -84,8 +84,8 @@ class DraftEditResponse(BaseModel):
 class DraftVersionSnapshot(BaseModel):
     """An immutable document snapshot in the draft version chain."""
 
-    id: str = Field(min_length=1, max_length=128)
-    draft_id: str = Field(min_length=1, max_length=128)
+    id: str = Field(min_length=1, max_length=64)
+    draft_id: str = Field(min_length=1, max_length=64)
     version_number: int = Field(ge=1)
     content_json: dict[str, Any]
     content_markdown: str
@@ -93,4 +93,4 @@ class DraftVersionSnapshot(BaseModel):
     created_at: str
     created_by: Literal["ai", "user"]
     edit_summary: str
-    parent_version_id: str | None = Field(default=None, max_length=128)
+    parent_version_id: str | None = Field(default=None, max_length=64)
