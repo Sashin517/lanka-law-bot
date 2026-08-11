@@ -21,7 +21,10 @@ import {
 } from "react";
 
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
-import { chatEditService, StaleDraftEditError } from "@/lib/drafting/chatEditService";
+import {
+  chatEditService,
+  StaleDraftEditError,
+} from "@/lib/drafting/chatEditService";
 import { documentBuilder } from "@/lib/drafting/documentBuilder";
 import {
   StaleEditorSelectionError,
@@ -66,13 +69,8 @@ export function DraftChatPanel({
     setProcessing,
     setError,
   } = useChatEditStore();
-  const {
-    draftId,
-    documentIds,
-    documentJson,
-    updateContent,
-    setSources,
-  } = useDraftDocumentStore();
+  const { draftId, documentIds, documentJson, updateContent, setSources } =
+    useDraftDocumentStore();
   const { createVersion, getVersionCount } = useVersionStore();
 
   const [input, setInput] = useState("");
@@ -127,13 +125,7 @@ export function DraftChatPanel({
   const handleSubmit = async (event?: FormEvent) => {
     event?.preventDefault();
     const instruction = input.trim();
-    if (
-      !instruction ||
-      isProcessing ||
-      !editor ||
-      !draftId ||
-      !documentJson
-    ) {
+    if (!instruction || isProcessing || !editor || !draftId || !documentJson) {
       return;
     }
 
@@ -199,7 +191,8 @@ export function DraftChatPanel({
   ) => {
     if (!editor) return;
     const existingVersionCount = getVersionCount();
-    const targetVersion = existingVersionCount === 0 ? 2 : existingVersionCount + 1;
+    const targetVersion =
+      existingVersionCount === 0 ? 2 : existingVersionCount + 1;
 
     try {
       const currentSources = useDraftDocumentStore.getState().sources;
@@ -259,11 +252,16 @@ export function DraftChatPanel({
       id="draft-chat-panel"
       aria-label="Drafting assistant"
     >
-      <div className="flex-1 space-y-3 overflow-y-auto p-4 chat-scroll" aria-live="polite">
+      <div
+        className="flex-1 space-y-3 overflow-y-auto p-4 chat-scroll"
+        aria-live="polite"
+      >
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center px-5 text-center">
             <Sparkles size={24} className="mb-3 text-[#D4AF37]" />
-            <p className="text-sm font-medium text-slate-200">Refine your draft</p>
+            <p className="text-sm font-medium text-slate-200">
+              Refine your draft
+            </p>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">
               Select text to ask a question or request an edit. AI edits remain
               pending until you apply them.
@@ -359,7 +357,10 @@ export function DraftChatPanel({
           </div>
         </div>
         {error && (
-          <p className="mt-2 flex items-start gap-1.5 text-[10px] text-red-400" role="alert">
+          <p
+            className="mt-2 flex items-start gap-1.5 text-[10px] text-red-400"
+            role="alert"
+          >
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
             {error}
           </p>
@@ -424,16 +425,16 @@ function ChatMessage({
           </p>
         )}
         {isUser ? (
-          <p className="whitespace-pre-wrap text-xs leading-relaxed">{message.content}</p>
+          <p className="whitespace-pre-wrap text-xs leading-relaxed">
+            {message.content}
+          </p>
         ) : (
           <div className="text-xs">
             <MarkdownRenderer
               content={message.content}
               sources={message.sources}
               onViewInSources={
-                message.status === "applied"
-                  ? onViewCitationSource
-                  : undefined
+                message.status === "applied" ? onViewCitationSource : undefined
               }
             />
           </div>
@@ -481,7 +482,9 @@ function SuggestionCard({
         <span className="text-[10px] font-semibold uppercase tracking-wide text-[#D4AF37]">
           {result.edit_path === "heavy" ? "Full revision" : "Suggested edit"}
         </span>
-        <span className="text-[9px] text-slate-500">{result.confidence} confidence</span>
+        <span className="text-[9px] text-slate-500">
+          {result.confidence} confidence
+        </span>
       </div>
       <p className="max-h-28 overflow-y-auto whitespace-pre-wrap text-[10px] leading-relaxed text-slate-400 chat-scroll">
         {preview}
@@ -492,12 +495,14 @@ function SuggestionCard({
         <details className="mt-2 text-[10px] text-slate-400">
           <summary className="flex cursor-pointer list-none items-center gap-1 text-slate-300">
             <ChevronDown size={11} />
-            Execution trace ({result.execution_trace.steps_executed.length} agents)
+            Execution trace ({result.execution_trace.steps_executed.length}{" "}
+            agents)
           </summary>
           <ol className="mt-1.5 space-y-1 border-l border-slate-600 pl-3">
             {result.execution_trace.steps_executed.map((step, index) => (
               <li key={`${step.agent}-${index}`}>
-                <span className="font-medium text-slate-300">{step.agent}</span>: {step.purpose}
+                <span className="font-medium text-slate-300">{step.agent}</span>
+                : {step.purpose}
               </li>
             ))}
           </ol>
@@ -574,7 +579,9 @@ function ProcessingIndicator({
                   index <= heavyStep ? "bg-[#D4AF37]" : "bg-slate-700"
                 }`}
               />
-              <span className={`text-[8px] ${index <= heavyStep ? "text-[#D4AF37]" : "text-slate-600"}`}>
+              <span
+                className={`text-[8px] ${index <= heavyStep ? "text-[#D4AF37]" : "text-slate-600"}`}
+              >
                 {step}
               </span>
             </div>
@@ -587,7 +594,9 @@ function ProcessingIndicator({
   return (
     <div className="flex items-center gap-2 rounded-xl border border-slate-700/50 bg-[#1D2530] px-3 py-2.5 text-[11px] text-slate-400">
       <LoaderCircle size={14} className="animate-spin text-[#D4AF37]" />
-      {kind === "ask" ? "Researching your question…" : "Applying edit analysis…"}
+      {kind === "ask"
+        ? "Researching your question…"
+        : "Applying edit analysis…"}
     </div>
   );
 }
