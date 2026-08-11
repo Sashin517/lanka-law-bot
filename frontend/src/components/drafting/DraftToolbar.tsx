@@ -26,15 +26,24 @@ export interface DraftToolbarProps {
   title: string;
   /** Current version number. */
   versionNumber: number;
+  /** Whether the left sidebar is showing versions. */
+  versionsActive?: boolean;
+  /** Whether the left sidebar is showing source verification. */
+  verifySourcesActive?: boolean;
   /** Whether "Show Edits" mode is active. */
   showEditsActive: boolean;
+  /** Whether an editor and original version are available for comparison. */
+  showEditsDisabled?: boolean;
   /** Whether the chat panel is visible. */
   chatPanelOpen: boolean;
+  /** Whether no accepted snapshot is available for export. */
+  exportDisabled?: boolean;
   /** Chat panel title (e.g. "Event Chronology Creation Chat"). */
   chatTitle: string;
 
   // ── Callbacks ──
   onClose: () => void;
+  onShowVersions: () => void;
   onToggleShowEdits: () => void;
   onVerifySources: () => void;
   onExport: () => void;
@@ -46,10 +55,15 @@ export interface DraftToolbarProps {
 export function DraftToolbar({
   title,
   versionNumber,
+  versionsActive = false,
+  verifySourcesActive = false,
   showEditsActive,
+  showEditsDisabled = false,
   chatPanelOpen,
+  exportDisabled = false,
   chatTitle,
   onClose,
+  onShowVersions,
   onToggleShowEdits,
   onVerifySources,
   onExport,
@@ -87,8 +101,14 @@ export function DraftToolbar({
         {/* Version Indicator */}
         <button
           type="button"
-          className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition"
+          onClick={onShowVersions}
+          className={`flex items-center gap-1.5 rounded px-3 py-1.5 transition ${
+            versionsActive
+              ? "bg-[#D4AF37]/10 text-[#D4AF37]"
+              : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+          }`}
           aria-label={`Version ${versionNumber}`}
+          aria-pressed={versionsActive}
           id="draft-toolbar-version"
         >
           <History size={14} />
@@ -101,11 +121,12 @@ export function DraftToolbar({
         <button
           type="button"
           onClick={onToggleShowEdits}
+          disabled={showEditsDisabled}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition ${
             showEditsActive
               ? "text-[#D4AF37] bg-[#D4AF37]/10"
               : "text-slate-300 hover:text-white hover:bg-slate-700/50"
-          }`}
+          } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
           aria-label="Toggle show edits"
           aria-pressed={showEditsActive}
           id="draft-toolbar-show-edits"
@@ -118,8 +139,13 @@ export function DraftToolbar({
         <button
           type="button"
           onClick={onVerifySources}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition"
+          className={`flex items-center gap-1.5 rounded px-3 py-1.5 transition ${
+            verifySourcesActive
+              ? "bg-[#D4AF37]/10 text-[#D4AF37]"
+              : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+          }`}
           aria-label="Verify sources"
+          aria-pressed={verifySourcesActive}
           id="draft-toolbar-verify-sources"
         >
           <Link2 size={14} />
@@ -130,7 +156,8 @@ export function DraftToolbar({
         <button
           type="button"
           onClick={onExport}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition"
+          disabled={exportDisabled}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="Export draft"
           id="draft-toolbar-export"
         >

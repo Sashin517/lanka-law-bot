@@ -23,6 +23,7 @@ interface DraftDocumentState {
   title: string;
   originalPrompt: string;
   documentType: string;
+  documentIds: string[];
 
   // ── Content ──
   documentJson: TiptapDocument | null;
@@ -80,6 +81,7 @@ const initialState: DraftDocumentState = {
   title: "",
   originalPrompt: "",
   documentType: "",
+  documentIds: [],
   documentJson: null,
   markdownContent: "",
   sources: [],
@@ -113,6 +115,7 @@ export const useDraftDocumentStore = create<DraftDocumentStore>((set) => ({
       sources: [],
       title: "",
       documentType: "",
+      documentIds: [...documentIds],
       draftId: crypto.randomUUID(),
     });
 

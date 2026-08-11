@@ -11,3 +11,6 @@ export type { CitationNodeViewProps } from "./CitationNodeView";
 
 export { EditHighlightMark } from "./EditHighlightMark";
 export type { EditHighlightMarkOptions } from "./EditHighlightMark";
+
+export { FontSize } from "./FontSize";
+export { ParagraphFormatting } from "./ParagraphFormatting";

@@ -14,13 +14,13 @@
  *   │ (left)   │                          │                   │
  *   └──────────┴──────────────────────────┴───────────────────┘
  *
- * Phase 2 delivers interactive citations and source verification.
- * Version History and Chat Panel are placeholder stubs for Phase 3/4.
+ * Phase 6 exports immutable accepted versions through DOCX/PDF strategies;
+ * pending suggestions and presentation-only diff overlays are excluded.
  *
  * @module app/draft/page
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Scale,
@@ -36,14 +36,30 @@ import Link from "next/link";
 import { DraftToolbar } from "@/components/drafting/DraftToolbar";
 import { EditorToolbar } from "@/components/drafting/EditorToolbar";
 import { TiptapEditor } from "@/components/drafting/TiptapEditor";
-import { SourceVerificationPanel } from "@/components/drafting/SourceVerificationPanel";
+import { DraftChatPanel } from "@/components/drafting/DraftChatPanel";
+import {
+  DraftSidebar,
+  type DraftSidebarView,
+} from "@/components/drafting/DraftSidebar";
+import { ShowEditsLegend } from "@/components/drafting/ShowEditsLegend";
+import { ExportModal } from "@/components/drafting/ExportModal";
 import { documentBuilder } from "@/lib/drafting/documentBuilder";
+import { diffService } from "@/lib/drafting/diffService";
+import type { SourceRef } from "@/lib/api";
+import type { IEditorService } from "@/lib/drafting/editorService";
 import { useDraftDocumentStore } from "@/store/draftDocumentStore";
 import { useVersionStore } from "@/store/versionStore";
 import { useChatEditStore } from "@/store/chatEditStore";
 import { useAuth } from "@/contexts/AuthProvider";
 import { logOut } from "@/lib/firebase/auth";
-import type { TiptapDocument, EditorSelection } from "@/types/drafting";
+import type {
+  ChatMode,
+  DocumentVersion,
+  EditorSelection,
+  TiptapDocument,
+} from "@/types/drafting";
+
+const MANUAL_SNAPSHOT_IDLE_MS = 5_000;
 
 // ─── Component ──────────────────────────────────────────────────
 
@@ -53,36 +69,100 @@ export default function DraftPage() {
 
   // ── Stores ──
   const {
+    draftId,
     title,
     originalPrompt,
     documentJson,
-    markdownContent,
     sources,
     isLoading,
     error,
     updateContent,
+    loadFromSnapshot,
   } = useDraftDocumentStore();
 
   const {
+    activeDraftId,
+    versions,
+    currentVersionId,
     showEditsMode,
-    toggleShowEdits,
-    getVersionCount,
+    initializeDraft,
   } = useVersionStore();
 
-  const { setSelection } = useChatEditStore();
+  const { setSelection, setChatMode } = useChatEditStore();
 
   // ── Local UI state ──
   const [chatPanelOpen, setChatPanelOpen] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(100);
-  const [sourcePanelOpen, setSourcePanelOpen] = useState(false);
+  const [leftSidebarView, setLeftSidebarView] =
+    useState<DraftSidebarView>("versions");
   const [activeCitationId, setActiveCitationId] = useState<string | null>(null);
+  const [editorService, setEditorService] = useState<IEditorService | null>(
+    null,
+  );
+  const [visibleDiffCount, setVisibleDiffCount] = useState(0);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const manualSnapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const pendingManualSnapshotRef = useRef<{
+    content: TiptapDocument;
+    sources: SourceRef[];
+  } | null>(null);
+
+  const flushManualSnapshot = useCallback(() => {
+    if (manualSnapshotTimerRef.current) {
+      clearTimeout(manualSnapshotTimerRef.current);
+      manualSnapshotTimerRef.current = null;
+    }
+
+    const pending = pendingManualSnapshotRef.current;
+    pendingManualSnapshotRef.current = null;
+    if (!pending) return;
+
+    useVersionStore
+      .getState()
+      .createVersion(pending.content, pending.sources, "Manual edit", "user");
+  }, []);
+
+  useEffect(() => {
+    if (!draftId || !documentJson || isLoading) return;
+
+    initializeDraft(draftId);
+    const versionState = useVersionStore.getState();
+    if (versionState.getVersionCount() === 0) {
+      versionState.createVersion(
+        documentJson,
+        sources,
+        "Original AI-generated draft",
+        "ai",
+      );
+    }
+  }, [documentJson, draftId, initializeDraft, isLoading, sources]);
+
+  useEffect(
+    () => () => {
+      flushManualSnapshot();
+      useVersionStore.getState().setShowEditsMode(false);
+    },
+    [flushManualSnapshot],
+  );
   // ── Editor callbacks ──
   const handleEditorUpdate = useCallback(
     (json: TiptapDocument) => {
-      // Sync to Zustand store (Phase 4 will also trigger version snapshot)
       updateContent(json, documentBuilder.toMarkdown(json));
+      pendingManualSnapshotRef.current = {
+        content: json,
+        sources: useDraftDocumentStore.getState().sources,
+      };
+      if (manualSnapshotTimerRef.current) {
+        clearTimeout(manualSnapshotTimerRef.current);
+      }
+      manualSnapshotTimerRef.current = setTimeout(
+        flushManualSnapshot,
+        MANUAL_SNAPSHOT_IDLE_MS,
+      );
     },
-    [updateContent],
+    [flushManualSnapshot, updateContent],
   );
 
   const handleSelectionUpdate = useCallback(
@@ -92,10 +172,62 @@ export default function DraftPage() {
     [setSelection],
   );
 
+  const handleSelectionAction = useCallback(
+    (mode: ChatMode, selection: EditorSelection) => {
+      setSelection({ ...selection });
+      setChatMode(mode);
+      setChatPanelOpen(true);
+    },
+    [setChatMode, setSelection],
+  );
+
+  const exitShowEditsMode = useCallback(() => {
+    editorService?.clearDiffOverlay();
+    useVersionStore.getState().setShowEditsMode(false);
+    setVisibleDiffCount(0);
+  }, [editorService]);
+
+  const handleToggleShowEdits = useCallback(() => {
+    const versionState = useVersionStore.getState();
+    if (versionState.showEditsMode) {
+      exitShowEditsMode();
+      return;
+    }
+
+    flushManualSnapshot();
+    const refreshedState = useVersionStore.getState();
+    const original = refreshedState.getOriginalVersion();
+    const current = refreshedState.getCurrentVersion();
+    if (!editorService || !original || !current) return;
+
+    const changes = diffService.computeDiff(original.content, current.content);
+    editorService.showDiffOverlay({
+      fromVersionId: original.id,
+      toVersionId: current.id,
+      versionNumber: current.versionNumber,
+      timestamp: current.createdAt,
+      changes,
+    });
+    refreshedState.setShowEditsMode(true);
+    setVisibleDiffCount(changes.length);
+    setSelection(null);
+  }, [editorService, exitShowEditsMode, flushManualSnapshot, setSelection]);
+
+  const handleBeforeChatRequest = useCallback(() => {
+    if (useVersionStore.getState().showEditsMode) exitShowEditsMode();
+    flushManualSnapshot();
+  }, [exitShowEditsMode, flushManualSnapshot]);
+
+  const handleBeforeRestore = useCallback(() => {
+    if (useVersionStore.getState().showEditsMode) exitShowEditsMode();
+    flushManualSnapshot();
+  }, [exitShowEditsMode, flushManualSnapshot]);
+
   // ── Toolbar callbacks ──
   const handleClose = useCallback(() => {
+    flushManualSnapshot();
     router.push("/");
-  }, [router]);
+  }, [flushManualSnapshot, router]);
 
   const handleZoomIn = useCallback(() => {
     setZoomLevel((prev) => Math.min(prev + 10, 200));
@@ -111,31 +243,54 @@ export default function DraftPage() {
 
   const handleVerifySources = useCallback(() => {
     setActiveCitationId(null);
-    setSourcePanelOpen(true);
+    setLeftSidebarView("sources");
   }, []);
 
   const handleViewCitationSource = useCallback((citationId: string) => {
     setActiveCitationId(citationId);
-    setSourcePanelOpen(true);
+    setLeftSidebarView("sources");
   }, []);
 
-  const handleCloseSourcePanel = useCallback(() => {
-    setSourcePanelOpen(false);
+  const handleShowVersions = useCallback(() => {
     setActiveCitationId(null);
+    setLeftSidebarView("versions");
   }, []);
 
-  // Placeholder callbacks for future phases
   const handleExport = useCallback(() => {
-    // Phase 6: Open export modal
-  }, []);
+    flushManualSnapshot();
+    if (useVersionStore.getState().getCurrentVersion()) {
+      setExportModalOpen(true);
+    }
+  }, [flushManualSnapshot]);
 
   const handleSave = useCallback(() => {
-    // Phase 4: Trigger manual version snapshot
-  }, []);
+    flushManualSnapshot();
+  }, [flushManualSnapshot]);
 
   const handleDownload = useCallback(() => {
-    // Phase 6: Direct download
-  }, []);
+    flushManualSnapshot();
+    if (useVersionStore.getState().getCurrentVersion()) {
+      setExportModalOpen(true);
+    }
+  }, [flushManualSnapshot]);
+
+  const handleVersionRestored = useCallback(
+    (version: DocumentVersion) => {
+      loadFromSnapshot(
+        version.content,
+        documentBuilder.toMarkdown(version.content),
+        version.sources,
+      );
+      setSelection(null);
+    },
+    [loadFromSnapshot, setSelection],
+  );
+
+  const visibleVersionCount = activeDraftId === draftId ? versions.length : 0;
+  const acceptedVersion =
+    activeDraftId === draftId
+      ? (versions.find((version) => version.id === currentVersionId) ?? null)
+      : null;
 
   // ── Render ──
   return (
@@ -227,12 +382,19 @@ export default function DraftPage() {
       {/* ── DRAFT TOOLBAR (Sub-header) ── */}
       <DraftToolbar
         title={title || "Untitled Draft"}
-        versionNumber={getVersionCount() || 1}
+        versionNumber={visibleVersionCount || 1}
+        versionsActive={leftSidebarView === "versions"}
+        verifySourcesActive={leftSidebarView === "sources"}
         showEditsActive={showEditsMode}
+        showEditsDisabled={!editorService || visibleVersionCount === 0}
+        exportDisabled={!acceptedVersion}
         chatPanelOpen={chatPanelOpen}
-        chatTitle={originalPrompt ? `${originalPrompt.slice(0, 40)}…` : "Edit Chat"}
+        chatTitle={
+          originalPrompt ? `${originalPrompt.slice(0, 40)}…` : "Edit Chat"
+        }
         onClose={handleClose}
-        onToggleShowEdits={toggleShowEdits}
+        onShowVersions={handleShowVersions}
+        onToggleShowEdits={handleToggleShowEdits}
         onVerifySources={handleVerifySources}
         onExport={handleExport}
         onToggleChatPanel={() => setChatPanelOpen((prev) => !prev)}
@@ -240,61 +402,31 @@ export default function DraftPage() {
 
       {/* ── MAIN CONTENT AREA (Three-Panel) ── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* ── LEFT SIDEBAR: Version History (Phase 4 stub) ── */}
-        <aside
-          className="w-[240px] bg-[#161B28] border-r border-slate-700/50 flex flex-col shrink-0 overflow-y-auto chat-scroll"
-          id="draft-version-sidebar"
-        >
-          {/* Prompt Display */}
-          <div className="p-4 border-b border-slate-700/50">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1.5">
-              Prompt
-            </p>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              {originalPrompt || "No prompt provided"}
-            </p>
-          </div>
-
-          {/* Placeholder for Published status */}
-          <div className="px-4 py-2 border-b border-slate-700/50">
-            <p className="text-[10px] text-slate-500 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-              Published to a place…
-            </p>
-          </div>
-
-          {/* Version History Label */}
-          <div className="px-4 py-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Version History
-            </p>
-          </div>
-
-          {/* Version Cards (Phase 4 will populate these) */}
-          <div className="flex-1 px-3 space-y-2">
-            {/* Phase 4: VersionHistoryPanel renders here */}
-            <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-white">
-                  Version 1
-                </span>
-                <span className="text-[9px] bg-[#D4AF37]/20 text-[#D4AF37] px-1.5 py-0.5 rounded font-medium">
-                  Selected
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed">
-                {isLoading
-                  ? "Generating draft…"
-                  : "Original AI-generated draft."}
-              </p>
-            </div>
-          </div>
-        </aside>
+        {/* ── LEFT SIDEBAR: Version History ── */}
+        <DraftSidebar
+          activeView={leftSidebarView}
+          draftId={draftId}
+          originalPrompt={originalPrompt}
+          editor={editorService}
+          document={documentJson}
+          sources={sources}
+          activeCitationId={activeCitationId}
+          onBeforeRestore={handleBeforeRestore}
+          onVersionRestored={handleVersionRestored}
+        />
 
         {/* ── CENTER: Document Editor ── */}
         <main className="flex-1 flex flex-col min-w-0 bg-[#2A3241]">
+          {showEditsMode && (
+            <ShowEditsLegend
+              currentVersionNumber={visibleVersionCount || 1}
+              changeCount={visibleDiffCount}
+            />
+          )}
           {/* Editor Toolbar (zoom, page, save) */}
           <EditorToolbar
+            editor={editorService}
+            editable={!showEditsMode}
             zoomLevel={zoomLevel}
             currentPage={1}
             totalPages={1}
@@ -322,9 +454,7 @@ export default function DraftPage() {
               </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center gap-3 text-red-400">
-                <p className="text-sm font-medium">
-                  Failed to generate draft
-                </p>
+                <p className="text-sm font-medium">Failed to generate draft</p>
                 <p className="text-xs text-slate-500 max-w-md text-center">
                   {error}
                 </p>
@@ -338,7 +468,10 @@ export default function DraftPage() {
                   content={documentJson}
                   editable={!showEditsMode}
                   onUpdate={handleEditorUpdate}
+                  onBlur={flushManualSnapshot}
                   onSelectionUpdate={handleSelectionUpdate}
+                  onSelectionAction={handleSelectionAction}
+                  onEditorReady={setEditorService}
                   sources={sources}
                   onViewCitationSource={handleViewCitationSource}
                 />
@@ -347,79 +480,22 @@ export default function DraftPage() {
           </div>
         </main>
 
-        {/* ── RIGHT SIDEBAR: Chat Panel (Phase 3 stub) ── */}
+        {/* ── RIGHT SIDEBAR: Chat-driven editing ── */}
         {chatPanelOpen && (
-          <aside
-            className="w-[340px] bg-[#161B28] border-l border-slate-700/50 flex flex-col shrink-0 overflow-hidden"
-            id="draft-chat-panel"
-          >
-            {/* Document Preview (read-only rendered view) */}
-            <div className="flex-1 overflow-y-auto p-4 chat-scroll">
-              {markdownContent ? (
-                <div className="text-xs text-slate-300 leading-relaxed prose prose-invert prose-xs max-w-none">
-                  {/* Phase 3: Full chat panel with messages will replace this */}
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-3">
-                    Document Preview
-                  </p>
-                  <div className="whitespace-pre-wrap text-[11px] text-slate-400">
-                    {markdownContent.slice(0, 800)}
-                    {markdownContent.length > 800 && "…"}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full text-slate-500 text-xs">
-                  No draft content yet
-                </div>
-              )}
-            </div>
-
-            {/* Chat Input (Phase 3 stub) */}
-            <div className="border-t border-slate-700/50 p-3">
-              <div className="flex items-center gap-2 bg-[#1D2530] rounded-lg px-3 py-2.5 border border-slate-700/50">
-                <input
-                  type="text"
-                  placeholder="Edit this document..."
-                  className="flex-1 bg-transparent text-sm text-white placeholder-slate-500 outline-none"
-                  disabled
-                  id="draft-chat-input"
-                />
-                <button
-                  type="button"
-                  className="text-[#D4AF37] hover:text-[#D4AF37]/80 transition"
-                  disabled
-                  aria-label="Send edit request"
-                >
-                  →
-                </button>
-              </div>
-              {/* Ask / Edit mode toggle */}
-              <div className="flex items-center gap-2 mt-2">
-                <button
-                  type="button"
-                  className="text-[10px] px-2.5 py-1 rounded bg-slate-700/50 text-slate-400 cursor-not-allowed"
-                  disabled
-                >
-                  Ask
-                </button>
-                <button
-                  type="button"
-                  className="text-[10px] px-2.5 py-1 rounded bg-[#D4AF37]/10 text-[#D4AF37] cursor-not-allowed"
-                  disabled
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-          </aside>
+          <DraftChatPanel
+            editor={editorService}
+            onBeforeRequest={handleBeforeChatRequest}
+            onViewCitationSource={handleViewCitationSource}
+          />
         )}
       </div>
 
-      <SourceVerificationPanel
-        open={sourcePanelOpen}
-        document={documentJson}
-        sources={sources}
-        activeCitationId={activeCitationId}
-        onClose={handleCloseSourcePanel}
+      <ExportModal
+        open={exportModalOpen}
+        version={acceptedVersion}
+        title={title || "Legal Document - LankaLawBot"}
+        author={user?.displayName || "LankaLawBot AI"}
+        onClose={() => setExportModalOpen(false)}
       />
     </div>
   );

@@ -15,11 +15,18 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 import type { SourceRef } from "@/lib/api";
+import type { IEditorService } from "@/lib/drafting/editorService";
+import {
+  validateVersionChain,
+  versionControlService,
+} from "@/lib/drafting/versionControlService";
 import type { DocumentVersion, TiptapDocument } from "@/types/drafting";
 
 // ─── Store Interface ────────────────────────────────────────────
 
 interface VersionState {
+  /** Draft owning this isolated version chain. */
+  activeDraftId: string | null;
   /** Ordered list of document versions (oldest first). */
   versions: DocumentVersion[];
   /** ID of the currently active version. */
@@ -29,6 +36,9 @@ interface VersionState {
 }
 
 interface VersionActions {
+  /** Start or resume an isolated version chain for one draft. */
+  initializeDraft: (draftId: string) => void;
+
   /**
    * Create a new version snapshot from the current editor state.
    *
@@ -40,13 +50,16 @@ interface VersionActions {
     sources: SourceRef[],
     editSummary: string,
     createdBy: "ai" | "user",
-  ) => DocumentVersion;
+  ) => DocumentVersion | null;
 
   /** Add a pre-built version object (e.g. from backend persistence). */
   addVersion: (version: DocumentVersion) => void;
 
-  /** Set the active version by ID (for version restore). */
-  setCurrentVersion: (id: string) => void;
+  /** Restore an historic snapshot by appending a new latest version. */
+  restoreVersion: (
+    id: string,
+    editor: IEditorService,
+  ) => DocumentVersion | null;
 
   /** Toggle "Show Edits" diff highlighting mode. */
   toggleShowEdits: () => void;
@@ -75,10 +88,48 @@ export type VersionStore = VersionState & VersionActions;
 // ─── Initial State ──────────────────────────────────────────────
 
 const initialState: VersionState = {
+  activeDraftId: null,
   versions: [],
   currentVersionId: null,
   showEditsMode: false,
 };
+
+function mergePersistedVersionState(
+  persistedState: unknown,
+  currentState: VersionStore,
+): VersionStore {
+  if (!persistedState || typeof persistedState !== "object") {
+    return currentState;
+  }
+
+  const persisted = persistedState as Partial<VersionState>;
+  if (!Array.isArray(persisted.versions)) return currentState;
+
+  try {
+    validateVersionChain(persisted.versions);
+    const currentVersionId = persisted.currentVersionId ?? null;
+    if (
+      currentVersionId &&
+      !persisted.versions.some((version) => version.id === currentVersionId)
+    ) {
+      return currentState;
+    }
+
+    return {
+      ...currentState,
+      activeDraftId:
+        typeof persisted.activeDraftId === "string"
+          ? persisted.activeDraftId
+          : null,
+      versions: persisted.versions,
+      currentVersionId,
+      showEditsMode: false,
+    };
+  } catch {
+    // Treat malformed or partially written localStorage data as unavailable.
+    return currentState;
+  }
+}
 
 // ─── Store Implementation ───────────────────────────────────────
 
@@ -87,43 +138,67 @@ export const useVersionStore = create<VersionStore>()(
     (set, get) => ({
       ...initialState,
 
+      initializeDraft: (draftId) => {
+        const state = get();
+        if (state.activeDraftId === draftId) return;
+        versionControlService.hydrate([], null);
+        set({
+          activeDraftId: draftId,
+          versions: [],
+          currentVersionId: null,
+          showEditsMode: false,
+        });
+      },
+
       createVersion: (content, sources, editSummary, createdBy) => {
         const state = get();
-        const versionNumber = state.versions.length + 1;
-        const parentVersionId = state.currentVersionId;
-
-        const newVersion: DocumentVersion = {
-          id: crypto.randomUUID(),
-          versionNumber,
-          label: `Version ${versionNumber}`,
+        versionControlService.hydrate(
+          state.versions,
+          state.currentVersionId,
+        );
+        const newVersion = versionControlService.createSnapshot(
           content,
-          sources: [...sources],
-          createdAt: new Date().toISOString(),
-          createdBy,
+          sources,
           editSummary,
-          parentVersionId,
-        };
+          createdBy,
+        );
+        if (!newVersion) return null;
 
         set({
-          versions: [...state.versions, newVersion],
-          currentVersionId: newVersion.id,
+          versions: versionControlService.getVersionHistory(),
+          currentVersionId: versionControlService.getCurrentVersionId(),
         });
 
         return newVersion;
       },
 
       addVersion: (version) => {
-        set((state) => ({
-          versions: [...state.versions, version],
-          currentVersionId: version.id,
-        }));
+        const state = get();
+        versionControlService.hydrate(
+          state.versions,
+          state.currentVersionId,
+        );
+        versionControlService.appendSnapshot(version);
+        set({
+          versions: versionControlService.getVersionHistory(),
+          currentVersionId: versionControlService.getCurrentVersionId(),
+        });
       },
 
-      setCurrentVersion: (id) => {
-        const version = get().versions.find((v) => v.id === id);
-        if (version) {
-          set({ currentVersionId: id });
-        }
+      restoreVersion: (id, editor) => {
+        const state = get();
+        versionControlService.hydrate(
+          state.versions,
+          state.currentVersionId,
+        );
+        const restored = versionControlService.restoreVersion(id, editor);
+        if (!restored) return null;
+        set({
+          versions: versionControlService.getVersionHistory(),
+          currentVersionId: versionControlService.getCurrentVersionId(),
+          showEditsMode: false,
+        });
+        return restored.newVersion;
       },
 
       toggleShowEdits: () => {
@@ -154,12 +229,15 @@ export const useVersionStore = create<VersionStore>()(
       },
 
       reset: () => {
+        versionControlService.hydrate([], null);
         set(initialState);
       },
     }),
     {
       name: "lanka-law-bot-draft-versions",
+      version: 1,
       storage: createJSONStorage(() => localStorage),
+      merge: mergePersistedVersionState,
       /**
        * Only persist version metadata and content, not derived state.
        * `showEditsMode` resets to false on page reload.
@@ -167,6 +245,7 @@ export const useVersionStore = create<VersionStore>()(
       partialize: (state) => ({
         versions: state.versions,
         currentVersionId: state.currentVersionId,
+        activeDraftId: state.activeDraftId,
       }),
     },
   ),

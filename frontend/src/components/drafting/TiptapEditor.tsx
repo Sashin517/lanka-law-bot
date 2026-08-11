@@ -14,7 +14,7 @@
  * @module components/drafting/TiptapEditor
  */
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Color from "@tiptap/extension-color";
@@ -30,10 +30,17 @@ import TableHeader from "@tiptap/extension-table-header";
 
 import { CitationMark } from "./extensions/CitationMark";
 import { EditHighlightMark } from "./extensions/EditHighlightMark";
+import { FontSize } from "./extensions/FontSize";
+import { ParagraphFormatting } from "./extensions/ParagraphFormatting";
 import { CitationNodeView } from "./extensions/CitationNodeView";
+import { SelectionToolbar } from "./SelectionToolbar";
 import type { SourceRef } from "@/lib/api";
 import { EditorService, type IEditorService } from "@/lib/drafting/editorService";
-import type { EditorSelection, TiptapDocument } from "@/types/drafting";
+import type {
+  ChatMode,
+  EditorSelection,
+  TiptapDocument,
+} from "@/types/drafting";
 
 // ─── Props ──────────────────────────────────────────────────────
 
@@ -46,8 +53,12 @@ export interface TiptapEditorProps {
   onUpdate?: (json: TiptapDocument, html: string) => void;
   /** Called when the user's text selection changes. */
   onSelectionUpdate?: (selection: EditorSelection | null) => void;
+  /** Flushes the pending manual-edit batch when focus leaves the editor. */
+  onBlur?: () => void;
   /** Exposes the editor facade when the instance is ready. */
   onEditorReady?: (editor: IEditorService | null) => void;
+  /** Sends the selected range to the drafting chat composer. */
+  onSelectionAction?: (mode: ChatMode, selection: EditorSelection) => void;
   /** Source metadata used by interactive citation previews. */
   sources?: SourceRef[];
   /** Opens the source verification panel at a selected citation. */
@@ -63,13 +74,21 @@ export function TiptapEditor({
   editable = true,
   onUpdate,
   onSelectionUpdate,
+  onBlur,
   onEditorReady,
+  onSelectionAction,
   sources = [],
   onViewCitationSource,
   className = "",
 }: TiptapEditorProps) {
   const onUpdateRef = useRef(onUpdate);
   const onSelectionUpdateRef = useRef(onSelectionUpdate);
+  const onBlurRef = useRef(onBlur);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [selectionToolbar, setSelectionToolbar] = useState<{
+    selection: EditorSelection;
+    position: { left: number; top: number };
+  } | null>(null);
 
   useEffect(() => {
     onUpdateRef.current = onUpdate;
@@ -78,6 +97,10 @@ export function TiptapEditor({
   useEffect(() => {
     onSelectionUpdateRef.current = onSelectionUpdate;
   }, [onSelectionUpdate]);
+
+  useEffect(() => {
+    onBlurRef.current = onBlur;
+  }, [onBlur]);
 
   const editor = useEditor({
     extensions: [
@@ -101,7 +124,9 @@ export function TiptapEditor({
         multicolor: true,
       }),
       TextStyle,
+      FontSize,
       Color,
+      ParagraphFormatting,
       // Table support for legal document tables
       Table.configure({
         resizable: true,
@@ -121,13 +146,13 @@ export function TiptapEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-invert prose-sm sm:prose-base max-w-none " +
+          "prose prose-slate prose-sm sm:prose-base max-w-none " +
           "focus:outline-none min-h-full px-12 py-8 " +
-          "prose-headings:text-white prose-p:text-slate-200 " +
-          "prose-strong:text-white prose-em:text-slate-300 " +
-          "prose-blockquote:border-l-[#D4AF37] prose-blockquote:text-slate-300 " +
-          "prose-a:text-[#D4AF37] prose-code:text-[#D4AF37] " +
-          "prose-li:text-slate-200",
+          "prose-headings:text-slate-950 prose-p:text-slate-800 " +
+          "prose-strong:text-slate-950 prose-em:text-slate-700 " +
+          "prose-blockquote:border-l-[#B58B16] prose-blockquote:text-slate-600 " +
+          "prose-a:text-[#8A6910] prose-code:text-[#7A5B0A] " +
+          "prose-li:text-slate-800",
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -139,12 +164,11 @@ export function TiptapEditor({
       }
     },
     onSelectionUpdate: ({ editor: ed }) => {
-      if (!onSelectionUpdateRef.current) return;
-
       const { from, to, empty } = ed.state.selection;
 
       if (empty) {
-        onSelectionUpdateRef.current(null);
+        setSelectionToolbar(null);
+        onSelectionUpdateRef.current?.(null);
         return;
       }
 
@@ -153,7 +177,35 @@ export function TiptapEditor({
       const $from = ed.state.doc.resolve(from);
       const nodeContext = $from.parent.type.name;
 
-      onSelectionUpdateRef.current({ text, from, to, nodeContext });
+      const selection = { text, from, to, nodeContext };
+      onSelectionUpdateRef.current?.(selection);
+
+      const wrapper = wrapperRef.current;
+      if (wrapper && text.trim()) {
+        const start = ed.view.coordsAtPos(from);
+        const end = ed.view.coordsAtPos(to);
+        const bounds = wrapper.getBoundingClientRect();
+        setSelectionToolbar({
+          selection,
+          position: {
+            left:
+              (start.left + end.right) / 2 -
+              bounds.left +
+              wrapper.scrollLeft,
+            top:
+              Math.min(start.top, end.top) -
+              bounds.top +
+              wrapper.scrollTop -
+              8,
+          },
+        });
+      } else {
+        setSelectionToolbar(null);
+      }
+    },
+    onBlur: () => {
+      setSelectionToolbar(null);
+      onBlurRef.current?.();
     },
     // Prevent SSR hydration mismatch
     immediatelyRender: false,
@@ -191,7 +243,8 @@ export function TiptapEditor({
 
   return (
     <div
-      className={`tiptap-editor-wrapper relative h-full overflow-auto rounded-lg bg-[#0B1934] ${className}`}
+      ref={wrapperRef}
+      className={`tiptap-editor-wrapper relative h-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-sm ${className}`}
       id="tiptap-editor-container"
     >
       <EditorContent
@@ -203,6 +256,13 @@ export function TiptapEditor({
           editor={editor}
           sources={sources}
           onViewInSources={onViewCitationSource}
+        />
+      )}
+      {editable && selectionToolbar && onSelectionAction && (
+        <SelectionToolbar
+          selection={selectionToolbar.selection}
+          position={selectionToolbar.position}
+          onAction={onSelectionAction}
         />
       )}
     </div>

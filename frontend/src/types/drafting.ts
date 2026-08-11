@@ -8,7 +8,7 @@
  * @module types/drafting
  */
 
-import type { SourceRef } from "@/lib/api";
+import type { DraftEditResult, SourceRef } from "@/lib/api";
 
 // ─── Tiptap Document Model ─────────────────────────────────────
 
@@ -107,6 +107,15 @@ export interface DiffChange {
   position: { from: number; to: number };
 }
 
+/** Metadata and decorations required for a non-mutating Show Edits overlay. */
+export interface DiffOverlay {
+  fromVersionId: string;
+  toVersionId: string;
+  versionNumber: number;
+  timestamp: string;
+  changes: DiffChange[];
+}
+
 // ─── Chat Editing ───────────────────────────────────────────────
 
 /**
@@ -137,6 +146,29 @@ export interface DraftChatMessage {
   editOperation?: EditOperation;
   /** Which routing path was used (only for assistant messages). */
   editPath?: "light" | "heavy";
+  /** Lifecycle state for informational replies and edit suggestions. */
+  status?: ChatMessageStatus;
+  /** Sources cited by this individual assistant response. */
+  sources?: SourceRef[];
+  /** Reviewable AI edit. The document changes only after acceptance. */
+  suggestion?: PendingEditSuggestion;
+}
+
+export type ChatMessageStatus =
+  | "informational"
+  | "pending"
+  | "applied"
+  | "rejected"
+  | "stale"
+  | "failed";
+
+/** Immutable context captured when an edit request is sent. */
+export interface PendingEditSuggestion {
+  result: DraftEditResult;
+  selection: EditorSelection | null;
+  baseDocument: TiptapDocument;
+  baseMarkdown: string;
+  createdAt: string;
 }
 
 /**

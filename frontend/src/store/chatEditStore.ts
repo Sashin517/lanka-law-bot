@@ -16,7 +16,10 @@ import type {
   EditorSelection,
   EditOperation,
   ChatMode,
+  ChatMessageStatus,
+  PendingEditSuggestion,
 } from "@/types/drafting";
+import type { SourceRef } from "@/lib/api";
 
 export type { DraftEditPayload, DraftEditResult } from "@/lib/api";
 
@@ -54,8 +57,13 @@ interface ChatEditActions {
    */
   addAssistantMessage: (
     content: string,
-    editOperation?: EditOperation,
-    editPath?: "light" | "heavy",
+    options?: {
+      editOperation?: EditOperation;
+      editPath?: "light" | "heavy";
+      status?: ChatMessageStatus;
+      sources?: SourceRef[];
+      suggestion?: PendingEditSuggestion;
+    },
   ) => string;
 
   /**
@@ -63,6 +71,9 @@ interface ChatEditActions {
    * Called by the ChatEditService after successfully applying to the editor.
    */
   markEditApplied: (messageId: string) => void;
+
+  /** Resolve a pending suggestion without mutating document content. */
+  setMessageStatus: (messageId: string, status: ChatMessageStatus) => void;
 
   /** Set processing state (for loading indicators). */
   setProcessing: (isProcessing: boolean) => void;
@@ -122,7 +133,7 @@ export const useChatEditStore = create<ChatEditStore>((set) => ({
     return messageId;
   },
 
-  addAssistantMessage: (content, editOperation, editPath) => {
+  addAssistantMessage: (content, options = {}) => {
     const messageId = crypto.randomUUID();
 
     const message: DraftChatMessage = {
@@ -131,8 +142,11 @@ export const useChatEditStore = create<ChatEditStore>((set) => ({
       content,
       timestamp: new Date().toISOString(),
       appliedToEditor: false,
-      editOperation,
-      editPath,
+      editOperation: options.editOperation,
+      editPath: options.editPath,
+      status: options.status ?? "informational",
+      sources: options.sources,
+      suggestion: options.suggestion,
     };
 
     set((state) => ({
@@ -145,7 +159,17 @@ export const useChatEditStore = create<ChatEditStore>((set) => ({
   markEditApplied: (messageId) => {
     set((state) => ({
       messages: state.messages.map((msg) =>
-        msg.id === messageId ? { ...msg, appliedToEditor: true } : msg,
+        msg.id === messageId
+          ? { ...msg, appliedToEditor: true, status: "applied" }
+          : msg,
+      ),
+    }));
+  },
+
+  setMessageStatus: (messageId, status) => {
+    set((state) => ({
+      messages: state.messages.map((message) =>
+        message.id === messageId ? { ...message, status } : message,
       ),
     }));
   },
