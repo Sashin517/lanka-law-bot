@@ -37,7 +37,7 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
-from app.agents.message_bus import emit_message
+from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
@@ -117,6 +117,9 @@ async def reasoning_node(state: AgentState) -> dict:
         len(citation_map),
         len(context_str),
     )
+
+    # ── Enrich with upstream agent outputs (e.g. deep_research findings) ──
+    context_str = enrich_context_with_upstream(state, context_str, logger)
 
     # ── Step 4: Generate IRAC analysis (hybrid JSON) ──
     question_for_llm = state.question

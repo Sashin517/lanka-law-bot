@@ -121,17 +121,67 @@ def get_latest_message(
     return messages[-1] if messages else None
 
 
-def get_upstream_context(state: AgentState) -> str:
-    """Merge upstream agent outputs into a single context string.
+def enrich_context_with_upstream(
+    state: AgentState,
+    context_str: str,
+    node_logger: logging.Logger | None = None,
+) -> str:
+    """Prepend upstream agent outputs to the current context string.
 
-    Used by downstream agents (e.g. drafting) to incorporate
-    research findings and reasoning conclusions from earlier
-    plan steps.
+    Checks ``working_memory`` for research findings and reasoning
+    conclusions produced by earlier agents in the execution plan.
+    This is the canonical way for step-2+ agents to incorporate
+    upstream outputs into their LLM prompt.
+
+    Parameters
+    ----------
+    state : AgentState
+        Current graph state with ``working_memory`` populated by
+        upstream agents.
+    context_str : str
+        The current agent's assembled retrieval context.
+    node_logger : logging.Logger, optional
+        Logger for diagnostics.  Falls back to module-level logger.
 
     Returns
     -------
     str
-        Combined upstream context, or empty string if none.
+        Enriched context string with upstream outputs prepended.
+    """
+    _log = node_logger or logger
+    parts: list[str] = []
+
+    research = state.working_memory.get("research_markdown", "")
+    if research:
+        parts.append(
+            "## Prior Research Findings (from deep_research agent)\n\n" + research
+        )
+        _log.info(
+            "Enriching context with upstream research: %d chars.", len(research)
+        )
+
+    reasoning = state.working_memory.get("reasoning_output", "")
+    if reasoning:
+        parts.append(
+            "## Prior Legal Analysis (from reasoning agent)\n\n" + reasoning
+        )
+        _log.info(
+            "Enriching context with upstream reasoning: %d chars.", len(reasoning)
+        )
+
+    if not parts:
+        return context_str
+
+    upstream_block = "\n\n---\n\n".join(parts)
+    return f"{upstream_block}\n\n---\n\n{context_str}"
+
+
+def get_upstream_context(state: AgentState) -> str:
+    """Merge upstream agent outputs into a single context string.
+
+    .. deprecated::
+        Use :func:`enrich_context_with_upstream` instead.  This function
+        is retained for backward compatibility but has no callers.
     """
     parts: list[str] = []
     for msg in state.agent_messages:

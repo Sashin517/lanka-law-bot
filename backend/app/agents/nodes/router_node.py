@@ -232,6 +232,70 @@ def _fallback_plan(config: ModeConfig, mode: str) -> ExecutionPlan:
     )
 
 
+def _enforce_final_step_matches_mode(
+    plan: ExecutionPlan,
+    config: ModeConfig,
+) -> ExecutionPlan:
+    """Ensure the plan's final step is the agent matching the user's mode.
+
+    If the LLM planner produces a plan where the last step doesn't match
+    the user's selected mode, this function corrects it by:
+    1. If the mode's agent is already in the plan but not last → reorder
+    2. If the mode's agent is missing entirely → append it as the final step
+
+    The plan is capped at 3 steps after correction.
+    """
+    if not plan.steps:
+        return plan
+
+    target_agent = config.route
+    last_agent = plan.steps[-1].agent
+
+    if last_agent == target_agent:
+        return plan  # Already correct
+
+    logger.warning(
+        "Plan's last step '%s' doesn't match user mode '%s'. Correcting.",
+        last_agent,
+        target_agent,
+    )
+
+    # Check if the target agent is already in the plan (just not last)
+    existing_idx = None
+    for i, step in enumerate(plan.steps):
+        if step.agent == target_agent:
+            existing_idx = i
+            break
+
+    new_steps = list(plan.steps)
+
+    if existing_idx is not None:
+        # Move the existing step to the end
+        target_step = new_steps.pop(existing_idx)
+        target_step = PlanStep(
+            agent=target_step.agent,
+            purpose=target_step.purpose,
+            depends_on=[s.agent for s in new_steps],
+            config_overrides=target_step.config_overrides,
+        )
+        new_steps.append(target_step)
+    else:
+        # Append the mode's agent as a new final step
+        new_steps.append(PlanStep(
+            agent=target_agent,
+            purpose=f"Final {target_agent} output matching user's selected mode.",
+            depends_on=[s.agent for s in new_steps],
+        ))
+
+    # Cap at 3 steps
+    return ExecutionPlan(
+        plan_type=plan.plan_type,
+        steps=new_steps[:3],
+        reasoning=plan.reasoning + f" [Corrected: final step → {target_agent}]",
+        estimated_complexity=plan.estimated_complexity,
+    )
+
+
 # ── Supervisor router node ───────────────────────────────────────
 
 
@@ -339,6 +403,7 @@ async def router_node(
     logger.info("Generating execution plan for complex '%s' query.", mode)
     plan_start = time.monotonic()
     plan = await _generate_plan(state, config)
+    plan = _enforce_final_step_matches_mode(plan, config)
     planning_seconds = time.monotonic() - plan_start
     first_agent = plan.steps[0].agent
 

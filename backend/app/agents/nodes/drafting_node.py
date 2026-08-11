@@ -36,6 +36,7 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
+from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
@@ -115,22 +116,7 @@ async def drafting_node(state: AgentState) -> dict:
     )
 
     # ── Enrich context with upstream agent outputs ──
-    enriched_context = context_str
-    research_output = state.working_memory.get("research_markdown", "")
-    reasoning_output = state.working_memory.get("reasoning_output", "")
-
-    if research_output:
-        enriched_context = (
-            "## Prior Research Findings\n\n"
-            f"{research_output}\n\n---\n\n"
-            f"{enriched_context}"
-        )
-    if reasoning_output:
-        enriched_context = (
-            "## Prior Legal Analysis\n\n"
-            f"{reasoning_output}\n\n---\n\n"
-            f"{enriched_context}"
-        )
+    enriched_context = enrich_context_with_upstream(state, context_str, logger)
 
     # Revision mode preserves the complete source draft in working memory while
     # the supervisor sees only a bounded excerpt. Upstream research and legal
@@ -148,9 +134,7 @@ async def drafting_node(state: AgentState) -> dict:
         )
 
     logger.info(
-        "Drafting context enriched with upstream: research=%d chars, reasoning=%d chars.",
-        len(research_output),
-        len(reasoning_output),
+        "Drafting context enriched with upstream outputs.",
     )
 
     # ── Step 5: Generate draft with template-injected prompt (hybrid JSON) ──
@@ -216,31 +200,38 @@ async def drafting_node(state: AgentState) -> dict:
         confidence,
     )
 
-    return {
-        "retrieved_sources": sources,
-        "context_str": context_str,
-        "summary": extract_first_paragraph(markdown),
-        "markdown_content": markdown,
-        "draft_content": markdown,  # Backward compat
-        "draft_title": title,
-        "draft_document_type": document_type,
-        "sources_used": sources_used,
-        "requires_completion": requires_completion,
-        "section_map": section_map,
-        "change_summary": change_summary,
-        "draft_documents": [
-            {
-                "title": title,
-                "document_type": document_type,
-                "draft_markdown": markdown,
-                "sources_used": sources_used,
-                "requires_completion": requires_completion,
-                "section_map": section_map,
-                "change_summary": change_summary,
-            }
-        ],
-        "confidence": confidence,
-    }
+    return emit_message(
+        state=state,
+        state_update={
+            "retrieved_sources": sources,
+            "context_str": context_str,
+            "summary": extract_first_paragraph(markdown),
+            "markdown_content": markdown,
+            "draft_content": markdown,  # Backward compat
+            "draft_title": title,
+            "draft_document_type": document_type,
+            "sources_used": sources_used,
+            "requires_completion": requires_completion,
+            "section_map": section_map,
+            "change_summary": change_summary,
+            "draft_documents": [
+                {
+                    "title": title,
+                    "document_type": document_type,
+                    "draft_markdown": markdown,
+                    "sources_used": sources_used,
+                    "requires_completion": requires_completion,
+                    "section_map": section_map,
+                    "change_summary": change_summary,
+                }
+            ],
+            "confidence": confidence,
+        },
+        sender="drafting",
+        msg_type="draft_output",
+        content=markdown,
+        metadata={"title": title, "document_type": document_type},
+    )
 
 
 # ── Helpers ───────────────────────────────────────────────────────

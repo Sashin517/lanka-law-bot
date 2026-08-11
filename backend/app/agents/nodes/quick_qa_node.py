@@ -36,7 +36,7 @@ from app.agents.nodes.helpers import (
     to_source_chunks,
 )
 from app.core.config import settings
-from app.agents.message_bus import emit_message
+from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from app.agents.nodes.verify_node import verify_node
 from evaluation.ablation import retrieval_search_kwargs
 
@@ -120,6 +120,9 @@ async def quick_qa_node(state: AgentState) -> dict:
         len(citation_map),
         len(context_str),
     )
+
+    # ── Enrich with upstream agent outputs (when running in a multi-step plan) ──
+    context_str = enrich_context_with_upstream(state, context_str, logger)
 
     # ── Step 4: Generate LLM response (hybrid JSON) ──
     question_for_llm = state.question

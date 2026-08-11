@@ -4,6 +4,9 @@ This is the last node before END.  It converts the internal
 ``AgentState`` fields into the JSON structure the frontend expects,
 including route metadata, markdown content, sources, grounding info,
 and the execution trace for multi-agent pipeline observability.
+
+Mode-aware output selection ensures the response matches the user's
+intended mode, even when multiple agents ran in a planned pipeline.
 """
 
 from __future__ import annotations
@@ -16,10 +19,67 @@ from app.agents.state import AgentState
 
 logger = logging.getLogger(__name__)
 
+# Map user mode → expected message bus sender + msg_type
+_MODE_TO_MSG: dict[str, tuple[str, str]] = {
+    "quick_qa": ("quick_qa", "qa_answer"),
+    "deep_research": ("deep_research", "research_findings"),
+    "reasoning": ("reasoning", "reasoning_conclusion"),
+    "review": ("review", "review_report"),
+    "drafting": ("drafting", "draft_output"),
+}
+
+
+def _select_mode_output(state: AgentState) -> tuple[str, str]:
+    """Select the output that matches the user's intended mode.
+
+    For multi-step plans, the message bus contains outputs from multiple
+    agents.  This function picks the output from the agent matching
+    the user's mode, falling back to the last agent's state output.
+
+    Returns
+    -------
+    tuple[str, str]
+        ``(summary, markdown_content)`` pair for the final response.
+    """
+    mode = state.mode
+
+    if mode in _MODE_TO_MSG:
+        sender, msg_type = _MODE_TO_MSG[mode]
+        # Search the message bus for the mode-matching agent's output
+        for msg in reversed(state.agent_messages):
+            if msg.sender == sender and msg.msg_type == msg_type:
+                logger.info(
+                    "Formatter: using output from '%s' (msg_type='%s') "
+                    "matching user mode '%s'.",
+                    sender,
+                    msg_type,
+                    mode,
+                )
+                # For message bus output, content is the full markdown.
+                # Use state.summary if the matching agent was the last writer,
+                # otherwise derive a summary from the first line of content.
+                summary = (
+                    state.summary
+                    if state.current_agent == sender
+                    else msg.content[:200].split("\n")[0]
+                )
+                return summary, msg.content
+
+    # Drafting mode fallback — use state.draft_content if message bus missed it
+    if mode == "drafting" and state.draft_content:
+        return state.summary, state.draft_content
+
+    # Fallback: use whatever is in state (last-write-wins)
+    logger.info("Formatter: using default state output for mode '%s'.", mode)
+    return state.summary, state.markdown_content
+
 
 @traceable(name="FormatterNode")
 async def formatter_node(state: AgentState) -> dict:
     """Assemble ``final_response`` from the current state."""
+
+    # ── Select the mode-appropriate output ──
+    answer, markdown_content = _select_mode_output(state)
 
     # Build route metadata for diagnostics
     route_dict = {
@@ -52,8 +112,8 @@ async def formatter_node(state: AgentState) -> dict:
 
     final = {
         "route": route_dict,
-        "answer": state.summary,  # Plain text fallback
-        "markdown_content": state.markdown_content,  # Rich markdown for rendering
+        "answer": answer,
+        "markdown_content": markdown_content,
         "sources": [src.model_dump() for src in state.retrieved_sources],
         "confidence": state.confidence,
         "grounding_score": state.grounding.grounding_score,
@@ -75,7 +135,7 @@ async def formatter_node(state: AgentState) -> dict:
         len(state.retrieved_sources),
         state.confidence,
         state.grounding.grounding_score,
-        len(state.markdown_content),
+        len(markdown_content),
         plan.plan_type,
         steps_executed,
     )

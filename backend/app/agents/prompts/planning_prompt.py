@@ -41,6 +41,11 @@ that determines which specialist agents should be invoked and in what order.
 5. **Max 3 steps** — never plan more than 3 sequential agent invocations.
 6. **Reasoning plans** — if the reasoning query is complex and touches multiple legal areas,
    prepend deep_research to gather broad context first.
+7. **CRITICAL — Final step must match user mode**: The LAST step in the plan
+   MUST always be the agent that corresponds to the user's selected mode.
+   For example, if mode is "drafting", the last step MUST be "drafting".
+   If mode is "reasoning", the last step MUST be "reasoning".
+   Preparatory agents (deep_research, reasoning) come BEFORE the final agent.
 
 ## OUTPUT FORMAT
 
