@@ -1,14 +1,70 @@
-# Next.js / Node
+# Dependencies & Virtual Environments
+node_modules/
 frontend/node_modules/
-frontend/.next/
-
-# Python
-*.py[cod]
+venv/
+.venv/
+env/
 backend/venv/
+
+# Next.js & Frontend Build Outputs
+.next/
+frontend/.next/
+out/
+frontend/out/
+build/
+dist/
+
+# Python Caches & Testing
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.eggs/
+
+# Environment Files & Secrets
 .env
+.env.*
+!.env.example
+*.env
+backend/.env
+frontend/.env.local
+frontend/.env.*
+backend/secrets/
+**/firebase-service-account*.json
+*.pem
+*.key
 
-# Massive Data & Databases
+# Local Data, Storage & Databases
 backend/data/
-backend/database/
-
+backend/database/*.sqlite3
+backend/app/database/chroma_db/
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+backend/storage/processed_markdown/*
+!backend/storage/processed_markdown/.gitkeep
 backend/temp_lk_legal_docs/
+*.sqlite
+*.sqlite3
+*.db
+
+# IDEs & System Files
+.DS_Store
+Thumbs.db
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
