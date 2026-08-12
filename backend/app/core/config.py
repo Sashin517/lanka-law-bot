@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import os
-from typing import List
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from sqlalchemy.engine import URL
 
 # Resolve paths relative to the *backend* directory
 _BACKEND_DIR = os.path.dirname(
@@ -13,10 +13,10 @@ _BACKEND_DIR = os.path.dirname(
 
 
 class Settings(BaseSettings):
-
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://10.148.67.159:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     PINECONE_EMBEDDING_DIMENSION: int = 2048
 
     UPLOAD_MAX_MB: int = 50
-    ALLOWED_UPLOAD_EXTENSIONS: List[str] = [".pdf", ".docx", ".txt", ".md"]
+    ALLOWED_UPLOAD_EXTENSIONS: list[str] = [".pdf", ".docx", ".txt", ".md"]
     INGESTION_BATCH_SIZE: int = 64
     USER_PARENT_CHUNK_SIZE: int = 2200
     USER_PARENT_CHUNK_OVERLAP: int = 250
@@ -106,6 +106,48 @@ class Settings(BaseSettings):
     NEO4J_GRAPH_WEIGHT: float = 0.3
     NEO4J_AUTHORITY_WEIGHT: float = 0.8
     NEO4J_BATCH_SIZE: int = 100
+
+    # PostgreSQL is intentionally separate from the legacy SQLite metadata
+    # store. It owns only research-chat conversation data.
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: int = Field(default=5432, ge=1, le=65535)
+    POSTGRES_USER: str = "lankalawbot"
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_DB: str = "lankalawbot"
+    POSTGRES_POOL_SIZE: int = Field(default=10, ge=1)
+    POSTGRES_MAX_OVERFLOW: int = Field(default=5, ge=0)
+    POSTGRES_AUTO_CREATE_SCHEMA: bool = False
+
+    # Firebase Admin uses this file when supplied and otherwise relies on
+    # Application Default Credentials.
+    FIREBASE_SERVICE_ACCOUNT_PATH: str = ""
+    FIREBASE_PROJECT_ID: str = ""
+    FIREBASE_CHECK_REVOKED_TOKENS: bool = False
+    FIREBASE_CLOCK_SKEW_SECONDS: int = Field(default=0, ge=0, le=60)
+
+    # Conversation-memory defaults used by later service-layer phases.
+    CONTEXT_WINDOW_MAX_TOKENS: int = Field(default=4096, ge=1)
+    SUMMARY_MAX_TOKENS: int = Field(default=800, ge=1)
+    SUMMARY_TRIGGER_MESSAGE_COUNT: int = Field(default=20, ge=1)
+    SLIDING_WINDOW_SIZE: int = Field(default=10, ge=1)
+    AUTO_TITLE_AFTER_MESSAGES: int = Field(default=2, ge=1)
+
+    @property
+    def postgres_url(self) -> URL:
+        """Return a structured URL without hand-assembling credentials."""
+        return URL.create(
+            drivername="postgresql+asyncpg",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            database=self.POSTGRES_DB,
+        )
+
+    @property
+    def postgres_dsn(self) -> str:
+        """Return the async PostgreSQL DSN with safely escaped credentials."""
+        return self.postgres_url.render_as_string(hide_password=False)
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(_BACKEND_DIR, ".env"),

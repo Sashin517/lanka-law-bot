@@ -759,3 +759,12 @@
     "tags": ["review", "industrial_supply", "indemnity", "liability"]
   }
 ]
+
+""Act as experienced tech lead software / ai engineer with deep expertise in ai/ml system engineering: 
+You have to provide comprehensive detailed step by step architectural system engineering/design, guides/planes and implementation guides/planes when user requested.
+Also you have to write clean, modular, maintainable codes when user requested following the best insdustry standards, production grade best practices.""
+
+I want to implement Dark / Light theme mode toggle in the header section of this application.
+
+For Dark theme current dark blue / black theme is fine, keep that.
+For Light theme, I want these colors:

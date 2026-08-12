@@ -15,29 +15,36 @@ from __future__ import annotations
 import logging
 import re
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
-from app.agents.state import AgentState
-from app.agents.shared import (
-    retrieval_service as _retrieval,
-    context_assembler as _assembler,
-    citation_verifier as _verifier,
-    get_user_doc_retrieval,
-)
-from app.agents.prompts.quick_qa_prompt import QUICK_QA_PROMPT
+from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from app.agents.nodes.helpers import (
+    build_and_verify_sources,
+    enrich_context_with_conversation,
     extract_first_paragraph,
     normalize_confidence,
-    build_and_verify_sources,
     strip_invalid_anchors,
     to_source_chunks,
 )
-from app.core.config import settings
-from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from app.agents.nodes.verify_node import verify_node
+from app.agents.prompts.quick_qa_prompt import QUICK_QA_PROMPT
+from app.agents.shared import (
+    citation_verifier as _verifier,
+)
+from app.agents.shared import (
+    context_assembler as _assembler,
+)
+from app.agents.shared import (
+    get_user_doc_retrieval,
+)
+from app.agents.shared import (
+    retrieval_service as _retrieval,
+)
+from app.agents.state import AgentState
+from app.core.config import settings
 from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
@@ -123,6 +130,7 @@ async def quick_qa_node(state: AgentState) -> dict:
 
     # ── Enrich with upstream agent outputs (when running in a multi-step plan) ──
     context_str = enrich_context_with_upstream(state, context_str, logger)
+    llm_context = enrich_context_with_conversation(state, context_str)
 
     # ── Step 4: Generate LLM response (hybrid JSON) ──
     question_for_llm = state.question
@@ -138,15 +146,14 @@ async def quick_qa_node(state: AgentState) -> dict:
         raw: dict = await _qa_chain.ainvoke(
             {
                 "question": question_for_llm,
-                "context": context_str,
+                "context": llm_context,
             }
         )
     except Exception:
         logger.exception("QA LLM generation failed.")
         raw = {
             "answer_markdown": (
-                "The AI service is temporarily unavailable. "
-                "Please try again shortly."
+                "The AI service is temporarily unavailable. Please try again shortly."
             ),
             "confidence": "low",
             "sources_used": [],
@@ -162,7 +169,6 @@ async def quick_qa_node(state: AgentState) -> dict:
             sources_used, citation_map, _verifier, markdown_content=markdown
         )
         markdown = strip_invalid_anchors(markdown, valid_ids)
-
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)

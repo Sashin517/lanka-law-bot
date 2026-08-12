@@ -16,28 +16,35 @@ from __future__ import annotations
 
 import logging
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
-from app.agents.state import AgentState
-from app.agents.shared import (
-    retrieval_service as _retrieval,
-    context_assembler as _assembler,
-    citation_verifier as _verifier,
-    get_user_doc_retrieval,
-)
-from app.agents.prompts.reasoning_prompt import REASONING_PROMPT
+from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from app.agents.nodes.helpers import (
+    build_and_verify_sources,
+    enrich_context_with_conversation,
     extract_first_paragraph,
     normalize_confidence,
-    build_and_verify_sources,
     strip_invalid_anchors,
     to_source_chunks,
 )
+from app.agents.prompts.reasoning_prompt import REASONING_PROMPT
+from app.agents.shared import (
+    citation_verifier as _verifier,
+)
+from app.agents.shared import (
+    context_assembler as _assembler,
+)
+from app.agents.shared import (
+    get_user_doc_retrieval,
+)
+from app.agents.shared import (
+    retrieval_service as _retrieval,
+)
+from app.agents.state import AgentState
 from app.core.config import settings
-from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
@@ -120,12 +127,15 @@ async def reasoning_node(state: AgentState) -> dict:
 
     # ── Enrich with upstream agent outputs (e.g. deep_research findings) ──
     context_str = enrich_context_with_upstream(state, context_str, logger)
+    llm_context = enrich_context_with_conversation(state, context_str)
 
     # ── Step 4: Generate IRAC analysis (hybrid JSON) ──
     question_for_llm = state.question
     grounding_feedback = state.working_memory.get("grounding_feedback")
     if grounding_feedback:
-        logger.info("Retrying reasoning with grounding feedback: %s", grounding_feedback)
+        logger.info(
+            "Retrying reasoning with grounding feedback: %s", grounding_feedback
+        )
         question_for_llm += (
             f"\n\n[RETRY NOTICE: Previous analysis contained ungrounded claims: {grounding_feedback}. "
             f"Ensure every IRAC step is strictly supported by the sources below.]"
@@ -135,7 +145,7 @@ async def reasoning_node(state: AgentState) -> dict:
         raw: dict = await _reasoning_chain.ainvoke(
             {
                 "question": question_for_llm,
-                "context": context_str,
+                "context": llm_context,
             }
         )
     except Exception:
@@ -158,7 +168,6 @@ async def reasoning_node(state: AgentState) -> dict:
             sources_used, citation_map, _verifier, markdown_content=markdown
         )
         markdown = strip_invalid_anchors(markdown, valid_ids)
-
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)

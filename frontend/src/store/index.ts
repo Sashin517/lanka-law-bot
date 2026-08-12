@@ -16,3 +16,6 @@ export type { VersionStore } from "./versionStore";
 export { useChatEditStore } from "./chatEditStore";
 export type { ChatEditStore } from "./chatEditStore";
 export type { DraftEditPayload, DraftEditResult } from "./chatEditStore";
+
+export { useConversationStore } from "./conversationStore";
+export type { ConversationStore } from "./conversationStore";

@@ -15,7 +15,7 @@ export interface SourceRef {
   breadcrumb: string | null;
   excerpt: string;
   content?: string;
-  source_type?: string;
+  source_type?: string | null;
   document_id?: string | null;
   filename?: string | null;
   page_start?: number | null;

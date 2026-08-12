@@ -13,30 +13,37 @@ from __future__ import annotations
 
 import logging
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
-from app.agents.state import AgentState
-from app.agents.shared import (
-    retrieval_service as _retrieval,
-    context_assembler as _assembler,
-    citation_verifier as _verifier,
-    get_user_doc_retrieval,
-)
-from app.agents.prompts.drafting_prompt import DRAFTING_PROMPT
-from app.agents.prompts.draft_revision_context import prepend_revision_context
-from app.agents.templates import TEMPLATE_REGISTRY
+from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from app.agents.nodes.helpers import (
+    build_and_verify_sources,
+    enrich_context_with_conversation,
     extract_first_paragraph,
     normalize_confidence,
-    build_and_verify_sources,
     strip_invalid_anchors,
     to_source_chunks,
 )
+from app.agents.prompts.draft_revision_context import prepend_revision_context
+from app.agents.prompts.drafting_prompt import DRAFTING_PROMPT
+from app.agents.shared import (
+    citation_verifier as _verifier,
+)
+from app.agents.shared import (
+    context_assembler as _assembler,
+)
+from app.agents.shared import (
+    get_user_doc_retrieval,
+)
+from app.agents.shared import (
+    retrieval_service as _retrieval,
+)
+from app.agents.state import AgentState
+from app.agents.templates import TEMPLATE_REGISTRY
 from app.core.config import settings
-from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
@@ -132,6 +139,8 @@ async def drafting_node(state: AgentState) -> dict:
             "Drafting in revision mode: existing draft=%d chars.",
             len(existing_draft),
         )
+
+    enriched_context = enrich_context_with_conversation(state, enriched_context)
 
     logger.info(
         "Drafting context enriched with upstream outputs.",

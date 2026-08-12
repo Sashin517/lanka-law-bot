@@ -15,29 +15,37 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
-from app.agents.state import AgentState
-from app.agents.shared import (
-    retrieval_service as _retrieval,
-    context_assembler as _assembler,
-    citation_verifier as _verifier,
-    get_user_doc_retrieval,
-)
-from app.agents.prompts.decomposition_prompt import DECOMPOSITION_PROMPT
-from app.agents.prompts.deep_research_prompt import DEEP_RESEARCH_PROMPT
+from app.agents.message_bus import emit_message
 from app.agents.nodes.helpers import (
+    build_and_verify_sources,
+    conversation_context_block,
+    enrich_context_with_conversation,
     extract_first_paragraph,
     normalize_confidence,
-    build_and_verify_sources,
     strip_invalid_anchors,
     to_source_chunks,
 )
+from app.agents.prompts.decomposition_prompt import DECOMPOSITION_PROMPT
+from app.agents.prompts.deep_research_prompt import DEEP_RESEARCH_PROMPT
+from app.agents.shared import (
+    citation_verifier as _verifier,
+)
+from app.agents.shared import (
+    context_assembler as _assembler,
+)
+from app.agents.shared import (
+    get_user_doc_retrieval,
+)
+from app.agents.shared import (
+    retrieval_service as _retrieval,
+)
+from app.agents.state import AgentState
 from app.core.config import settings
-from app.agents.message_bus import emit_message
 from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
@@ -77,7 +85,13 @@ async def deep_research_node(state: AgentState) -> dict:
     """
 
     # ── Step 1: Decompose question into sub-queries ──
-    sub_queries = await _decompose_query(state.question)
+    history = conversation_context_block(state)
+    decomposition_question = (
+        f"{history}\n\nCURRENT QUESTION: {state.question}"
+        if history
+        else state.question
+    )
+    sub_queries = await _decompose_query(decomposition_question)
     logger.info("Decomposed into %d sub-queries: %s", len(sub_queries), sub_queries)
 
     # ── Step 2: Parallel retrieval across all sub-queries ──
@@ -124,12 +138,15 @@ async def deep_research_node(state: AgentState) -> dict:
         len(citation_map),
         len(context_str),
     )
+    llm_context = enrich_context_with_conversation(state, context_str)
 
     # ── Step 5: Synthesize research memo (hybrid JSON) ──
     question_for_llm = state.question
     grounding_feedback = state.working_memory.get("grounding_feedback")
     if grounding_feedback:
-        logger.info("Retrying deep_research with grounding feedback: %s", grounding_feedback)
+        logger.info(
+            "Retrying deep_research with grounding feedback: %s", grounding_feedback
+        )
         question_for_llm += (
             f"\n\n[RETRY NOTICE: Previous research synthesis contained ungrounded claims: {grounding_feedback}. "
             f"Ensure every point in the research memo is strictly supported by the context.]"
@@ -141,7 +158,7 @@ async def deep_research_node(state: AgentState) -> dict:
             {
                 "question": question_for_llm,
                 "sub_queries": sub_query_text,
-                "context": context_str,
+                "context": llm_context,
             }
         )
     except Exception:
@@ -164,7 +181,6 @@ async def deep_research_node(state: AgentState) -> dict:
             sources_used, citation_map, _verifier, markdown_content=markdown
         )
         markdown = strip_invalid_anchors(markdown, valid_ids)
-
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)

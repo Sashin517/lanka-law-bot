@@ -16,28 +16,35 @@ from __future__ import annotations
 
 import logging
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
-from app.agents.state import AgentState
-from app.agents.shared import (
-    retrieval_service as _retrieval,
-    context_assembler as _assembler,
-    citation_verifier as _verifier,
-    get_user_doc_retrieval,
-)
-from app.agents.prompts.review_prompt import REVIEW_PROMPT
+from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from app.agents.nodes.helpers import (
+    build_and_verify_sources,
+    enrich_context_with_conversation,
     extract_first_paragraph,
     normalize_confidence,
-    build_and_verify_sources,
     strip_invalid_anchors,
     to_source_chunks,
 )
+from app.agents.prompts.review_prompt import REVIEW_PROMPT
+from app.agents.shared import (
+    citation_verifier as _verifier,
+)
+from app.agents.shared import (
+    context_assembler as _assembler,
+)
+from app.agents.shared import (
+    get_user_doc_retrieval,
+)
+from app.agents.shared import (
+    retrieval_service as _retrieval,
+)
+from app.agents.state import AgentState
 from app.core.config import settings
-from app.agents.message_bus import emit_message, enrich_context_with_upstream
 from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
@@ -121,11 +128,13 @@ async def review_node(state: AgentState) -> dict:
     )
     logger.info(
         "Review context assembled: %d sources, %d chars.",
-        len(citation_map), len(context_str),
+        len(citation_map),
+        len(context_str),
     )
 
     # ── Enrich with upstream agent outputs (when running in a multi-step plan) ──
     context_str = enrich_context_with_upstream(state, context_str, logger)
+    llm_context = enrich_context_with_conversation(state, context_str)
 
     # ── Step 4: Generate risk report (hybrid JSON) ──
     question_for_llm = state.question
@@ -138,10 +147,12 @@ async def review_node(state: AgentState) -> dict:
         )
 
     try:
-        raw: dict = await _review_chain.ainvoke({
-            "question": question_for_llm,
-            "context": context_str,
-        })
+        raw: dict = await _review_chain.ainvoke(
+            {
+                "question": question_for_llm,
+                "context": llm_context,
+            }
+        )
     except Exception:
         logger.exception("Review LLM generation failed.")
         raw = {
@@ -169,7 +180,9 @@ async def review_node(state: AgentState) -> dict:
 
     logger.info(
         "Review complete: %d sources, %d risks, confidence=%s.",
-        len(sources), raw.get("risk_count", 0), confidence,
+        len(sources),
+        raw.get("risk_count", 0),
+        confidence,
     )
 
     return emit_message(

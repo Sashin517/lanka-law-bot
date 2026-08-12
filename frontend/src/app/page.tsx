@@ -20,13 +20,13 @@ import {
 import Link from "next/link";
 
 import { ChatInputBar } from "@/components/ChatInputBar";
+import { ChatHistorySidebar } from "@/components/ChatHistorySidebar";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { PromptSuggestionPanel } from "@/components/PromptSuggestionPanel";
 import {
   deleteDocument,
   getDocumentStatus,
   improvePrompt,
-  sendLegalQuery,
   uploadDocument,
   type ImprovePromptResponse,
   type SourceRef,
@@ -35,24 +35,13 @@ import { logOut } from "@/lib/firebase/auth";
 import { sourceCardId } from "@/lib/sources";
 import { useAuth } from "@/contexts/AuthProvider";
 import { useDraftDocumentStore } from "@/store/draftDocumentStore";
-import type { AttachedDocument, UploadedDocument } from "@/types/documents";
+import { useConversationStore } from "@/store/conversationStore";
+import type { UploadedDocument } from "@/types/documents";
 import type { QueryMode } from "@/types/QueryMode";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
 /* ------------------------------------------------------------------ */
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string; // Plain text fallback
-  markdownContent?: string; // Rich markdown from backend
-  attachedDocuments?: AttachedDocument[];
-  sources?: SourceRef[];
-  confidence?: string;
-  disclaimer?: string;
-  timestamp: Date;
-}
 
 /* ------------------------------------------------------------------ */
 /* Main Component                                                      */
@@ -61,10 +50,24 @@ interface ChatMessage {
 export default function ResearchDashboard() {
   const router = useRouter();
   const startDraft = useDraftDocumentStore((state) => state.startDraft);
-  // Chat state
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messages = useConversationStore((state) => state.messages);
+  const activeConversationId = useConversationStore(
+    (state) => state.activeConversationId,
+  );
+  const isSending = useConversationStore((state) => state.isSending);
+  const isCreating = useConversationStore((state) => state.isCreating);
+  const isMessagesLoading = useConversationStore(
+    (state) => state.isMessagesLoading,
+  );
+  const newConversation = useConversationStore(
+    (state) => state.newConversation,
+  );
+  const sendConversationMessage = useConversationStore((state) => state.send);
+  const clearActiveConversation = useConversationStore(
+    (state) => state.clearActive,
+  );
   const [inputQuery, setInputQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const isLoading = isSending || isCreating;
   const [uploadedDocuments, setUploadedDocuments] = useState<
     UploadedDocument[]
   >([]);
@@ -73,24 +76,12 @@ export default function ResearchDashboard() {
   const [promptSuggestion, setPromptSuggestion] =
     useState<ImprovePromptResponse | null>(null);
   const [improveError, setImproveError] = useState<string | null>(null);
+  const [documentError, setDocumentError] = useState<string | null>(null);
 
   // Collapsible state for bot responses (keyed by message id)
   const [expandedSources, setExpandedSources] = useState<Set<string>>(
     new Set(),
   );
-
-  // Sidebar – Filters
-  const [filterSource, setFilterSource] = useState({
-    acts: true,
-    caseLaws: true,
-  });
-  const [filterDate, setFilterDate] = useState("all");
-  const [openSections, setOpenSections] = useState({
-    source: true,
-    date: true,
-    topic: true,
-    court: true,
-  });
 
   // Sidebar – Added materials
   const [addedMaterials, setAddedMaterials] = useState<SourceRef[]>([]);
@@ -106,6 +97,12 @@ export default function ResearchDashboard() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    setExpandedSources(new Set());
+    setAddedMaterials([]);
+    setDocumentError(null);
+  }, [activeConversationId]);
 
   useEffect(() => {
     const timers = pollingTimersRef.current;
@@ -267,15 +264,9 @@ export default function ResearchDashboard() {
       try {
         await deleteDocument(doc.document_id);
       } catch {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: `The document was removed from this chat, but the backend could not delete "${doc.filename}".`,
-            timestamp: new Date(),
-          },
-        ]);
+        setDocumentError(
+          `The document was removed here, but the backend could not delete “${doc.filename}”.`,
+        );
       }
     }
   };
@@ -292,14 +283,6 @@ export default function ResearchDashboard() {
         status: doc.status,
       }));
 
-    const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: inputQuery.trim(),
-      attachedDocuments,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
     const query = inputQuery.trim();
     setInputQuery("");
     setPromptSuggestion(null);
@@ -314,40 +297,18 @@ export default function ResearchDashboard() {
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      const data = await sendLegalQuery({
-        question: query,
-        mode: selectedMode,
-        matter_id: null,
-        document_ids: attachedDocuments.map((doc) => doc.document_id),
-      });
-
-      const botMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: data.answer || "No response generated.",
-        markdownContent: data.markdown_content,
-        sources: data.sources || [],
-        confidence: data.confidence,
-        disclaimer: data.disclaimer,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMsg]);
+      if (!activeConversationId) {
+        await newConversation(selectedMode);
+      }
+      await sendConversationMessage(
+        query,
+        selectedMode,
+        attachedDocuments.map((document) => document.document_id),
+        attachedDocuments,
+      );
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content:
-            "Unable to reach the legal research backend. Please ensure the server is running and try again.",
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
+      // Store actions expose a stable, dismissible error in the sidebar.
     }
   };
 
@@ -378,8 +339,13 @@ export default function ResearchDashboard() {
     }
   };
 
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  const handleNewChat = async () => {
+    clearActiveConversation();
+    setInputQuery("");
+    setUploadedDocuments([]);
+    setPromptSuggestion(null);
+    setImproveError(null);
+    await newConversation(selectedMode);
   };
 
   const toggleSources = (id: string) => {
@@ -513,171 +479,7 @@ export default function ResearchDashboard() {
 
       {/* ── BODY: 3-column layout ── */}
       <div className="flex flex-1 overflow-hidden">
-        {/* ──────── LEFT SIDEBAR: FILTERS ──────── */}
-        <aside className="w-[260px] bg-[#161B28] text-white p-5 overflow-y-auto shrink-0 border-r border-slate-700/40 chat-scroll">
-          <h2 className="text-base font-semibold mb-4 text-slate-200">
-            Filters
-          </h2>
-
-          {/* Source Type */}
-          <div className="mb-4">
-            <div
-              onClick={() => toggleSection("source")}
-              className="bg-[#C5D0E6] text-[#161B28] p-2 rounded flex justify-between items-center cursor-pointer font-semibold text-sm"
-            >
-              <span>Source Type</span>
-              {openSections.source ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </div>
-            {openSections.source && (
-              <div className="space-y-2 pt-2 px-2 text-sm text-slate-300">
-                <label className="flex items-center space-x-3 cursor-pointer hover:text-white">
-                  <input
-                    type="checkbox"
-                    checked={filterSource.acts}
-                    onChange={(e) =>
-                      setFilterSource({
-                        ...filterSource,
-                        acts: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 accent-[#D4AF37]"
-                  />
-                  <span>Acts</span>
-                </label>
-                <label className="flex items-center space-x-3 cursor-pointer hover:text-white">
-                  <input
-                    type="checkbox"
-                    checked={filterSource.caseLaws}
-                    onChange={(e) =>
-                      setFilterSource({
-                        ...filterSource,
-                        caseLaws: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 accent-[#D4AF37]"
-                  />
-                  <span>Case Laws</span>
-                </label>
-              </div>
-            )}
-          </div>
-
-          {/* Date Range */}
-          <div className="mb-4">
-            <div
-              onClick={() => toggleSection("date")}
-              className="bg-[#C5D0E6] text-[#161B28] p-2 rounded flex justify-between items-center cursor-pointer font-semibold text-sm"
-            >
-              <span>Date Range</span>
-              {openSections.date ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </div>
-            {openSections.date && (
-              <div className="space-y-2 pt-2 px-2 text-sm text-slate-300">
-                {[
-                  { value: "all", label: "All Time" },
-                  { value: "last5", label: "Last 5 Years" },
-                  { value: "custom", label: "Custom" },
-                ].map((opt) => (
-                  <label
-                    key={opt.value}
-                    className="flex items-center space-x-3 cursor-pointer hover:text-white"
-                  >
-                    <input
-                      type="radio"
-                      name="date"
-                      checked={filterDate === opt.value}
-                      onChange={() => setFilterDate(opt.value)}
-                      className="w-4 h-4 accent-[#D4AF37]"
-                    />
-                    <span>{opt.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Topic */}
-          <div className="mb-4">
-            <div
-              onClick={() => toggleSection("topic")}
-              className="bg-[#C5D0E6] text-[#161B28] p-2 rounded flex justify-between items-center cursor-pointer font-semibold text-sm"
-            >
-              <span>Topic</span>
-              {openSections.topic ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </div>
-            {openSections.topic && (
-              <div className="space-y-2 pt-2 px-2 text-sm text-slate-300">
-                {[
-                  "Contract & Commercial",
-                  "Property & Land",
-                  "Labour & Employment",
-                  "Civil Procedure",
-                ].map((t) => (
-                  <label
-                    key={t}
-                    className="flex items-center space-x-3 cursor-pointer hover:text-white"
-                  >
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 accent-[#D4AF37]"
-                    />
-                    <span>{t}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Court Level */}
-          {filterSource.caseLaws && (
-            <div className="mb-4">
-              <div
-                onClick={() => toggleSection("court")}
-                className="bg-[#C5D0E6] text-[#161B28] p-2 rounded flex justify-between items-center cursor-pointer font-semibold text-sm"
-              >
-                <span>Court Level</span>
-                {openSections.court ? (
-                  <ChevronUp size={16} />
-                ) : (
-                  <ChevronDown size={16} />
-                )}
-              </div>
-              {openSections.court && (
-                <div className="space-y-2 pt-2 px-2 text-sm text-slate-300">
-                  {[
-                    "Supreme Court (SC)",
-                    "Court of Appeal (COA)",
-                    "Commercial High Court (CHC)",
-                    "District Court (DC)",
-                  ].map((c) => (
-                    <label
-                      key={c}
-                      className="flex items-center space-x-3 cursor-pointer hover:text-white"
-                    >
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 accent-[#D4AF37]"
-                      />
-                      <span>{c}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </aside>
+        <ChatHistorySidebar onNewChat={handleNewChat} />
 
         {/* ──────── CENTER: CHAT AREA ──────── */}
         <main className="flex-1 flex flex-col min-w-0 bg-[#2A3241]">
@@ -685,7 +487,7 @@ export default function ResearchDashboard() {
           <div className="flex-1 overflow-y-auto px-6 py-6 chat-scroll">
             <div className="max-w-3xl mx-auto space-y-5">
               {/* Welcome state */}
-              {messages.length === 0 && !isLoading && (
+              {messages.length === 0 && !isLoading && !isMessagesLoading && (
                 <div className="flex flex-col items-center justify-center h-full py-24 text-center">
                   <Scale size={48} className="text-[#D4AF37] mb-4" />
                   <h2 className="text-xl font-serif text-white mb-2">
@@ -709,10 +511,9 @@ export default function ResearchDashboard() {
                         <p className="text-sm font-medium leading-relaxed">
                           {msg.content}
                         </p>
-                        {msg.attachedDocuments &&
-                          msg.attachedDocuments.length > 0 && (
+                        {msg.attachments.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-2">
-                              {msg.attachedDocuments.map((doc) => (
+                              {msg.attachments.map((doc) => (
                                 <div
                                   key={doc.document_id}
                                   className="flex max-w-full items-center gap-1.5 rounded-lg bg-[#161B28]/15 px-2 py-1 text-[11px] font-semibold"
@@ -728,7 +529,7 @@ export default function ResearchDashboard() {
                           )}
                       </div>
                       <p className="text-[10px] text-slate-500 text-right mt-1 mr-1">
-                        {msg.timestamp.toLocaleTimeString([], {
+                        {new Date(msg.created_at).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
@@ -760,10 +561,10 @@ export default function ResearchDashboard() {
 
                         {/* Main content — markdown or plain text */}
                         <div className="px-5 pb-3">
-                          {msg.markdownContent ? (
+                          {msg.markdown_content ? (
                             <MarkdownRenderer
-                              content={msg.markdownContent}
-                              sources={msg.sources}
+                              content={msg.markdown_content}
+                              sources={msg.citations}
                               onViewInSources={(citationId) =>
                                 scrollToSource(msg.id, citationId)
                               }
@@ -776,7 +577,7 @@ export default function ResearchDashboard() {
                         </div>
 
                         {/* Sources section (collapsible) */}
-                        {msg.sources && msg.sources.length > 0 && (
+                        {msg.citations.length > 0 && (
                           <div className="border-t border-slate-700/40">
                             <button
                               onClick={() => toggleSources(msg.id)}
@@ -784,7 +585,7 @@ export default function ResearchDashboard() {
                             >
                               <span className="flex items-center gap-2">
                                 <Info size={14} className="text-sky-400" />
-                                Sources ({msg.sources.length})
+                                Sources ({msg.citations.length})
                               </span>
                               {expandedSources.has(msg.id) ? (
                                 <ChevronUp size={14} />
@@ -794,7 +595,7 @@ export default function ResearchDashboard() {
                             </button>
                             {expandedSources.has(msg.id) && (
                               <div className="px-5 pb-4 space-y-2">
-                                {msg.sources.map((src) => (
+                                {msg.citations.map((src) => (
                                   <div
                                     key={src.citation_id}
                                     id={sourceCardId(msg.id, src.citation_id)}
@@ -849,7 +650,7 @@ export default function ResearchDashboard() {
                         )}
                       </div>
                       <p className="text-[10px] text-slate-500 mt-1 ml-1">
-                        {msg.timestamp.toLocaleTimeString([], {
+                        {new Date(msg.created_at).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
@@ -860,7 +661,7 @@ export default function ResearchDashboard() {
               )}
 
               {/* Typing indicator */}
-              {isLoading && (
+              {(isLoading || isMessagesLoading) && (
                 <div className="flex justify-start">
                   <div className="bg-[#161B28] border border-slate-700/50 rounded-2xl rounded-bl-md px-5 py-4 shadow-lg">
                     <div className="flex items-center gap-2">
@@ -874,7 +675,9 @@ export default function ResearchDashboard() {
                       <span className="typing-dot w-2 h-2 rounded-full bg-slate-400" />
                       <span className="typing-dot w-2 h-2 rounded-full bg-slate-400" />
                       <span className="text-xs text-slate-500 ml-2">
-                        Analyzing Sri Lankan law…
+                        {isMessagesLoading
+                          ? "Loading conversation…"
+                          : "Analyzing Sri Lankan law…"}
                       </span>
                     </div>
                   </div>
@@ -887,6 +690,16 @@ export default function ResearchDashboard() {
 
           {/* ── Input bar (bottom-pinned) ── */}
           <div className="shrink-0 border-t border-slate-700/40 bg-[#1E2636] px-6 py-4">
+            {documentError && (
+              <button
+                type="button"
+                onClick={() => setDocumentError(null)}
+                className="mx-auto mb-3 block w-full max-w-3xl rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-left text-xs text-amber-200"
+                title="Dismiss document warning"
+              >
+                {documentError}
+              </button>
+            )}
             <PromptSuggestionPanel
               suggestedPrompt={promptSuggestion?.improved_prompt ?? ""}
               intentSummary={promptSuggestion?.intent_summary}

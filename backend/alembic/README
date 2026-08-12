@@ -1,0 +1,37 @@
+This migration tree owns only the PostgreSQL research-chat schema. The legacy
+SQLite document and drafting metadata remains separate and is not migrated.
+
+Configure these environment variables in backend/.env before connecting:
+
+    POSTGRES_HOST=localhost
+    POSTGRES_PORT=5432
+    POSTGRES_USER=lankalawbot
+    POSTGRES_PASSWORD=<development-or-secret-manager-value>
+    POSTGRES_DB=lankalawbot
+    POSTGRES_POOL_SIZE=10
+    POSTGRES_MAX_OVERFLOW=5
+    POSTGRES_AUTO_CREATE_SCHEMA=false
+
+Keep ``POSTGRES_AUTO_CREATE_SCHEMA=false`` in production. Application startup
+then verifies PostgreSQL connectivity and expects the versioned migrations to
+already be applied. Set it to ``true`` only for an explicit local/test bootstrap.
+
+For local development, start the isolated PostgreSQL service from the backend
+directory after setting POSTGRES_PASSWORD in your shell:
+
+    docker compose -f docker-compose.postgres.yml up -d
+
+From the backend directory, apply migrations with:
+
+    alembic upgrade head
+
+Generate future revisions only after importing all conversation models into
+alembic/env.py:
+
+    alembic revision --autogenerate -m "describe schema change"
+
+The legacy SQLite metadata database is intentionally outside this migration
+tree.
+
+Do not call init_postgres() during a production startup. It is an explicit
+local/test bootstrap helper; production schema changes must go through Alembic.

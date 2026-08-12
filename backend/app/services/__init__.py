@@ -4,10 +4,10 @@ Importing a lightweight submodule must not initialize retrievers, download ML
 models, or construct the agent graph. Existing ``from app.services import X``
 callers remain supported through PEP 562 lazy attribute resolution.
 """
+
 from __future__ import annotations
 
 from importlib import import_module
-
 
 _EXPORTS = {
     "RetrievalService": "app.services.retrieval.retrieval_service",
@@ -32,6 +32,8 @@ _EXPORTS = {
     "ContextAssembler": "app.services.generation.context_assembler",
     "MultiSourceContextAssembler": "app.services.generation.context_assembler",
     "CitationVerifier": "app.services.generation.citation_verifier",
+    "ConversationService": "app.services.conversation_service",
+    "MemoryService": "app.services.memory_service",
 }
 
 __all__ = list(_EXPORTS)

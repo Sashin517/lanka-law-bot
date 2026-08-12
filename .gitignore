@@ -5,6 +5,8 @@ venv/
 .venv/
 env/
 backend/venv/
+**/venv/
+**/.venv/
 
 # Next.js & Frontend Build Outputs
 .next/
@@ -13,6 +15,7 @@ out/
 frontend/out/
 build/
 dist/
+*.tsbuildinfo
 
 # Python Caches & Testing
 __pycache__/
@@ -20,6 +23,8 @@ __pycache__/
 *$py.class
 .pytest_cache/
 .ruff_cache/
+_ragas_cache/
+**/_ragas_cache/
 .coverage
 htmlcov/
 *.egg-info/
@@ -41,7 +46,9 @@ backend/secrets/
 # Local Data, Storage & Databases
 backend/data/
 backend/database/*.sqlite3
+backend/database/chroma_db/
 backend/app/database/chroma_db/
+**/chroma_db/
 backend/storage/uploads/*
 !backend/storage/uploads/.gitkeep
 backend/storage/processed_markdown/*
