@@ -63,6 +63,9 @@ export default function ResearchDashboard() {
     (state) => state.newConversation,
   );
   const sendConversationMessage = useConversationStore((state) => state.send);
+  const stopConversationMessage = useConversationStore(
+    (state) => state.stopSending,
+  );
   const clearActiveConversation = useConversationStore(
     (state) => state.clearActive,
   );
@@ -719,6 +722,7 @@ export default function ResearchDashboard() {
             <ChatInputBar
               value={inputQuery}
               isLoading={isLoading}
+              canStop={isSending}
               isImproving={isImproving}
               documents={uploadedDocuments}
               selectedMode={selectedMode}
@@ -727,6 +731,7 @@ export default function ResearchDashboard() {
               onRemoveDocument={handleRemoveDocument}
               onModeChange={setSelectedMode}
               onSubmit={handleSend}
+              onStop={stopConversationMessage}
               onImprove={handleImprove}
             />
           </div>

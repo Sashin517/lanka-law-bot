@@ -298,6 +298,38 @@ test("send immediately displays optimistic user message while awaiting response"
   ]);
 });
 
+test("stopSending aborts the active request and keeps the submitted message", async () => {
+  let requestSignal;
+  const store = loadStore(
+    createApi({
+      sendMessage: async (...args) => {
+        requestSignal = args[5].signal;
+        return new Promise((_resolve, reject) => {
+          requestSignal.addEventListener("abort", () => {
+            reject(new DOMException("The operation was aborted", "AbortError"));
+          });
+        });
+      },
+    }),
+  );
+  store.setState({
+    conversations: [conversation("active")],
+    activeConversationId: "active",
+  });
+
+  const sending = store.getState().send("Stop this question");
+  assert.equal(store.getState().isSending, true);
+
+  store.getState().stopSending();
+  await sending;
+
+  assert.equal(requestSignal.aborted, true);
+  assert.equal(store.getState().isSending, false);
+  assert.equal(store.getState().error, null);
+  assert.equal(store.getState().messages.length, 1);
+  assert.equal(store.getState().messages[0].content, "Stop this question");
+});
+
 
 test("a response for a background conversation never enters active messages", async () => {
   const request = deferred();

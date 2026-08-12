@@ -297,19 +297,10 @@ class RetrievalService:
         elif years:
             clauses.append({"year": {"$in": years}})
 
-        titles = [
-            str(value).strip()
-            for value in (act_name_filters or [])
-            if str(value).strip()
-        ]
-        title_filters: list[dict] = []
-        for title in titles:
-            title_filters.append({"title": {"$eq": title}})
-            title_filters.append({"case_name": {"$eq": title}})
-        if len(title_filters) == 1:
-            clauses.append(title_filters[0])
-        elif title_filters:
-            clauses.append({"$or": title_filters})
+        # Note: Pinecone metadata filtering only supports exact equality ($eq / $in).
+        # Extracted act names (e.g. "Companies Act") do not match full statutory titles
+        # (e.g. "Companies Act, No. 7 of 2007") under strict $eq, causing 0 results.
+        # Title filtering is performed via hybrid retrieval + soft matching in _post_filter_metadata.
 
         if not clauses:
             return None
@@ -379,8 +370,13 @@ class RetrievalService:
             )
             return filtered
 
-        logger.debug("Metadata filter matched 0/%d candidates.", len(candidates))
-        return []
+        logger.warning(
+            "Metadata filter matched 0/%d candidates (years=%s, acts=%s). Falling back to candidates.",
+            len(candidates),
+            year_filters,
+            act_name_filters,
+        )
+        return candidates
 
 
 _instance: RetrievalService | None = None

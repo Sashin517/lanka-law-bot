@@ -7,6 +7,7 @@ import {
   Plus,
   Scale,
   Send,
+  Square,
   Sparkles,
   Telescope,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 interface ChatInputBarProps {
   value: string;
   isLoading: boolean;
+  canStop: boolean;
   isImproving: boolean;
   documents: UploadedDocument[];
   selectedMode: QueryMode;
@@ -35,6 +37,7 @@ interface ChatInputBarProps {
   onRemoveDocument: (documentId: string) => void;
   onModeChange: (mode: QueryMode) => void;
   onSubmit: () => void;
+  onStop: () => void;
   onImprove: () => void;
 }
 
@@ -44,6 +47,7 @@ const ACCEPTED_FILES =
 export function ChatInputBar({
   value,
   isLoading,
+  canStop,
   isImproving,
   documents,
   selectedMode,
@@ -52,6 +56,7 @@ export function ChatInputBar({
   onRemoveDocument,
   onModeChange,
   onSubmit,
+  onStop,
   onImprove,
 }: ChatInputBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -143,14 +148,26 @@ export function ChatInputBar({
           {isImproving ? "Improving..." : "Improve"}
         </button>
 
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] text-[#161B28] transition hover:bg-[#C5A030] disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-400"
-          aria-label="Send message"
-        >
-          <Send size={17} />
-        </button>
+        {canStop ? (
+          <button
+            type="button"
+            onClick={onStop}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] text-[#161B28] transition hover:bg-[#C5A030]"
+            aria-label="Stop generating response"
+            title="Stop generating"
+          >
+            <Square size={15} fill="currentColor" aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] text-[#161B28] transition hover:bg-[#C5A030] disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-400"
+            aria-label="Send message"
+          >
+            <Send size={17} aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       {/* ── Mode selector buttons ── */}

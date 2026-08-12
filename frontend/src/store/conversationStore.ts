@@ -46,6 +46,7 @@ interface ConversationActions {
     documentIds?: string[],
     attachments?: MessageAttachment[],
   ) => Promise<void>;
+  stopSending: () => void;
   clearError: () => void;
   clearActive: () => void;
   reset: () => void;
@@ -71,6 +72,7 @@ const initialState: ConversationState = {
 let lifecycleGeneration = 0;
 let listRequestGeneration = 0;
 let messageRequestGeneration = 0;
+let activeSendController: AbortController | null = null;
 
 export const useConversationStore = create<ConversationStore>((set, get) => ({
   ...initialState,
@@ -288,6 +290,8 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
 
     const conversationId = state.activeConversationId;
     const lifecycle = lifecycleGeneration;
+    const controller = new AbortController();
+    activeSendController = controller;
 
     const tempId = `temp-user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const maxSeq =
@@ -324,6 +328,7 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
         queryMode,
         documentIds,
         attachments,
+        { signal: controller.signal },
       );
       if (lifecycle !== lifecycleGeneration) return;
 
@@ -367,11 +372,23 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
       if (lifecycle === lifecycleGeneration) {
         set((current) => ({
           isSending: false,
-          error: errorMessage(error, "Failed to send message"),
-          messages: current.messages.filter((m) => m.id !== tempId),
+          error: isAbortError(error)
+            ? null
+            : errorMessage(error, "Failed to send message"),
+          messages: isAbortError(error)
+            ? current.messages
+            : current.messages.filter((m) => m.id !== tempId),
         }));
       }
+    } finally {
+      if (activeSendController === controller) {
+        activeSendController = null;
+      }
     }
+  },
+
+  stopSending: () => {
+    activeSendController?.abort();
   },
 
   clearError: () => set({ error: null }),
@@ -388,6 +405,8 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
   },
 
   reset: () => {
+    activeSendController?.abort();
+    activeSendController = null;
     ++lifecycleGeneration;
     ++listRequestGeneration;
     ++messageRequestGeneration;
@@ -449,4 +468,11 @@ function mergeMessages(
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === "AbortError" || error.name === "TimeoutError")
+  );
 }

@@ -21,17 +21,52 @@ import time
 from dataclasses import dataclass
 from typing import Literal
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
-from langsmith import traceable
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.types import Command
+from langsmith import traceable
 
-from app.agents.state import AgentState, ExecutionPlan, PlanStep
 from app.agents.prompts.planning_prompt import PLANNING_PROMPT
+from app.agents.state import AgentState, ExecutionPlan, PlanStep
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+_LEGAL_INSTRUMENT_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_])"
+    r"(?P<name>"
+    r"[A-Z][A-Za-z'’.-]*"
+    r"(?:\s+(?:[A-Z][A-Za-z'’.-]*|of|the|and|for|to|by))*"
+    r"\s+(?:Act|Ordinance|Law)"
+    r")\b"
+)
+
+# These words may be capitalized only because they start the question or a
+# clause. They are context, not part of a statutory instrument's short title.
+_LEADING_INSTRUMENT_CONTEXT_WORDS = frozenset(
+    {
+        "are",
+        "can",
+        "could",
+        "did",
+        "do",
+        "does",
+        "in",
+        "is",
+        "may",
+        "must",
+        "should",
+        "under",
+        "was",
+        "were",
+        "what",
+        "which",
+        "will",
+        "would",
+    }
+)
 
 
 # ── Static mode configuration ────────────────────────────────────
@@ -437,17 +472,38 @@ async def router_node(
 def _extract_entities_from_query(
     question: str,
 ) -> tuple[list[int] | None, list[str] | None]:
-    years = [int(y) for y in re.findall(r"\b(?:18|19|20)\d{2}\b", question)]
+    years = list(
+        dict.fromkeys(
+            int(year) for year in re.findall(r"\b(?:18|19|20)\d{2}\b", question)
+        )
+    )
     year_filters = years if years else None
 
-    acts = []
-    for match in re.finditer(
-        r"([A-Z][a-zA-Z\(\)]*(?:\s+(?:[A-Z][a-zA-Z\(\)]*|of|the|and))*\s+(?:Act|Ordinance))",
-        question,
-    ):
-        acts.append(match.group(1).strip())
+    instruments: list[str] = []
+    for match in _LEGAL_INSTRUMENT_PATTERN.finditer(question):
+        words = match.group("name").split()
+        if len(words) >= 3 and words[1].casefold() == "the":
+            # Handles question/command prefixes such as "Can the ...",
+            # "Under the ...", and "Compare the ..." without maintaining an
+            # unbounded list of possible opening verbs.
+            words = words[2:]
+        elif words and words[0].casefold() in _LEADING_INSTRUMENT_CONTEXT_WORDS:
+            words.pop(0)
+            if words and words[0].casefold() == "the":
+                words.pop(0)
+        elif words and words[0] == "The":
+            words.pop(0)
 
-    act_name_filters = acts if acts else None
+        # A suffix by itself (for example, "What Act") is not a named legal
+        # instrument and must not constrain retrieval.
+        if len(words) < 2:
+            continue
+
+        instrument = " ".join(words)
+        if instrument not in instruments:
+            instruments.append(instrument)
+
+    act_name_filters = instruments if instruments else None
 
     return year_filters, act_name_filters
 
