@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  Fragment,
   type FormEvent,
   useCallback,
   useEffect,
@@ -21,7 +22,7 @@ import {
 } from "react";
 
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
-import { ActivityStream } from "@/components/ActivityStream";
+import { ExecutionActivityDisclosure } from "@/components/ExecutionActivityDisclosure";
 import {
   chatEditService,
   StaleDraftEditError,
@@ -29,6 +30,7 @@ import {
 import { documentBuilder } from "@/lib/drafting/documentBuilder";
 import { isSSEEndpointUnavailableError } from "@/lib/sseClient";
 import { useActivityStream } from "@/lib/useActivityStream";
+import { useContainedAutoScroll } from "@/lib/useContainedAutoScroll";
 import {
   StaleEditorSelectionError,
   type IEditorService,
@@ -43,7 +45,6 @@ import type {
   DraftChatMessage,
   PendingEditSuggestion,
 } from "@/types/drafting";
-import type { ActivityStep } from "@/types/streaming";
 
 const HEAVY_PROGRESS_DELAY_MS = 2_500;
 const HEAVY_PROGRESS_STEP_MS = 2_200;
@@ -81,15 +82,21 @@ export function DraftChatPanel({
   const {
     steps: activitySteps,
     isStreaming: activityStreaming,
+    error: activityError,
     startStream,
   } = useActivityStream();
+  const activitySessionId = useActivityStreamStore((state) => state.sessionId);
 
   const [input, setInput] = useState("");
   const [loadingKind, setLoadingKind] = useState<"ask" | "edit" | null>(null);
   const [showHeavyProgress, setShowHeavyProgress] = useState(false);
   const [heavyStep, setHeavyStep] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const {
+    containerRef: messagesScrollRef,
+    onScroll: handleMessagesScroll,
+    scrollToBottom: scrollMessagesToBottom,
+  } = useContainedAutoScroll<HTMLDivElement>();
   const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -126,8 +133,8 @@ export function DraftChatPanel({
   );
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isProcessing]);
+    scrollMessagesToBottom();
+  }, [activitySteps, isProcessing, messages, scrollMessagesToBottom]);
 
   useEffect(() => {
     if (currentSelection) inputRef.current?.focus();
@@ -145,6 +152,7 @@ export function DraftChatPanel({
     const currentDocument = editor.getDocument();
     const currentMarkdown = documentBuilder.toMarkdown(currentDocument);
     addUserMessage(instruction, selection ?? undefined);
+    scrollMessagesToBottom(true);
     setInput("");
     setError(null);
     setProcessing(true);
@@ -288,14 +296,33 @@ export function DraftChatPanel({
     input.trim() && editor && draftId && documentJson && !isProcessing,
   );
 
+  const completedActivityAssistantId =
+    !activityStreaming &&
+    activitySteps.length > 0 &&
+    messages.at(-1)?.role === "assistant"
+      ? messages.at(-1)?.id
+      : null;
+
+  const renderDraftActivity = () => (
+    <ExecutionActivityDisclosure
+      key={activitySessionId ?? "draft-chat-activity"}
+      steps={activitySteps}
+      isStreaming={activityStreaming}
+      error={activityError}
+      compact
+    />
+  );
+
   return (
     <aside
-      className="flex w-[360px] shrink-0 flex-col overflow-hidden border-l border-slate-700/50 bg-[#161B28]"
+      className="flex min-h-0 w-[360px] shrink-0 flex-col overflow-hidden border-l border-slate-700/50 bg-[#161B28]"
       id="draft-chat-panel"
       aria-label="Drafting assistant"
     >
       <div
-        className="flex-1 space-y-3 overflow-y-auto p-4 chat-scroll"
+        ref={messagesScrollRef}
+        onScroll={handleMessagesScroll}
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4 [overflow-anchor:none] chat-scroll"
         aria-live="polite"
       >
         {messages.length === 0 && (
@@ -312,25 +339,30 @@ export function DraftChatPanel({
         )}
 
         {messages.map((message) => (
-          <ChatMessage
-            key={message.id}
-            message={message}
-            onApply={applySuggestion}
-            onReject={rejectSuggestion}
-            onViewCitationSource={onViewCitationSource}
-          />
+          <Fragment key={message.id}>
+            {completedActivityAssistantId === message.id &&
+              renderDraftActivity()}
+            <ChatMessage
+              message={message}
+              onApply={applySuggestion}
+              onReject={rejectSuggestion}
+              onViewCitationSource={onViewCitationSource}
+            />
+          </Fragment>
         ))}
 
-        {isProcessing && (
+        {(activityStreaming || activitySteps.length > 0) &&
+          !completedActivityAssistantId &&
+          renderDraftActivity()}
+
+        {isProcessing && !activityStreaming && activitySteps.length === 0 && (
           <ProcessingIndicator
             kind={loadingKind}
             showHeavyProgress={showHeavyProgress}
             heavyStep={heavyStep}
-            activitySteps={activitySteps}
-            activityStreaming={activityStreaming}
           />
         )}
-        <div ref={messagesEndRef} />
+        <div aria-hidden="true" />
       </div>
 
       <form
@@ -604,27 +636,11 @@ function ProcessingIndicator({
   kind,
   showHeavyProgress,
   heavyStep,
-  activitySteps,
-  activityStreaming,
 }: {
   kind: "ask" | "edit" | null;
   showHeavyProgress: boolean;
   heavyStep: number;
-  activitySteps: ActivityStep[];
-  activityStreaming: boolean;
 }) {
-  if (activityStreaming || activitySteps.length > 0) {
-    return (
-      <div className="rounded-xl border border-slate-700/50 bg-[#1D2530] p-3">
-        <ActivityStream
-          steps={activitySteps}
-          isStreaming={activityStreaming}
-          compact
-        />
-      </div>
-    );
-  }
-
   if (kind === "edit" && showHeavyProgress) {
     return (
       <div className="rounded-xl border border-[#D4AF37]/20 bg-[#1D2530] p-3">

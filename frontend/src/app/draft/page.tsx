@@ -34,7 +34,7 @@ import {
 import Link from "next/link";
 
 import { DraftToolbar } from "@/components/drafting/DraftToolbar";
-import { ActivityStream } from "@/components/ActivityStream";
+import { ExecutionActivityDisclosure } from "@/components/ExecutionActivityDisclosure";
 import { EditorToolbar } from "@/components/drafting/EditorToolbar";
 import { TiptapEditor } from "@/components/drafting/TiptapEditor";
 import { DraftChatPanel } from "@/components/drafting/DraftChatPanel";
@@ -95,6 +95,8 @@ export default function DraftPage() {
   const activityStreaming = useActivityStreamStore(
     (state) => state.isStreaming,
   );
+  const activityError = useActivityStreamStore((state) => state.error);
+  const activitySessionId = useActivityStreamStore((state) => state.sessionId);
 
   // ── Local UI state ──
   const [chatPanelOpen, setChatPanelOpen] = useState(true);
@@ -300,7 +302,7 @@ export default function DraftPage() {
 
   // ── Render ──
   return (
-    <div className="h-screen flex flex-col bg-[#2A3241] font-sans overflow-hidden">
+    <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-[#2A3241] font-sans">
       {/* ── NAVBAR ── */}
       <header
         className="bg-[#161B28] text-white flex items-center justify-between px-8 py-4 z-10 border-b border-slate-700/50 shrink-0"
@@ -407,7 +409,7 @@ export default function DraftPage() {
       />
 
       {/* ── MAIN CONTENT AREA (Three-Panel) ── */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* ── LEFT SIDEBAR: Version History ── */}
         <DraftSidebar
           activeView={leftSidebarView}
@@ -422,7 +424,7 @@ export default function DraftPage() {
         />
 
         {/* ── CENTER: Document Editor ── */}
-        <main className="flex-1 flex flex-col min-w-0 bg-white">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
           {showEditsMode && (
             <ShowEditsLegend
               currentVersionNumber={visibleVersionCount || 1}
@@ -447,7 +449,7 @@ export default function DraftPage() {
 
           {/* Editor Area */}
           <div
-            className="flex-1 overflow-auto bg-white p-6 flex justify-center"
+            className="flex min-h-0 flex-1 justify-center overflow-auto overscroll-contain bg-white p-6"
             id="draft-editor-area"
           >
             {isLoading ? (
@@ -462,10 +464,13 @@ export default function DraftPage() {
                       Generating your legal draft…
                     </p>
                   </div>
-                  <ActivityStream
+                  <ExecutionActivityDisclosure
+                    key={activitySessionId ?? "draft-generation-activity"}
                     steps={activitySteps}
                     isStreaming={activityStreaming}
-                    className="max-h-72 pr-1 chat-scroll"
+                    error={activityError}
+                    compact
+                    streamClassName="max-h-72 pr-1 chat-scroll"
                   />
                 </div>
               </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { Fragment, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -21,7 +21,7 @@ import Link from "next/link";
 
 import { ChatInputBar } from "@/components/ChatInputBar";
 import { ChatHistorySidebar } from "@/components/ChatHistorySidebar";
-import { ActivityStream } from "@/components/ActivityStream";
+import { ExecutionActivityDisclosure } from "@/components/ExecutionActivityDisclosure";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { PromptSuggestionPanel } from "@/components/PromptSuggestionPanel";
 import {
@@ -34,6 +34,7 @@ import {
 } from "@/lib/api";
 import { logOut } from "@/lib/firebase/auth";
 import { sourceCardId } from "@/lib/sources";
+import { useContainedAutoScroll } from "@/lib/useContainedAutoScroll";
 import { useAuth } from "@/contexts/AuthProvider";
 import { useDraftDocumentStore } from "@/store/draftDocumentStore";
 import { useConversationStore } from "@/store/conversationStore";
@@ -76,6 +77,7 @@ export default function ResearchDashboard() {
     (state) => state.isStreaming,
   );
   const activityError = useActivityStreamStore((state) => state.error);
+  const activitySessionId = useActivityStreamStore((state) => state.sessionId);
   const [inputQuery, setInputQuery] = useState("");
   const isLoading = isSending || isCreating;
   const [uploadedDocuments, setUploadedDocuments] = useState<
@@ -96,8 +98,11 @@ export default function ResearchDashboard() {
   // Sidebar – Added materials
   const [addedMaterials, setAddedMaterials] = useState<SourceRef[]>([]);
 
-  // Auto-scroll ref
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const {
+    containerRef: chatScrollRef,
+    onScroll: handleChatScroll,
+    scrollToBottom: scrollChatToBottom,
+  } = useContainedAutoScroll<HTMLDivElement>();
   const pollingTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(
     new Map(),
   );
@@ -105,8 +110,8 @@ export default function ResearchDashboard() {
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activitySteps, isLoading, messages]);
+    scrollChatToBottom();
+  }, [activitySteps, isLoading, messages, scrollChatToBottom]);
 
   useEffect(() => {
     setExpandedSources(new Set());
@@ -307,6 +312,10 @@ export default function ResearchDashboard() {
       return;
     }
 
+    // A deliberate submission resumes follow mode. Subsequent SSE updates stay
+    // container-scoped and stop following again if the user scrolls upward.
+    scrollChatToBottom(true);
+
     try {
       if (!activeConversationId) {
         await newConversation(selectedMode);
@@ -409,12 +418,40 @@ export default function ResearchDashboard() {
     ));
   };
 
+  const completedActivityAssistantId =
+    !activityStreaming &&
+    activitySteps.length > 0 &&
+    messages.at(-1)?.role === "assistant"
+      ? messages.at(-1)?.id
+      : null;
+
+  const renderResearchActivity = () => (
+    <div className="flex justify-start">
+      <div className="w-full max-w-[85%] rounded-2xl rounded-bl-md border border-slate-700/50 bg-[#161B28] px-5 py-4 shadow-lg">
+        <div className="flex items-center gap-2">
+          <Scale size={14} className="text-[#D4AF37]" />
+          <span className="text-[#D4AF37] text-sm font-semibold">
+            LankaLawBot
+          </span>
+        </div>
+        <ExecutionActivityDisclosure
+          key={activitySessionId ?? "research-activity"}
+          steps={activitySteps}
+          isStreaming={activityStreaming}
+          error={activityError}
+          className="mt-3"
+          streamClassName="max-h-64 pr-1 chat-scroll"
+        />
+      </div>
+    </div>
+  );
+
   /* ---------------------------------------------------------------- */
   /* Render                                                            */
   /* ---------------------------------------------------------------- */
 
   return (
-    <div className="h-screen flex flex-col bg-[#2A3241] font-sans overflow-hidden">
+    <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-[#2A3241] font-sans">
       {/* ── NAVBAR ── */}
       <header className="bg-[#161B28] text-white flex items-center justify-between px-8 py-4 z-10 border-b border-slate-700/50 shrink-0">
         <div className="text-2xl font-serif tracking-wide text-white flex items-center gap-2">
@@ -488,13 +525,17 @@ export default function ResearchDashboard() {
       </header>
 
       {/* ── BODY: 3-column layout ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <ChatHistorySidebar onNewChat={handleNewChat} />
 
         {/* ──────── CENTER: CHAT AREA ──────── */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#2A3241]">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#2A3241]">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-6 py-6 chat-scroll">
+          <div
+            ref={chatScrollRef}
+            onScroll={handleChatScroll}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6 [overflow-anchor:none] chat-scroll"
+          >
             <div className="max-w-3xl mx-auto space-y-5">
               {/* Welcome state */}
               {messages.length === 0 && !isLoading && !isMessagesLoading && (
@@ -548,7 +589,10 @@ export default function ResearchDashboard() {
                   </div>
                 ) : (
                   /* ── Bot response ── */
-                  <div key={msg.id} className="flex justify-start">
+                  <Fragment key={msg.id}>
+                    {completedActivityAssistantId === msg.id &&
+                      renderResearchActivity()}
+                  <div className="flex justify-start">
                     <div className="max-w-[85%] w-full">
                       <div className="bg-[#161B28] border border-slate-700/50 rounded-2xl rounded-bl-md shadow-lg overflow-hidden">
                         {/* Header */}
@@ -667,26 +711,14 @@ export default function ResearchDashboard() {
                       </p>
                     </div>
                   </div>
+                  </Fragment>
                 ),
               )}
 
               {/* Live execution activity for the active research request. */}
-              {activitySteps.length > 0 && (isSending || activityError) ? (
-                <div className="flex justify-start">
-                  <div className="w-full max-w-[85%] rounded-2xl rounded-bl-md border border-slate-700/50 bg-[#161B28] px-5 py-4 shadow-lg">
-                    <div className="flex items-center gap-2">
-                      <Scale size={14} className="text-[#D4AF37]" />
-                      <span className="text-[#D4AF37] text-sm font-semibold">
-                        LankaLawBot
-                      </span>
-                    </div>
-                    <ActivityStream
-                      steps={activitySteps}
-                      isStreaming={activityStreaming}
-                      className="mt-3 max-h-64 pr-1 chat-scroll"
-                    />
-                  </div>
-                </div>
+              {(activityStreaming || activitySteps.length > 0) &&
+              !completedActivityAssistantId ? (
+                renderResearchActivity()
               ) : isLoading || isMessagesLoading ? (
                 <div className="flex justify-start">
                   <div className="rounded-2xl rounded-bl-md border border-slate-700/50 bg-[#161B28] px-5 py-4 shadow-lg">
@@ -710,7 +742,7 @@ export default function ResearchDashboard() {
                 </div>
               ) : null}
 
-              <div ref={chatEndRef} />
+              <div aria-hidden="true" />
             </div>
           </div>
 
@@ -761,7 +793,7 @@ export default function ResearchDashboard() {
         </main>
 
         {/* ──────── RIGHT SIDEBAR: ADDED MATERIALS ──────── */}
-        <aside className="w-[280px] bg-[#161B28] text-white p-5 overflow-y-auto shrink-0 border-l border-slate-700/40 chat-scroll">
+        <aside className="min-h-0 w-[280px] shrink-0 overflow-y-auto border-l border-slate-700/40 bg-[#161B28] p-5 text-white chat-scroll">
           <h2 className="text-base font-semibold mb-4 pb-3 border-b border-slate-700 text-slate-200">
             Added Materials
           </h2>

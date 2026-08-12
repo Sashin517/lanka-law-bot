@@ -2,9 +2,10 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { AlertTriangle, Check, Loader2 } from "lucide-react";
 
+import { useContainedAutoScroll } from "@/lib/useContainedAutoScroll";
 import type { ActivityStep, StreamStepStatus } from "@/types/streaming";
 
 export interface ActivityStreamProps {
@@ -20,13 +21,12 @@ export function ActivityStream({
   className = "",
   compact = false,
 }: ActivityStreamProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { containerRef, onScroll, scrollToBottom } =
+    useContainedAutoScroll<HTMLDivElement>();
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
-  }, [steps]);
+    scrollToBottom();
+  }, [steps, scrollToBottom]);
 
   if (steps.length === 0 && !isStreaming) return null;
 
@@ -37,7 +37,8 @@ export function ActivityStream({
   return (
     <div
       ref={containerRef}
-      className={`space-y-1 overflow-y-auto ${className}`.trim()}
+      onScroll={onScroll}
+      className={`space-y-1 overflow-y-auto overscroll-contain [overflow-anchor:none] ${className}`.trim()}
       role="log"
       aria-label="Execution activity"
       aria-live="polite"
