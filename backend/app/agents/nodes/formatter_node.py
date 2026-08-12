@@ -12,10 +12,13 @@ intended mode, even when multiple agents ran in a planned pipeline.
 from __future__ import annotations
 
 import logging
+from typing import Optional
 
+from langchain_core.runnables import RunnableConfig
 from langsmith import traceable
 
 from app.agents.state import AgentState
+from app.agents.streaming import get_emitter
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +78,14 @@ def _select_mode_output(state: AgentState) -> tuple[str, str]:
 
 
 @traceable(name="FormatterNode")
-async def formatter_node(state: AgentState) -> dict:
+async def formatter_node(
+    state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
+) -> dict:
     """Assemble ``final_response`` from the current state."""
+
+    emitter = get_emitter(config)
+    emitter.emit_step_start("formatter", "Preparing final response")
 
     # ── Select the mode-appropriate output ──
     answer, markdown_content = _select_mode_output(state)
@@ -139,5 +148,12 @@ async def formatter_node(state: AgentState) -> dict:
         plan.plan_type,
         steps_executed,
     )
+
+    emitter.emit_step_done(
+        "formatter",
+        "Final response ready",
+        source_count=len(state.retrieved_sources),
+    )
+    emitter.emit_final(final)
 
     return {"final_response": final}

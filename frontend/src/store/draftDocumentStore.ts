@@ -13,6 +13,11 @@ import { create } from "zustand";
 import type { SourceRef, LegalQueryResponse } from "@/lib/api";
 import { sendLegalQuery } from "@/lib/api";
 import { DocumentBuilder } from "@/lib/drafting/documentBuilder";
+import {
+  connectSSE,
+  isSSEEndpointUnavailableError,
+} from "@/lib/sseClient";
+import { useActivityStreamStore } from "@/store/activityStreamStore";
 import type { TiptapDocument } from "@/types/drafting";
 
 // ─── Store Interface ────────────────────────────────────────────
@@ -90,6 +95,9 @@ const initialState: DraftDocumentState = {
   error: null,
 };
 
+let activeDraftController: AbortController | null = null;
+let draftRequestGeneration = 0;
+
 // ─── Store Implementation ───────────────────────────────────────
 
 function draftTitle(markdown: string, prompt: string): string {
@@ -106,6 +114,11 @@ export const useDraftDocumentStore = create<DraftDocumentStore>((set) => ({
   ...initialState,
 
   startDraft: async (question, documentIds) => {
+    activeDraftController?.abort();
+    const requestGeneration = ++draftRequestGeneration;
+    const controller = new AbortController();
+    activeDraftController = controller;
+
     set({
       isLoading: true,
       error: null,
@@ -119,12 +132,40 @@ export const useDraftDocumentStore = create<DraftDocumentStore>((set) => ({
       draftId: crypto.randomUUID(),
     });
 
+    const activityStore = useActivityStreamStore.getState();
+    activityStore.startStream(createRequestId("draft-stream"));
+
     try {
-      const response: LegalQueryResponse = await sendLegalQuery({
+      const payload = {
         question,
-        mode: "drafting",
+        mode: "drafting" as const,
         document_ids: documentIds.length > 0 ? documentIds : undefined,
-      });
+      };
+      let response: LegalQueryResponse;
+
+      try {
+        let streamedResponse: Record<string, unknown> | null = null;
+        await connectSSE({
+          endpoint: "/api/search/stream",
+          payload,
+          signal: controller.signal,
+          onEvent: activityStore.processEvent,
+          onComplete: (result) => {
+            streamedResponse = result;
+          },
+        });
+        if (controller.signal.aborted) throw abortError();
+        if (!streamedResponse) {
+          throw new Error("Draft stream completed without a final response");
+        }
+        response = streamedResponse as LegalQueryResponse;
+      } catch (error) {
+        if (!isSSEEndpointUnavailableError(error)) throw error;
+        activityStore.reset();
+        response = await sendLegalQuery(payload, { signal: controller.signal });
+      }
+
+      if (requestGeneration !== draftRequestGeneration) return;
 
       const markdownContent =
         response.markdown_content ?? response.answer ?? "";
@@ -141,9 +182,23 @@ export const useDraftDocumentStore = create<DraftDocumentStore>((set) => ({
         isLoading: false,
       });
     } catch (err) {
+      if (requestGeneration !== draftRequestGeneration) return;
+      if (isAbortError(err)) {
+        set({ isLoading: false });
+        activityStore.endStream();
+        return;
+      }
       const message =
         err instanceof Error ? err.message : "Failed to generate draft";
+      activityStore.setError(message);
       set({ isLoading: false, error: message });
+    } finally {
+      if (requestGeneration === draftRequestGeneration) {
+        activityStore.endStream();
+      }
+      if (activeDraftController === controller) {
+        activeDraftController = null;
+      }
     }
   },
 
@@ -174,6 +229,30 @@ export const useDraftDocumentStore = create<DraftDocumentStore>((set) => ({
   },
 
   reset: () => {
-    set(initialState);
+    activeDraftController?.abort();
+    activeDraftController = null;
+    draftRequestGeneration += 1;
+    useActivityStreamStore.getState().reset();
+    set({ ...initialState });
   },
 }));
+
+function createRequestId(prefix: string): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function abortError(): Error {
+  if (typeof DOMException !== "undefined") {
+    return new DOMException("The operation was aborted", "AbortError");
+  }
+  const error = new Error("The operation was aborted");
+  error.name = "AbortError";
+  return error;
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}

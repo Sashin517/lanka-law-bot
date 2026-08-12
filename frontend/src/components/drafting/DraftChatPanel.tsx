@@ -21,11 +21,14 @@ import {
 } from "react";
 
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { ActivityStream } from "@/components/ActivityStream";
 import {
   chatEditService,
   StaleDraftEditError,
 } from "@/lib/drafting/chatEditService";
 import { documentBuilder } from "@/lib/drafting/documentBuilder";
+import { isSSEEndpointUnavailableError } from "@/lib/sseClient";
+import { useActivityStream } from "@/lib/useActivityStream";
 import {
   StaleEditorSelectionError,
   type IEditorService,
@@ -33,11 +36,14 @@ import {
 import { useChatEditStore } from "@/store/chatEditStore";
 import { useDraftDocumentStore } from "@/store/draftDocumentStore";
 import { useVersionStore } from "@/store/versionStore";
+import { useActivityStreamStore } from "@/store/activityStreamStore";
+import type { DraftEditResult, LegalQueryResponse } from "@/lib/api";
 import type {
   ChatMessageStatus,
   DraftChatMessage,
   PendingEditSuggestion,
 } from "@/types/drafting";
+import type { ActivityStep } from "@/types/streaming";
 
 const HEAVY_PROGRESS_DELAY_MS = 2_500;
 const HEAVY_PROGRESS_STEP_MS = 2_200;
@@ -72,6 +78,11 @@ export function DraftChatPanel({
   const { draftId, documentIds, documentJson, updateContent, setSources } =
     useDraftDocumentStore();
   const { createVersion, getVersionCount } = useVersionStore();
+  const {
+    steps: activitySteps,
+    isStreaming: activityStreaming,
+    startStream,
+  } = useActivityStream();
 
   const [input, setInput] = useState("");
   const [loadingKind, setLoadingKind] = useState<"ask" | "edit" | null>(null);
@@ -141,25 +152,56 @@ export function DraftChatPanel({
 
     try {
       if (chatMode === "ask") {
-        const answer = await chatEditService.ask({
+        const request = {
           instruction,
           selection,
           currentContent: currentMarkdown,
           documentIds,
-        });
+        };
+        let answer;
+        try {
+          const response = await startStream(
+            "/api/search/stream",
+            chatEditService.buildAskPayload(request),
+          );
+          if (!response) return;
+          answer = chatEditService.mapAskResponse(
+            response as unknown as LegalQueryResponse,
+          );
+        } catch (cause) {
+          if (!isSSEEndpointUnavailableError(cause)) throw cause;
+          useActivityStreamStore.getState().reset();
+          answer = await chatEditService.ask(request);
+        }
         addAssistantMessage(answer.content, {
           status: "informational",
           sources: answer.sources,
         });
       } else {
-        const suggestion = await chatEditService.requestEdit({
+        const request = {
           draftId,
           instruction,
           selection,
           currentDocument,
           currentMarkdown,
           documentIds,
-        });
+        };
+        let suggestion;
+        try {
+          const response = await startStream(
+            "/api/draft/edit/stream",
+            chatEditService.buildEditPayload(request),
+          );
+          if (!response) return;
+          suggestion = chatEditService.createSuggestion(
+            request,
+            response as unknown as DraftEditResult,
+          );
+        } catch (cause) {
+          if (!isSSEEndpointUnavailableError(cause)) throw cause;
+          useActivityStreamStore.getState().reset();
+          suggestion = await chatEditService.requestEdit(request);
+        }
         const isHeavy = suggestion.result.edit_path === "heavy";
         addAssistantMessage(
           isHeavy
@@ -284,6 +326,8 @@ export function DraftChatPanel({
             kind={loadingKind}
             showHeavyProgress={showHeavyProgress}
             heavyStep={heavyStep}
+            activitySteps={activitySteps}
+            activityStreaming={activityStreaming}
           />
         )}
         <div ref={messagesEndRef} />
@@ -560,11 +604,27 @@ function ProcessingIndicator({
   kind,
   showHeavyProgress,
   heavyStep,
+  activitySteps,
+  activityStreaming,
 }: {
   kind: "ask" | "edit" | null;
   showHeavyProgress: boolean;
   heavyStep: number;
+  activitySteps: ActivityStep[];
+  activityStreaming: boolean;
 }) {
+  if (activityStreaming || activitySteps.length > 0) {
+    return (
+      <div className="rounded-xl border border-slate-700/50 bg-[#1D2530] p-3">
+        <ActivityStream
+          steps={activitySteps}
+          isStreaming={activityStreaming}
+          compact
+        />
+      </div>
+    );
+  }
+
   if (kind === "edit" && showHeavyProgress) {
     return (
       <div className="rounded-xl border border-[#D4AF37]/20 bg-[#1D2530] p-3">

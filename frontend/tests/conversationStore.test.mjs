@@ -70,24 +70,42 @@ function message(id, role, content, sequenceNumber) {
 }
 
 function createApi(overrides = {}) {
+  const defaultSendMessage = async () => ({
+    user_message: message("user-1", "user", "Question", 0),
+    assistant_message: message("assistant-1", "assistant", "Answer", 1),
+    response: { answer: "Answer" },
+  });
+  const selectedSendMessage = overrides.sendMessage ?? defaultSendMessage;
   return {
     createConversation: async () => conversation("created"),
     deleteConversation: async () => undefined,
     listConversations: async () => ({ conversations: [], next_cursor: null }),
     listMessages: async () => ({ messages: [], next_cursor: null }),
     renameConversation: async () => undefined,
-    sendMessage: async () => ({
-      user_message: message("user-1", "user", "Question", 0),
-      assistant_message: message("assistant-1", "assistant", "Answer", 1),
-      response: { answer: "Answer" },
-    }),
+    sendMessage: selectedSendMessage,
+    sendMessageStream: overrides.sendMessageStream ?? selectedSendMessage,
+    isConversationStreamUnavailableError: (error) =>
+      error?.endpointUnavailable === true,
     ...overrides,
   };
 }
 
-function loadStore(api = createApi()) {
+function loadStore(api = createApi(), activityOverrides = {}) {
+  const activity = {
+    startStream: () => undefined,
+    processEvent: () => undefined,
+    endStream: () => undefined,
+    setError: () => undefined,
+    reset: () => undefined,
+    ...activityOverrides,
+  };
   return loadTypeScriptModule(storeFilename, {
     "@/lib/conversationApi": api,
+    "@/store/activityStreamStore": {
+      useActivityStreamStore: {
+        getState: () => activity,
+      },
+    },
   }).useConversationStore;
 }
 
@@ -265,6 +283,73 @@ test("send appends persisted turns and promotes updated conversation", async () 
     "deep_research",
     ["doc-1"],
   ]);
+});
+
+test("send uses legacy persistence only when the streaming route is unavailable", async () => {
+  const calls = [];
+  const activity = [];
+  const unavailable = Object.assign(new Error("Streaming route not found"), {
+    endpointUnavailable: true,
+  });
+  const api = createApi({
+    async sendMessageStream() {
+      calls.push("stream");
+      throw unavailable;
+    },
+    async sendMessage() {
+      calls.push("legacy");
+      return {
+        user_message: message("user-1", "user", "Question", 0),
+        assistant_message: message("assistant-1", "assistant", "Answer", 1),
+        response: { answer: "Answer" },
+      };
+    },
+  });
+  const store = loadStore(api, {
+    startStream: () => activity.push("start"),
+    reset: () => activity.push("reset"),
+    endStream: () => activity.push("end"),
+  });
+  store.setState({
+    conversations: [conversation("active")],
+    activeConversationId: "active",
+  });
+
+  await store.getState().send("Question");
+
+  assert.deepEqual(calls, ["stream", "legacy"]);
+  assert.deepEqual(activity, ["start", "reset", "end"]);
+  assert.deepEqual(store.getState().messages.map((item) => item.id), [
+    "user-1",
+    "assistant-1",
+  ]);
+});
+
+test("runtime stream failures never execute the conversation graph twice", async () => {
+  let legacyCalls = 0;
+  const activityErrors = [];
+  const api = createApi({
+    sendMessageStream: async () => {
+      throw new Error("Graph execution failed");
+    },
+    sendMessage: async () => {
+      legacyCalls += 1;
+      throw new Error("must not run");
+    },
+  });
+  const store = loadStore(api, {
+    setError: (message) => activityErrors.push(message),
+  });
+  store.setState({
+    conversations: [conversation("active")],
+    activeConversationId: "active",
+  });
+
+  await store.getState().send("Question");
+
+  assert.equal(legacyCalls, 0);
+  assert.equal(store.getState().error, "Graph execution failed");
+  assert.deepEqual(activityErrors, ["Graph execution failed"]);
 });
 
 test("send immediately displays optimistic user message while awaiting response", async () => {

@@ -19,16 +19,18 @@ import logging
 import re
 import time
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.types import Command
 from langsmith import traceable
 
 from app.agents.prompts.planning_prompt import PLANNING_PROMPT
 from app.agents.state import AgentState, ExecutionPlan, PlanStep
+from app.agents.streaming import get_emitter
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -141,9 +143,16 @@ _MODE_CONFIG: dict[str, ModeConfig] = {
 _DEFAULT_MODE = "quick_qa"
 
 # Valid agent names for plan step validation
-_VALID_AGENTS = frozenset({
-    "quick_qa", "deep_research", "reasoning", "drafting", "review", "verify",
-})
+_VALID_AGENTS = frozenset(
+    {
+        "quick_qa",
+        "deep_research",
+        "reasoning",
+        "drafting",
+        "review",
+        "verify",
+    }
+)
 
 
 # ── Planning LLM (lightweight, deterministic) ────────────────────
@@ -191,10 +200,20 @@ def _assess_complexity(state: AgentState) -> str:
     # Rule 3: Drafting — check for complexity signals
     if mode == "drafting":
         complexity_signals = (
-            "research", "analyze", "analyse", "compare", "considering",
-            "based on", "according to", "legal implications",
-            "comprehensive", "detailed analysis", "risk assessment",
-            "multiple", "all relevant", "thorough",
+            "research",
+            "analyze",
+            "analyse",
+            "compare",
+            "considering",
+            "based on",
+            "according to",
+            "legal implications",
+            "comprehensive",
+            "detailed analysis",
+            "risk assessment",
+            "multiple",
+            "all relevant",
+            "thorough",
         )
         if any(signal in question for signal in complexity_signals):
             return "needs_planning"
@@ -223,11 +242,13 @@ async def _generate_plan(
     Falls back to a single-step fast-path plan on any failure.
     """
     try:
-        raw: dict = await _planning_chain.ainvoke({
-            "mode": state.mode,
-            "question": state.question,
-            "has_documents": str(bool(state.document_ids)),
-        })
+        raw: dict = await _planning_chain.ainvoke(
+            {
+                "mode": state.mode,
+                "question": state.question,
+                "has_documents": str(bool(state.document_ids)),
+            }
+        )
 
         steps = [
             PlanStep(
@@ -316,11 +337,13 @@ def _enforce_final_step_matches_mode(
         new_steps.append(target_step)
     else:
         # Append the mode's agent as a new final step
-        new_steps.append(PlanStep(
-            agent=target_agent,
-            purpose=f"Final {target_agent} output matching user's selected mode.",
-            depends_on=[s.agent for s in new_steps],
-        ))
+        new_steps.append(
+            PlanStep(
+                agent=target_agent,
+                purpose=f"Final {target_agent} output matching user's selected mode.",
+                depends_on=[s.agent for s in new_steps],
+            )
+        )
 
     # Cap at 3 steps
     return ExecutionPlan(
@@ -337,6 +360,7 @@ def _enforce_final_step_matches_mode(
 @traceable(name="SupervisorRouter", metadata={"routing_method": "hybrid"})
 async def router_node(
     state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
 ) -> Command[
     Literal[
         "quick_qa",
@@ -355,6 +379,9 @@ async def router_node(
     3. Planned-path: LLM generates ExecutionPlan → dispatch to first agent
     """
 
+    emitter = get_emitter(config)
+    emitter.emit_step_start("supervisor", "Analysing your legal question")
+
     mode = state.mode or _DEFAULT_MODE
     config = _MODE_CONFIG.get(mode)
 
@@ -362,6 +389,12 @@ async def router_node(
         logger.error("Unknown mode '%s' — falling back to quick_qa.", mode)
         config = _MODE_CONFIG[_DEFAULT_MODE]
         mode = _DEFAULT_MODE
+
+    emitter.emit_step_detail(
+        "supervisor",
+        f"Identified as a {config.task_type} task "
+        f"({config.answer_mode.replace('_', ' ')} mode)",
+    )
 
     has_documents = bool(state.document_ids)
 
@@ -375,6 +408,11 @@ async def router_node(
 
     # ── Handle review without documents — request upload ──
     if config.requires_user_document and not has_documents:
+        emitter.emit_step_done(
+            "supervisor",
+            "A document is required before the review can begin",
+            route="formatter",
+        )
         return Command(
             update={
                 "route": config.route,
@@ -418,6 +456,12 @@ async def router_node(
     if path == "fast_path":
         # ── FAST PATH: O(1) dispatch — same as current behavior ──
         logger.info("Fast-path dispatch → %s", config.route)
+        emitter.emit_step_done(
+            "supervisor",
+            f"Supervisor selected {config.route.replace('_', ' ').title()} Agent",
+            route=config.route,
+            path="fast_path",
+        )
         return Command(
             update={
                 **base_update,
@@ -436,6 +480,10 @@ async def router_node(
 
     # ── PLANNED PATH: LLM generates multi-step plan ──
     logger.info("Generating execution plan for complex '%s' query.", mode)
+    emitter.emit_step_detail(
+        "supervisor",
+        "Complex query detected — generating execution plan",
+    )
     plan_start = time.monotonic()
     plan = await _generate_plan(state, config)
     plan = _enforce_final_step_matches_mode(plan, config)
@@ -450,12 +498,21 @@ async def router_node(
         planning_seconds,
     )
 
+    planned_agents = [step.agent for step in plan.steps]
+    emitter.emit_plan(plan.plan_type, planned_agents, plan.reasoning)
+    emitter.emit_step_done(
+        "supervisor",
+        f"Execution plan: {' → '.join(planned_agents)}",
+        route=first_agent,
+        path="planned",
+        planning_seconds=planning_seconds,
+    )
+
     return Command(
         update={
             **base_update,
             "routing_reason": (
-                f"Planned multi-step execution for '{mode}' mode: "
-                f"{plan.reasoning}"
+                f"Planned multi-step execution for '{mode}' mode: {plan.reasoning}"
             ),
             "current_agent": first_agent,
             "current_step_index": 0,

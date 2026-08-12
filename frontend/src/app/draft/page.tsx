@@ -34,6 +34,7 @@ import {
 import Link from "next/link";
 
 import { DraftToolbar } from "@/components/drafting/DraftToolbar";
+import { ActivityStream } from "@/components/ActivityStream";
 import { EditorToolbar } from "@/components/drafting/EditorToolbar";
 import { TiptapEditor } from "@/components/drafting/TiptapEditor";
 import { DraftChatPanel } from "@/components/drafting/DraftChatPanel";
@@ -50,6 +51,7 @@ import type { IEditorService } from "@/lib/drafting/editorService";
 import { useDraftDocumentStore } from "@/store/draftDocumentStore";
 import { useVersionStore } from "@/store/versionStore";
 import { useChatEditStore } from "@/store/chatEditStore";
+import { useActivityStreamStore } from "@/store/activityStreamStore";
 import { useAuth } from "@/contexts/AuthProvider";
 import { logOut } from "@/lib/firebase/auth";
 import type {
@@ -89,6 +91,10 @@ export default function DraftPage() {
   } = useVersionStore();
 
   const { setSelection, setChatMode } = useChatEditStore();
+  const activitySteps = useActivityStreamStore((state) => state.steps);
+  const activityStreaming = useActivityStreamStore(
+    (state) => state.isStreaming,
+  );
 
   // ── Local UI state ──
   const [chatPanelOpen, setChatPanelOpen] = useState(true);
@@ -445,12 +451,23 @@ export default function DraftPage() {
             id="draft-editor-area"
           >
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center gap-4 text-slate-400">
-                <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm">Generating your legal draft…</p>
-                <p className="text-xs text-slate-500">
-                  This may take 8–15 seconds
-                </p>
+              <div className="flex w-full max-w-md flex-col items-center justify-center gap-4">
+                <div className="w-full rounded-xl border border-slate-700/50 bg-[#161B28] p-5 shadow-xl">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div
+                      className="h-6 w-6 rounded-full border-2 border-[#D4AF37] border-t-transparent animate-spin"
+                      aria-hidden="true"
+                    />
+                    <p className="text-sm font-medium text-slate-200">
+                      Generating your legal draft…
+                    </p>
+                  </div>
+                  <ActivityStream
+                    steps={activitySteps}
+                    isStreaming={activityStreaming}
+                    className="max-h-72 pr-1 chat-scroll"
+                  />
+                </div>
               </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center gap-3 text-red-400">

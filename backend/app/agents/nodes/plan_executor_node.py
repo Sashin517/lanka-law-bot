@@ -18,12 +18,14 @@ This node is the core of the multi-agent chaining loop:
 from __future__ import annotations
 
 import logging
-from typing import Literal
+from typing import Literal, Optional
 
-from langsmith import traceable
+from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
+from langsmith import traceable
 
 from app.agents.state import AgentState
+from app.agents.streaming import get_emitter
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,7 @@ logger = logging.getLogger(__name__)
 @traceable(name="PlanExecutor")
 async def plan_executor_node(
     state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
 ) -> Command[
     Literal[
         "quick_qa",
@@ -49,6 +52,9 @@ async def plan_executor_node(
     to the formatter for final response assembly.
     """
 
+    emitter = get_emitter(config)
+    emitter.emit_step_start("plan_executor", "Advancing execution plan")
+
     plan = state.execution_plan
     next_index = state.current_step_index + 1
 
@@ -57,6 +63,12 @@ async def plan_executor_node(
         logger.info(
             "Plan complete after %d steps. Routing to formatter.",
             len(plan.steps),
+        )
+        emitter.emit_step_done(
+            "plan_executor",
+            "All planned steps completed",
+            completed_steps=len(plan.steps),
+            next_node="formatter",
         )
         return Command(
             update={"current_step_index": next_index},
@@ -73,6 +85,12 @@ async def plan_executor_node(
         next_step.agent,
         next_step.purpose,
     )
+    emitter.emit_step_detail(
+        "plan_executor",
+        f"Advancing to next step: {next_step.agent.replace('_', ' ').title()}",
+        step_index=next_index,
+        total_steps=len(plan.steps),
+    )
 
     # Build state updates — include config overrides from the plan step
     updates: dict = {
@@ -86,5 +104,13 @@ async def plan_executor_node(
     # (e.g., {"legal_top_k": 12} for broader retrieval)
     if next_step.config_overrides:
         updates.update(next_step.config_overrides)
+
+    emitter.emit_step_done(
+        "plan_executor",
+        f"Next agent: {next_step.agent.replace('_', ' ').title()}",
+        next_agent=next_step.agent,
+        step_index=next_index,
+        total_steps=len(plan.steps),
+    )
 
     return Command(update=updates, goto=next_step.agent)

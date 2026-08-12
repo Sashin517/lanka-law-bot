@@ -12,9 +12,12 @@ Pipeline:
 from __future__ import annotations
 
 import logging
+from typing import Optional
 
+from evaluation.ablation import retrieval_search_kwargs
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
@@ -42,9 +45,9 @@ from app.agents.shared import (
     retrieval_service as _retrieval,
 )
 from app.agents.state import AgentState
+from app.agents.streaming import get_emitter
 from app.agents.templates import TEMPLATE_REGISTRY
 from app.core.config import settings
-from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -73,18 +76,30 @@ _DOC_TYPE_PATTERNS: list[tuple[str, list[str]]] = [
 
 
 @traceable(name="DraftingNode")
-async def drafting_node(state: AgentState) -> dict:
+async def drafting_node(
+    state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
+) -> dict:
     """Execute the template-aware legal drafting pipeline.
 
     Selects template → retrieves → assembles → generates → verifies.
     """
 
+    emitter = get_emitter(config)
+    emitter.emit_step_start("drafting", "Selecting legal document template")
+
     # ── Step 1: Select the appropriate template ──
     template_key = _select_template(state.question, state.answer_mode)
     template_text = TEMPLATE_REGISTRY.get(template_key, TEMPLATE_REGISTRY["contract"])
     logger.info("Drafting with template: '%s'", template_key)
+    emitter.emit_step_detail(
+        "drafting",
+        f"Selected {template_key.replace('_', ' ')} template",
+        template=template_key,
+    )
 
     # ── Step 2: Retrieve from legal corpus ──
+    emitter.emit_step_detail("drafting", "Retrieving relevant statutes and authorities")
     legal_results: list[dict] = []
     if state.use_legal_corpus:
         legal_results = _retrieval.search(
@@ -96,6 +111,7 @@ async def drafting_node(state: AgentState) -> dict:
     # ── Step 3: Retrieve from user documents (if applicable) ──
     user_doc_results: list[dict] = []
     if state.use_user_documents and state.document_ids:
+        emitter.emit_step_detail("drafting", "Searching uploaded reference documents")
         try:
             user_doc_results = get_user_doc_retrieval().search(
                 query=state.question,
@@ -120,6 +136,10 @@ async def drafting_node(state: AgentState) -> dict:
         "Drafting context assembled: %d sources, %d chars.",
         len(citation_map),
         len(context_str),
+    )
+    emitter.emit_sources_found(
+        len(citation_map),
+        [source.title for source in citation_map.values()],
     )
 
     # ── Enrich context with upstream agent outputs ──
@@ -147,6 +167,7 @@ async def drafting_node(state: AgentState) -> dict:
     )
 
     # ── Step 5: Generate draft with template-injected prompt (hybrid JSON) ──
+    emitter.emit_step_detail("drafting", "Generating structured legal draft")
     question_for_llm = state.question
     grounding_feedback = state.working_memory.get("grounding_feedback")
     if grounding_feedback:
@@ -194,10 +215,17 @@ async def drafting_node(state: AgentState) -> dict:
     change_summary = raw.get("change_summary") or f"Generated {title}."
 
     if not state.ablation_config.get("skip_verification"):
+        emitter.emit_step_start("verification", "Verifying draft citations")
         valid_ids = build_and_verify_sources(
             sources_used, citation_map, _verifier, markdown_content=markdown
         )
         markdown = strip_invalid_anchors(markdown, valid_ids)
+        emitter.emit_step_done(
+            "verification",
+            f"{len(valid_ids)}/{len(citation_map)} source citations verified",
+            verified_count=len(valid_ids),
+            source_count=len(citation_map),
+        )
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
@@ -207,6 +235,12 @@ async def drafting_node(state: AgentState) -> dict:
         template_key,
         len(sources),
         confidence,
+    )
+    emitter.emit_step_done(
+        "drafting",
+        "Legal draft generated",
+        document_type=document_type,
+        source_count=len(sources),
     )
 
     return emit_message(

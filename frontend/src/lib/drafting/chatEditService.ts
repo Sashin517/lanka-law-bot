@@ -9,6 +9,7 @@
 import {
   editDraft,
   sendLegalQuery,
+  type ApiRequestOptions,
   type DraftEditPayload,
   type DraftEditResult,
   type LegalQueryPayload,
@@ -61,8 +62,14 @@ export interface AppliedDraftEdit {
 }
 
 interface ChatEditApi {
-  edit(payload: DraftEditPayload): Promise<DraftEditResult>;
-  ask(payload: LegalQueryPayload): Promise<LegalQueryResponse>;
+  edit(
+    payload: DraftEditPayload,
+    options?: ApiRequestOptions,
+  ): Promise<DraftEditResult>;
+  ask(
+    payload: LegalQueryPayload,
+    options?: ApiRequestOptions,
+  ): Promise<LegalQueryResponse>;
 }
 
 const defaultApi: ChatEditApi = {
@@ -86,12 +93,20 @@ export class ChatEditService {
   ) {}
 
   async ask(request: DraftAskRequest): Promise<DraftAskResponse> {
-    const response = await this.api.ask({
+    const response = await this.api.ask(this.buildAskPayload(request));
+    return this.mapAskResponse(response);
+  }
+
+  buildAskPayload(request: DraftAskRequest): LegalQueryPayload {
+    return {
       question: buildAskQuestion(request),
       mode: "reasoning",
       document_ids:
         request.documentIds.length > 0 ? request.documentIds : undefined,
-    });
+    };
+  }
+
+  mapAskResponse(response: LegalQueryResponse): DraftAskResponse {
     const content = response.markdown_content ?? response.answer ?? "";
     if (!content.trim()) {
       throw new Error("The drafting assistant returned an empty answer.");
@@ -102,7 +117,12 @@ export class ChatEditService {
   async requestEdit(
     request: DraftEditRequestContext,
   ): Promise<PendingEditSuggestion> {
-    const result = await this.api.edit({
+    const result = await this.api.edit(this.buildEditPayload(request));
+    return this.createSuggestion(request, result);
+  }
+
+  buildEditPayload(request: DraftEditRequestContext): DraftEditPayload {
+    return {
       draft_id: request.draftId,
       instruction: request.instruction,
       selected_text: request.selection?.text ?? null,
@@ -110,8 +130,13 @@ export class ChatEditService {
       selection_end: request.selection?.to ?? null,
       current_content: request.currentMarkdown,
       document_ids: request.documentIds,
-    });
+    };
+  }
 
+  createSuggestion(
+    request: DraftEditRequestContext,
+    result: DraftEditResult,
+  ): PendingEditSuggestion {
     return {
       result,
       selection: request.selection ? { ...request.selection } : null,

@@ -35,6 +35,10 @@ export interface LegalQueryPayload {
   matter_id?: string | null;
 }
 
+export interface ApiRequestOptions {
+  signal?: AbortSignal;
+}
+
 export interface ImprovePromptPayload {
   draft: string;
   mode: QueryMode;
@@ -115,11 +119,13 @@ export async function deleteDocument(documentId: string): Promise<void> {
 
 export async function sendLegalQuery(
   payload: LegalQueryPayload,
+  options: ApiRequestOptions = {},
 ): Promise<LegalQueryResponse> {
   const response = await fetch(`${API_BASE_URL}/api/search`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal: options.signal,
   });
 
   return parseJsonOrThrow<LegalQueryResponse>(response);
@@ -176,11 +182,13 @@ export interface DraftEditResult {
  */
 export async function editDraft(
   payload: DraftEditPayload,
+  options: ApiRequestOptions = {},
 ): Promise<DraftEditResult> {
   const response = await fetch(`${API_BASE_URL}/api/draft/edit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal: options.signal,
   });
 
   return parseJsonOrThrow<DraftEditResult>(response);

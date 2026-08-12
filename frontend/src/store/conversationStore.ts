@@ -9,7 +9,10 @@ import {
   listMessages,
   renameConversation,
   sendMessage,
+  sendMessageStream,
+  isConversationStreamUnavailableError,
 } from "@/lib/conversationApi";
+import { useActivityStreamStore } from "@/store/activityStreamStore";
 import type {
   ConversationMessage,
   ConversationSummary,
@@ -154,6 +157,7 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
   selectConversation: async (conversationId) => {
     const requestGeneration = ++messageRequestGeneration;
     const lifecycle = lifecycleGeneration;
+    useActivityStreamStore.getState().reset();
     set({
       activeConversationId: conversationId,
       messages: [],
@@ -321,15 +325,42 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
           : current.messages,
     }));
 
+    const activityStore = useActivityStreamStore.getState();
+    activityStore.startStream(createTemporaryId("conversation-stream"));
+
     try {
-      const response = await sendMessage(
-        conversationId,
-        normalizedContent,
-        queryMode,
-        documentIds,
-        attachments,
-        { signal: controller.signal },
-      );
+      let response;
+      try {
+        response = await sendMessageStream(
+          conversationId,
+          normalizedContent,
+          queryMode,
+          documentIds,
+          attachments,
+          {
+            signal: controller.signal,
+            onEvent: (event) => {
+              if (
+                lifecycle === lifecycleGeneration &&
+                get().activeConversationId === conversationId
+              ) {
+                activityStore.processEvent(event);
+              }
+            },
+          },
+        );
+      } catch (error) {
+        if (!isConversationStreamUnavailableError(error)) throw error;
+        activityStore.reset();
+        response = await sendMessage(
+          conversationId,
+          normalizedContent,
+          queryMode,
+          documentIds,
+          attachments,
+          { signal: controller.signal },
+        );
+      }
       if (lifecycle !== lifecycleGeneration) return;
 
       ++listRequestGeneration;
@@ -370,6 +401,11 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
       });
     } catch (error) {
       if (lifecycle === lifecycleGeneration) {
+        if (isAbortError(error)) {
+          activityStore.endStream();
+        } else {
+          activityStore.setError(errorMessage(error, "Failed to send message"));
+        }
         set((current) => ({
           isSending: false,
           error: isAbortError(error)
@@ -381,6 +417,7 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
         }));
       }
     } finally {
+      activityStore.endStream();
       if (activeSendController === controller) {
         activeSendController = null;
       }
@@ -389,12 +426,14 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
 
   stopSending: () => {
     activeSendController?.abort();
+    useActivityStreamStore.getState().endStream();
   },
 
   clearError: () => set({ error: null }),
 
   clearActive: () => {
     ++messageRequestGeneration;
+    useActivityStreamStore.getState().reset();
     set({
       activeConversationId: null,
       messages: [],
@@ -410,6 +449,7 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
     ++lifecycleGeneration;
     ++listRequestGeneration;
     ++messageRequestGeneration;
+    useActivityStreamStore.getState().reset();
     set({ ...initialState });
   },
 }));
@@ -475,4 +515,11 @@ function isAbortError(error: unknown): boolean {
     error instanceof Error &&
     (error.name === "AbortError" || error.name === "TimeoutError")
   );
+}
+
+function createTemporaryId(prefix: string): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }

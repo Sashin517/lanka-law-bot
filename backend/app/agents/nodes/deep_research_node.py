@@ -14,9 +14,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import Optional
 
+from evaluation.ablation import retrieval_search_kwargs
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
@@ -45,8 +48,8 @@ from app.agents.shared import (
     retrieval_service as _retrieval,
 )
 from app.agents.state import AgentState
+from app.agents.streaming import get_emitter
 from app.core.config import settings
-from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +81,17 @@ _synthesis_chain = (
 
 
 @traceable(name="DeepResearchNode")
-async def deep_research_node(state: AgentState) -> dict:
+async def deep_research_node(
+    state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
+) -> dict:
     """Execute the multi-hop research pipeline.
 
     Decomposes → parallel retrieve → merge → synthesize → verify.
     """
+
+    emitter = get_emitter(config)
+    emitter.emit_step_start("deep_research", "Searching legal knowledge base")
 
     # ── Step 1: Decompose question into sub-queries ──
     history = conversation_context_block(state)
@@ -93,14 +102,26 @@ async def deep_research_node(state: AgentState) -> dict:
     )
     sub_queries = await _decompose_query(decomposition_question)
     logger.info("Decomposed into %d sub-queries: %s", len(sub_queries), sub_queries)
+    emitter.emit_step_detail(
+        "deep_research",
+        f"Decomposed into {len(sub_queries)} focused sub-queries",
+    )
 
     # ── Step 2: Parallel retrieval across all sub-queries ──
+    emitter.emit_step_detail(
+        "deep_research",
+        "Searching dense and keyword legal indexes in parallel",
+    )
     legal_results = await _parallel_legal_retrieval(sub_queries, state.ablation_config)
     logger.info("Parallel retrieval returned %d total results.", len(legal_results))
 
     # ── Step 3: User document retrieval (when document_ids present) ──
     user_doc_results: list[dict] = []
     if state.use_user_documents and state.document_ids:
+        emitter.emit_step_detail(
+            "deep_research",
+            "Searching uploaded documents",
+        )
         try:
             user_doc_results = get_user_doc_retrieval().search(
                 query=state.question,
@@ -115,6 +136,12 @@ async def deep_research_node(state: AgentState) -> dict:
     # Handle empty retrieval
     if not legal_results and not user_doc_results:
         logger.warning("No results for deep research: '%s'", state.question[:80])
+        emitter.emit_sources_found(0, [])
+        emitter.emit_step_done(
+            "deep_research",
+            "Research completed with no matching sources",
+            source_count=0,
+        )
         return {
             "summary": "No relevant legal documents were found.",
             "markdown_content": (
@@ -138,9 +165,17 @@ async def deep_research_node(state: AgentState) -> dict:
         len(citation_map),
         len(context_str),
     )
+    emitter.emit_sources_found(
+        len(citation_map),
+        [source.title for source in citation_map.values()],
+    )
     llm_context = enrich_context_with_conversation(state, context_str)
 
     # ── Step 5: Synthesize research memo (hybrid JSON) ──
+    emitter.emit_step_detail(
+        "deep_research",
+        "Comparing statutory provisions and relevant authorities",
+    )
     question_for_llm = state.question
     grounding_feedback = state.working_memory.get("grounding_feedback")
     if grounding_feedback:
@@ -177,10 +212,21 @@ async def deep_research_node(state: AgentState) -> dict:
     sources_used = raw.get("sources_used", [])
 
     if not state.ablation_config.get("skip_verification"):
+        emitter.emit_step_start("verification", "Source & Citation Verification")
+        emitter.emit_step_detail(
+            "verification",
+            f"Checking cited claims against {len(citation_map)} retrieved sources",
+        )
         valid_ids = build_and_verify_sources(
             sources_used, citation_map, _verifier, markdown_content=markdown
         )
         markdown = strip_invalid_anchors(markdown, valid_ids)
+        emitter.emit_step_done(
+            "verification",
+            f"{len(valid_ids)}/{len(citation_map)} source citations verified",
+            verified_count=len(valid_ids),
+            source_count=len(citation_map),
+        )
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
@@ -190,6 +236,12 @@ async def deep_research_node(state: AgentState) -> dict:
         len(sub_queries),
         len(sources),
         confidence,
+    )
+    emitter.emit_step_done(
+        "deep_research",
+        "Research analysis complete",
+        source_count=len(sources),
+        sub_query_count=len(sub_queries),
     )
 
     return emit_message(

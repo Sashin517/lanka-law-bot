@@ -1,6 +1,11 @@
 /** Authenticated conversation API Facade. */
 
 import { auth } from "@/lib/firebase/firebase";
+import {
+  connectSSE,
+  isSSEEndpointUnavailableError,
+  SSEConnectionError,
+} from "@/lib/sseClient";
 import type {
   ConversationDetail,
   ConversationListResponse,
@@ -11,6 +16,7 @@ import type {
   SendMessageResponse,
 } from "@/types/conversation";
 import type { QueryMode } from "@/types/QueryMode";
+import type { StreamEvent } from "@/types/streaming";
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 const DEFAULT_CONVERSATION_LIMIT = 30;
@@ -24,6 +30,11 @@ export interface ConversationRequestOptions {
   signal?: AbortSignal;
 }
 
+export interface ConversationStreamRequestOptions
+  extends ConversationRequestOptions {
+  onEvent: (event: StreamEvent) => void;
+}
+
 export class ConversationApiError extends Error {
   readonly status: number;
   readonly details: unknown;
@@ -33,6 +44,18 @@ export class ConversationApiError extends Error {
     this.name = "ConversationApiError";
     this.status = status;
     this.details = details;
+  }
+}
+
+export class ConversationStreamError extends ConversationApiError {
+  constructor(
+    message: string,
+    status: number,
+    details: unknown,
+    readonly endpointUnavailable: boolean,
+  ) {
+    super(message, status, details);
+    this.name = "ConversationStreamError";
   }
 }
 
@@ -168,6 +191,85 @@ export class ConversationApiClient {
     );
   }
 
+  async sendMessageStream(
+    conversationId: string,
+    content: string,
+    queryMode: QueryMode = "quick_qa",
+    documentIds: string[] = [],
+    attachments: MessageAttachment[] = [],
+    options: ConversationStreamRequestOptions = { onEvent: () => undefined },
+  ): Promise<SendMessageResponse> {
+    const endpoint =
+      `/api/conversations/${pathSegment(conversationId)}/messages/stream`;
+    const payload = {
+      content,
+      query_mode: queryMode,
+      document_ids: documentIds,
+      attachments,
+    };
+
+    for (const forceRefresh of [false, true]) {
+      const token = await this.tokenProvider.getToken(forceRefresh);
+      let finalResponse: Record<string, unknown> | null = null;
+
+      try {
+        await connectSSE({
+          endpoint,
+          payload,
+          baseUrl: this.baseUrl,
+          fetcher: this.fetcher,
+          headers: { Authorization: `Bearer ${token}` },
+          signal: options.signal,
+          onEvent: options.onEvent,
+          onComplete: (response) => {
+            finalResponse = response;
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof SSEConnectionError &&
+          error.status === 401 &&
+          !forceRefresh
+        ) {
+          continue;
+        }
+        if (isAbortError(error)) throw error;
+        if (error instanceof SSEConnectionError) {
+          throw new ConversationStreamError(
+            error.message,
+            error.status,
+            error,
+            isSSEEndpointUnavailableError(error),
+          );
+        }
+        throw new ConversationStreamError(
+          error instanceof Error ? error.message : "Conversation stream failed",
+          0,
+          error,
+          false,
+        );
+      }
+
+      if (options.signal?.aborted) throw abortError();
+      if (!isSendMessageResponse(finalResponse)) {
+        throw new ConversationStreamError(
+          "Conversation stream returned an invalid final response",
+          200,
+          finalResponse,
+          false,
+        );
+      }
+      return finalResponse;
+    }
+
+    throw new ConversationStreamError(
+      "Conversation stream authentication failed",
+      401,
+      null,
+      false,
+    );
+  }
+
   private async request<T>(
     path: string,
     options: RequestInit = {},
@@ -183,10 +285,8 @@ export class ConversationApiClient {
         throw error;
       }
       console.error("Conversation API fetch failed:", error);
-      const detail =
-        error instanceof Error && error.message ? `: ${error.message}` : "";
       throw new ConversationApiError(
-        `Unable to reach the conversation service${detail}`,
+        "Unable to reach the conversation service",
         0,
         error,
       );
@@ -302,7 +402,36 @@ function responseErrorMessage(data: unknown, fallback: string): string {
 }
 
 function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === "AbortError";
+  return error instanceof Error && error.name === "AbortError";
+}
+
+function abortError(): Error {
+  if (typeof DOMException !== "undefined") {
+    return new DOMException("The operation was aborted", "AbortError");
+  }
+  const error = new Error("The operation was aborted");
+  error.name = "AbortError";
+  return error;
+}
+
+function isSendMessageResponse(value: unknown): value is SendMessageResponse {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    isRecord(record.user_message) &&
+    isRecord(record.assistant_message) &&
+    isRecord(record.response)
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function isConversationStreamUnavailableError(error: unknown): boolean {
+  return (
+    error instanceof ConversationStreamError && error.endpointUnavailable
+  );
 }
 
 export const conversationApi = new ConversationApiClient();
@@ -319,3 +448,5 @@ export const deleteConversation =
   conversationApi.deleteConversation.bind(conversationApi);
 export const listMessages = conversationApi.listMessages.bind(conversationApi);
 export const sendMessage = conversationApi.sendMessage.bind(conversationApi);
+export const sendMessageStream =
+  conversationApi.sendMessageStream.bind(conversationApi);

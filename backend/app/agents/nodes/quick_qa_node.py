@@ -14,9 +14,12 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Optional
 
+from evaluation.ablation import retrieval_search_kwargs
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
@@ -44,8 +47,8 @@ from app.agents.shared import (
     retrieval_service as _retrieval,
 )
 from app.agents.state import AgentState
+from app.agents.streaming import get_emitter
 from app.core.config import settings
-from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -62,19 +65,30 @@ _qa_chain = (
 
 
 @traceable(name="QuickQANode")
-async def quick_qa_node(state: AgentState) -> dict:
+async def quick_qa_node(
+    state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
+) -> dict:
     """Execute the single-pass RAG pipeline for fast legal lookups.
 
     If the question matches a citation-verification pattern, delegates
     to ``verify_node`` as an internal sub-mode.
     """
 
+    emitter = get_emitter(config)
+    emitter.emit_step_start("quick_qa", "Searching legal corpus")
+
     # ── Sub-mode: verify request detection ──
     if _is_verify_request(state.question):
         logger.info(
             "Verify sub-mode triggered within quick_qa for: '%s'", state.question[:80]
         )
-        return await verify_node(state)
+        emitter.emit_step_done(
+            "quick_qa",
+            "Verification request detected",
+            delegated_to="verify",
+        )
+        return await verify_node(state, config)
 
     # ── Step 1: Retrieve from legal corpus ──
     legal_results: list[dict] = []
@@ -90,6 +104,7 @@ async def quick_qa_node(state: AgentState) -> dict:
     # ── Step 2: Retrieve from user documents (if applicable) ──
     user_doc_results: list[dict] = []
     if state.use_user_documents and state.document_ids:
+        emitter.emit_step_detail("quick_qa", "Searching uploaded documents")
         try:
             user_doc_results = get_user_doc_retrieval().search(
                 query=state.question,
@@ -104,6 +119,12 @@ async def quick_qa_node(state: AgentState) -> dict:
     # Handle empty retrieval
     if not legal_results and not user_doc_results:
         logger.warning("No retrieval results for: '%s'", state.question[:80])
+        emitter.emit_sources_found(0, [])
+        emitter.emit_step_done(
+            "quick_qa",
+            "Search completed with no matching sources",
+            source_count=0,
+        )
         return {
             "summary": "No relevant legal documents were found for this query.",
             "markdown_content": (
@@ -127,12 +148,17 @@ async def quick_qa_node(state: AgentState) -> dict:
         len(citation_map),
         len(context_str),
     )
+    emitter.emit_sources_found(
+        len(citation_map),
+        [source.title for source in citation_map.values()],
+    )
 
     # ── Enrich with upstream agent outputs (when running in a multi-step plan) ──
     context_str = enrich_context_with_upstream(state, context_str, logger)
     llm_context = enrich_context_with_conversation(state, context_str)
 
     # ── Step 4: Generate LLM response (hybrid JSON) ──
+    emitter.emit_step_detail("quick_qa", "Generating answer from retrieved sources")
     question_for_llm = state.question
     grounding_feedback = state.working_memory.get("grounding_feedback")
     if grounding_feedback:
@@ -165,10 +191,17 @@ async def quick_qa_node(state: AgentState) -> dict:
 
     # Run verification: strips hallucinated anchors
     if not state.ablation_config.get("skip_verification"):
+        emitter.emit_step_start("verification", "Verifying citations")
         valid_ids = build_and_verify_sources(
             sources_used, citation_map, _verifier, markdown_content=markdown
         )
         markdown = strip_invalid_anchors(markdown, valid_ids)
+        emitter.emit_step_done(
+            "verification",
+            f"{len(valid_ids)}/{len(citation_map)} source citations verified",
+            verified_count=len(valid_ids),
+            source_count=len(citation_map),
+        )
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
@@ -177,6 +210,11 @@ async def quick_qa_node(state: AgentState) -> dict:
         "QA complete: confidence=%s, sources=%d.",
         confidence,
         len(sources),
+    )
+    emitter.emit_step_done(
+        "quick_qa",
+        "Legal answer generated",
+        source_count=len(sources),
     )
 
     return emit_message(

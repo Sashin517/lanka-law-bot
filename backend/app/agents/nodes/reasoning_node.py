@@ -15,9 +15,12 @@ Conclusion framework.
 from __future__ import annotations
 
 import logging
+from typing import Optional
 
+from evaluation.ablation import retrieval_search_kwargs
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
@@ -44,8 +47,8 @@ from app.agents.shared import (
     retrieval_service as _retrieval,
 )
 from app.agents.state import AgentState
+from app.agents.streaming import get_emitter
 from app.core.config import settings
-from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -67,12 +70,19 @@ _REASONING_TOP_K = 12
 
 
 @traceable(name="ReasoningNode")
-async def reasoning_node(state: AgentState) -> dict:
+async def reasoning_node(
+    state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
+) -> dict:
     """Execute the IRAC legal analysis pipeline.
 
     Uses expanded retrieval (top_k=8) to gather broader context,
     then generates structured Issue-Rule-Application-Conclusion markdown.
     """
+
+    emitter = get_emitter(config)
+    emitter.emit_step_start("reasoning", "Analysing legal issues")
+    emitter.emit_step_detail("reasoning", "Searching for applicable legal rules")
 
     # ── Step 1: Expanded retrieval from legal corpus ──
     legal_results: list[dict] = []
@@ -87,6 +97,7 @@ async def reasoning_node(state: AgentState) -> dict:
     # ── Step 2: User document retrieval (if applicable) ──
     user_doc_results: list[dict] = []
     if state.use_user_documents and state.document_ids:
+        emitter.emit_step_detail("reasoning", "Searching uploaded documents")
         try:
             user_doc_results = get_user_doc_retrieval().search(
                 query=state.question,
@@ -101,6 +112,12 @@ async def reasoning_node(state: AgentState) -> dict:
     # Handle empty retrieval
     if not legal_results and not user_doc_results:
         logger.warning("No retrieval results for reasoning: '%s'", state.question[:80])
+        emitter.emit_sources_found(0, [])
+        emitter.emit_step_done(
+            "reasoning",
+            "Analysis completed with no matching sources",
+            source_count=0,
+        )
         return {
             "summary": "No relevant legal documents were found.",
             "markdown_content": (
@@ -124,12 +141,17 @@ async def reasoning_node(state: AgentState) -> dict:
         len(citation_map),
         len(context_str),
     )
+    emitter.emit_sources_found(
+        len(citation_map),
+        [source.title for source in citation_map.values()],
+    )
 
     # ── Enrich with upstream agent outputs (e.g. deep_research findings) ──
     context_str = enrich_context_with_upstream(state, context_str, logger)
     llm_context = enrich_context_with_conversation(state, context_str)
 
     # ── Step 4: Generate IRAC analysis (hybrid JSON) ──
+    emitter.emit_step_detail("reasoning", "Building IRAC argument structure")
     question_for_llm = state.question
     grounding_feedback = state.working_memory.get("grounding_feedback")
     if grounding_feedback:
@@ -164,10 +186,17 @@ async def reasoning_node(state: AgentState) -> dict:
     sources_used = raw.get("sources_used", [])
 
     if not state.ablation_config.get("skip_verification"):
+        emitter.emit_step_start("verification", "Verifying legal analysis")
         valid_ids = build_and_verify_sources(
             sources_used, citation_map, _verifier, markdown_content=markdown
         )
         markdown = strip_invalid_anchors(markdown, valid_ids)
+        emitter.emit_step_done(
+            "verification",
+            f"{len(valid_ids)}/{len(citation_map)} source citations verified",
+            verified_count=len(valid_ids),
+            source_count=len(citation_map),
+        )
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
@@ -176,6 +205,11 @@ async def reasoning_node(state: AgentState) -> dict:
         "Reasoning complete: %d sources, confidence=%s.",
         len(sources),
         confidence,
+    )
+    emitter.emit_step_done(
+        "reasoning",
+        "Legal analysis complete",
+        source_count=len(sources),
     )
 
     return emit_message(

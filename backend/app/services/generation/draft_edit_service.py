@@ -6,6 +6,7 @@ import logging
 from functools import lru_cache
 from typing import Any
 
+from evaluation.ablation import retrieval_search_kwargs
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -19,10 +20,10 @@ from app.agents.nodes.helpers import (
 from app.agents.prompts.draft_edit_prompt import DRAFT_EDIT_PROMPT
 from app.agents.runtime import get_graph
 from app.agents.state import AgentState
+from app.agents.streaming import FinalSuppressingEmitter, IStreamEmitter, NullEmitter
 from app.core.config import settings
 from app.schemas.requests import DraftEditRequest
 from app.schemas.responses import DraftEditResponse, SourceReference
-from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +63,16 @@ def _get_light_dependencies() -> tuple[Any, Any, Any]:
     return retrieval_service, context_assembler, citation_verifier
 
 
-async def process_light_edit(request: DraftEditRequest) -> DraftEditResponse:
+async def process_light_edit(
+    request: DraftEditRequest,
+    *,
+    stream_emitter: IStreamEmitter | None = None,
+) -> DraftEditResponse:
     """Apply a localized edit using retrieval and one structured LLM call."""
 
+    emitter = stream_emitter if stream_emitter is not None else NullEmitter()
     retrieval, assembler, verifier = _get_light_dependencies()
+    emitter.emit_step_detail("edit", "Retrieving relevant legal authorities")
     try:
         legal_results = retrieval.search(
             query=request.instruction,
@@ -76,6 +83,10 @@ async def process_light_edit(request: DraftEditRequest) -> DraftEditResponse:
             legal_results=legal_results,
             user_document_results=[],
         )
+        emitter.emit_sources_found(
+            len(citation_map),
+            [source.title for source in citation_map.values()],
+        )
     except Exception as exc:
         logger.exception(
             "Legal context retrieval failed for draft %s.",
@@ -83,6 +94,7 @@ async def process_light_edit(request: DraftEditRequest) -> DraftEditResponse:
         )
         raise DraftEditError("Legal context retrieval for the edit failed.") from exc
 
+    emitter.emit_step_detail("edit", "Generating the targeted revision")
     try:
         raw = await _get_edit_chain().ainvoke(
             {
@@ -111,6 +123,7 @@ async def process_light_edit(request: DraftEditRequest) -> DraftEditResponse:
     sources_used = raw.get("sources_used", [])
     if not isinstance(sources_used, list):
         sources_used = []
+    emitter.emit_step_detail("edit", "Verifying citations in the revision")
     try:
         valid_ids = build_and_verify_sources(
             sources_used,
@@ -145,7 +158,11 @@ async def process_light_edit(request: DraftEditRequest) -> DraftEditResponse:
     )
 
 
-async def process_heavy_edit(request: DraftEditRequest) -> DraftEditResponse:
+async def process_heavy_edit(
+    request: DraftEditRequest,
+    *,
+    stream_emitter: IStreamEmitter | None = None,
+) -> DraftEditResponse:
     """Run a structural revision through the existing multi-agent graph."""
 
     excerpt = request.current_content[:3_000]
@@ -171,7 +188,18 @@ async def process_heavy_edit(request: DraftEditRequest) -> DraftEditResponse:
     )
 
     try:
-        final_state = await get_graph().ainvoke(initial_state.model_dump())
+        if stream_emitter is None:
+            # Preserve the legacy invocation exactly for non-streaming callers.
+            final_state = await get_graph().ainvoke(initial_state.model_dump())
+        else:
+            # The child graph's formatter emits a LegalQueryResponse-shaped
+            # final. Suppress only that event; the endpoint emits the adapted
+            # DraftEditResponse as the stream's single authoritative final.
+            child_emitter = FinalSuppressingEmitter(stream_emitter)
+            final_state = await get_graph().ainvoke(
+                initial_state.model_dump(),
+                config={"configurable": {"stream_emitter": child_emitter}},
+            )
     except Exception as exc:
         logger.exception(
             "Structural draft revision failed for draft %s.",
@@ -183,7 +211,9 @@ async def process_heavy_edit(request: DraftEditRequest) -> DraftEditResponse:
         raise DraftEditError("The structural revision pipeline returned invalid state.")
     final = final_state.get("final_response") or {}
     if not isinstance(final, dict):
-        raise DraftEditError("The structural revision pipeline returned invalid output.")
+        raise DraftEditError(
+            "The structural revision pipeline returned invalid output."
+        )
     markdown = final.get("markdown_content")
     if not isinstance(markdown, str) or not markdown.strip():
         raise DraftEditError("The structural revision pipeline returned no document.")
@@ -195,8 +225,7 @@ async def process_heavy_edit(request: DraftEditRequest) -> DraftEditResponse:
         markdown_content=markdown,
         sources=_coerce_sources(final.get("sources")),
         edit_summary=(
-            final.get("change_summary")
-            or f"Full revision: {request.instruction[:100]}"
+            final.get("change_summary") or f"Full revision: {request.instruction[:100]}"
         ),
         confidence=normalize_confidence(str(final.get("confidence", "medium"))),
         edit_path="heavy",
@@ -244,7 +273,7 @@ def _apply_local_edit(
         raise DraftEditConflictError(
             "The selected text occurs more than once; refresh the selection and retry."
         )
-    return f"{content[:first]}{edited_text}{content[first + len(selected):]}"
+    return f"{content[:first]}{edited_text}{content[first + len(selected) :]}"
 
 
 def _referenced_sources(

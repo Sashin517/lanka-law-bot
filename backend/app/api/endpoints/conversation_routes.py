@@ -2,19 +2,29 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Mapping
 from typing import Annotated, Any, TypeVar
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
+from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.runtime import get_graph
 from app.agents.state import AgentState
+from app.agents.streaming import (
+    ExecutionStreamManager,
+    FinalSuppressingEmitter,
+    event_bus,
+)
+from app.api.sse import stream_channel, streaming_response
 from app.auth.firebase_auth import get_current_user_id
 from app.database.postgres_session import get_async_db
 from app.repositories.exceptions import (
@@ -195,6 +205,94 @@ async def send_message(
     graph: ConversationGraphDependency,
 ) -> SendMessageResponse:
     """Persist a user turn, run the graph, then persist its response."""
+
+    return await _execute_message(
+        conversation_id=conversation_id,
+        body=body,
+        user_id=user_id,
+        service=service,
+        graph=graph,
+    )
+
+
+@router.post("/{conversation_id}/messages/stream")
+async def send_message_stream(
+    conversation_id: ConversationIdPath,
+    body: SendMessageRequest,
+    user_id: CurrentUserId,
+    service: ConversationServiceDependency,
+    graph: ConversationGraphDependency,
+) -> StreamingResponse:
+    """Persist one conversation turn while streaming its graph activity."""
+
+    session_id = str(uuid4())
+    channel = event_bus.create_channel(session_id)
+    stream_manager = ExecutionStreamManager(session_id, event_bus)
+    graph_emitter = FinalSuppressingEmitter(stream_manager)
+    graph_config: RunnableConfig = {
+        "configurable": {"stream_emitter": graph_emitter}
+    }
+
+    logger.info(
+        "Conversation SSE stream created: session=%s conversation=%s mode=%s",
+        session_id,
+        conversation_id,
+        body.query_mode.value,
+    )
+
+    async def run_message() -> None:
+        try:
+            stream_manager.emit_stream_start(body.content, body.query_mode.value)
+            response = await _execute_message(
+                conversation_id=conversation_id,
+                body=body,
+                user_id=user_id,
+                service=service,
+                graph=graph,
+                graph_config=graph_config,
+            )
+            stream_manager.emit_final(response.model_dump(mode="json"))
+        except asyncio.CancelledError:
+            logger.info(
+                "Conversation SSE stream cancelled: session=%s conversation=%s",
+                session_id,
+                conversation_id,
+            )
+            raise
+        except HTTPException as exc:
+            logger.warning(
+                "Conversation SSE request failed: session=%s status=%s",
+                session_id,
+                exc.status_code,
+            )
+            stream_manager.emit_error(_http_exception_message(exc))
+        except Exception as exc:
+            logger.exception(
+                "Conversation SSE execution failed: session=%s conversation=%s",
+                session_id,
+                conversation_id,
+            )
+            stream_manager.emit_error(str(exc) or "Conversation request failed.")
+
+    content = stream_channel(
+        channel=channel,
+        producer=run_message,
+        close_channel=lambda: event_bus.close_channel(session_id),
+    )
+    return streaming_response(content)
+
+
+async def _execute_message(
+    *,
+    conversation_id: str,
+    body: SendMessageRequest,
+    user_id: str,
+    service: ConversationService,
+    graph: Any,
+    graph_config: RunnableConfig | None = None,
+) -> SendMessageResponse:
+    """Shared application service for JSON and SSE conversation adapters."""
+
     user_message = await _service_call(
         service.add_user_message(
             conversation_id=conversation_id,
@@ -221,7 +319,13 @@ async def send_message(
     )
     graph_started = time.monotonic()
     try:
-        final_state = await graph.ainvoke(initial_state.model_dump())
+        if graph_config is None:
+            final_state = await graph.ainvoke(initial_state.model_dump())
+        else:
+            final_state = await graph.ainvoke(
+                initial_state.model_dump(),
+                config=graph_config,
+            )
         final_response = _extract_final_response(final_state)
     except HTTPException:
         raise
@@ -267,6 +371,13 @@ async def send_message(
             "response": encoded_response,
         }
     )
+
+
+def _http_exception_message(exc: HTTPException) -> str:
+    detail = exc.detail
+    if isinstance(detail, str) and detail.strip():
+        return detail
+    return f"Conversation request failed with status {exc.status_code}."
 
 
 async def _service_call(awaitable: Awaitable[T]) -> T:

@@ -17,29 +17,36 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Optional
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
+from evaluation.ablation import retrieval_search_kwargs
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
-from app.agents.state import AgentState
-from app.agents.shared import (
-    retrieval_service as _retrieval,
-    context_assembler as _assembler,
-    citation_verifier as _verifier,
-)
-from app.agents.prompts.verify_prompt import VERIFY_PROMPT
+from app.agents.message_bus import emit_message
 from app.agents.nodes.helpers import (
+    build_and_verify_sources,
     extract_first_paragraph,
     normalize_confidence,
-    build_and_verify_sources,
     strip_invalid_anchors,
     to_source_chunks,
 )
+from app.agents.prompts.verify_prompt import VERIFY_PROMPT
+from app.agents.shared import (
+    citation_verifier as _verifier,
+)
+from app.agents.shared import (
+    context_assembler as _assembler,
+)
+from app.agents.shared import (
+    retrieval_service as _retrieval,
+)
+from app.agents.state import AgentState
+from app.agents.streaming import get_emitter
 from app.core.config import settings
-from app.agents.message_bus import emit_message
-from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -56,11 +63,17 @@ _verify_chain = (
 
 
 @traceable(name="VerifyNode")
-async def verify_node(state: AgentState) -> dict:
+async def verify_node(
+    state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
+) -> dict:
     """Execute the citation verification pipeline.
 
     Parses the user's claim → targeted retrieval → comparison → verdict.
     """
+
+    emitter = get_emitter(config)
+    emitter.emit_step_start("verify", "Fact-checking legal claim")
 
     # ── Step 1: Extract verification target from the question ──
     act_name, section_ref = _extract_citation_target(state.question)
@@ -68,6 +81,12 @@ async def verify_node(state: AgentState) -> dict:
         "Verify target: act='%s', section='%s'",
         act_name or "(none)",
         section_ref or "(none)",
+    )
+    emitter.emit_step_detail(
+        "verify",
+        "Identified the cited legal instrument and provision",
+        act_name=act_name,
+        section=section_ref,
     )
 
     # ── Step 2: Targeted retrieval — narrow search for the cited provision ──
@@ -87,6 +106,13 @@ async def verify_node(state: AgentState) -> dict:
     # Handle empty retrieval
     if not legal_results:
         logger.warning("No results for verification: '%s'", state.question[:80])
+        emitter.emit_sources_found(0, [])
+        emitter.emit_step_done(
+            "verify",
+            "Claim could not be confirmed from indexed sources",
+            verdict="UNCONFIRMED",
+            source_count=0,
+        )
         return {
             "summary": "UNCONFIRMED — The cited provision could not be found.",
             "markdown_content": (
@@ -110,8 +136,13 @@ async def verify_node(state: AgentState) -> dict:
         len(citation_map),
         len(context_str),
     )
+    emitter.emit_sources_found(
+        len(citation_map),
+        [source.title for source in citation_map.values()],
+    )
 
     # ── Step 4: Compare claim against sources (hybrid JSON) ──
+    emitter.emit_step_detail("verify", "Cross-referencing claim against source text")
     question_for_llm = state.question
     grounding_feedback = state.working_memory.get("grounding_feedback")
     if grounding_feedback:
@@ -145,11 +176,11 @@ async def verify_node(state: AgentState) -> dict:
     sources_used = raw.get("sources_used", [])
 
     if not state.ablation_config.get("skip_verification"):
+        emitter.emit_step_detail("verify", "Validating citations in the verdict")
         valid_ids = build_and_verify_sources(
             sources_used, citation_map, _verifier, markdown_content=markdown
         )
         markdown = strip_invalid_anchors(markdown, valid_ids)
-
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
@@ -158,6 +189,12 @@ async def verify_node(state: AgentState) -> dict:
         "Verification complete: %d sources, verdict=%s.",
         len(sources),
         raw.get("verdict", "unknown"),
+    )
+    emitter.emit_step_done(
+        "verify",
+        "Legal claim verification complete",
+        verdict=raw.get("verdict", "UNCONFIRMED"),
+        source_count=len(sources),
     )
 
     return emit_message(

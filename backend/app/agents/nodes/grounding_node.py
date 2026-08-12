@@ -14,16 +14,18 @@ Plan-aware routing logic (via ``Command``):
 from __future__ import annotations
 
 import logging
-from typing import Literal
+from typing import Literal, Optional
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
-from langsmith import traceable
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.types import Command
+from langsmith import traceable
 
-from app.agents.state import AgentState, GroundingResult
 from app.agents.prompts.grounding_prompt import GROUNDING_JUDGE_PROMPT
+from app.agents.state import AgentState, GroundingResult
+from app.agents.streaming import get_emitter
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -55,6 +57,7 @@ def _has_remaining_plan_steps(state: AgentState) -> bool:
 @traceable(name="GroundingVerifier")
 async def grounding_node(
     state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
 ) -> Command[
     Literal[
         "quick_qa",
@@ -76,6 +79,9 @@ async def grounding_node(
     - ``formatter`` with fallback (max retries exhausted)
     """
 
+    emitter = get_emitter(config)
+    emitter.emit_step_start("grounding", "Verifying factual grounding")
+
     # ── Skip grounding for empty / clarification responses or when skip_verification is set ──
     has_content = state.markdown_content or state.summary
     skip_reason = None
@@ -91,6 +97,13 @@ async def grounding_node(
     if skip_reason:
         # Even when skipping, respect plan-aware routing
         next_node = "plan_executor" if _has_remaining_plan_steps(state) else "formatter"
+        emitter.emit_step_detail("grounding", skip_reason)
+        emitter.emit_step_done(
+            "grounding",
+            "Grounding check skipped",
+            skipped=True,
+            next_node=next_node,
+        )
         return Command(
             update={
                 "grounding": GroundingResult(
@@ -116,6 +129,10 @@ async def grounding_node(
         )
 
     # ── Call the grounding judge LLM ──
+    emitter.emit_step_detail(
+        "grounding",
+        "Cross-referencing generated claims against retrieved sources",
+    )
     try:
         raw: dict = await _grounding_chain.ainvoke(
             {
@@ -148,6 +165,13 @@ async def grounding_node(
         state.retry_count,
         state.max_retries,
         state.current_agent,
+    )
+    emitter.emit_step_done(
+        "grounding",
+        "Grounding passed" if grounding.is_grounded else "Grounding failed",
+        is_grounded=grounding.is_grounded,
+        grounding_score=grounding.grounding_score,
+        ungrounded_claim_count=len(grounding.ungrounded_claims),
     )
 
     # ── Route based on grounding result ──

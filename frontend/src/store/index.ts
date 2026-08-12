@@ -19,3 +19,6 @@ export type { DraftEditPayload, DraftEditResult } from "./chatEditStore";
 
 export { useConversationStore } from "./conversationStore";
 export type { ConversationStore } from "./conversationStore";
+
+export { useActivityStreamStore } from "./activityStreamStore";
+export type { ActivityStreamStore } from "./activityStreamStore";

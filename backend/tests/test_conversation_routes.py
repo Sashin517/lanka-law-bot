@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unittest
 from copy import deepcopy
 from typing import Any
@@ -149,10 +150,25 @@ class _FakeGraph:
         self.failure = failure
         self.states: list[dict[str, Any]] = []
 
-    async def ainvoke(self, state: dict[str, Any]) -> dict[str, Any]:
+    async def ainvoke(
+        self,
+        state: dict[str, Any],
+        config: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         self.states.append(deepcopy(state))
         if self.failure is not None:
             raise self.failure
+        if config is not None:
+            emitter = config["configurable"]["stream_emitter"]
+            emitter.emit_step_start("quick_qa", "Researching legal authorities")
+            emitter.emit_step_detail(
+                "quick_qa",
+                "Reviewing the conversation context",
+            )
+            emitter.emit_step_done("quick_qa", "Legal research complete")
+            # The conversation adapter must suppress this internal graph result
+            # and own the one public final event after both turns are persisted.
+            emitter.emit_final({"answer": "internal graph response"})
         return {
             **state,
             "final_response": {
@@ -353,6 +369,65 @@ class ConversationRouteTests(unittest.TestCase):
         self.assertFalse(self.service.assistant_was_saved)
         self.assertIn("add_user_message", [name for name, _ in self.service.calls])
 
+    def test_streaming_send_emits_activity_and_one_persisted_final_response(
+        self,
+    ) -> None:
+        with self.client.stream(
+            "POST",
+            "/api/conversations/conversation-1/messages/stream",
+            json={
+                "content": "What does section 3 provide?",
+                "query_mode": "quick_qa",
+                "document_ids": ["doc-1"],
+            },
+        ) as response:
+            body = "\n".join(response.iter_lines())
+
+        self.assertEqual(response.status_code, 200, body)
+        self.assertTrue(response.headers["content-type"].startswith("text/event-stream"))
+        events = _parse_sse_events(body)
+        self.assertEqual(
+            [event["event_type"] for event in events],
+            ["stream_start", "step_start", "step_detail", "step_done", "final"],
+        )
+        final_events = [event for event in events if event["event_type"] == "final"]
+        self.assertEqual(len(final_events), 1)
+        final_response = final_events[0]["final_response"]
+        self.assertEqual(final_response["user_message"]["id"], "user-message-1")
+        self.assertEqual(
+            final_response["assistant_message"]["id"],
+            "assistant-message-1",
+        )
+        self.assertEqual(
+            final_response["response"]["answer"],
+            "Section 3 governs the issue.",
+        )
+        self.assertTrue(self.service.assistant_was_saved)
+
+    def test_streaming_graph_failure_emits_terminal_error_without_assistant(
+        self,
+    ) -> None:
+        self.app.dependency_overrides[conversation_routes.get_conversation_graph] = (
+            lambda: _FakeGraph(failure=RuntimeError("private provider failure"))
+        )
+
+        with self.client.stream(
+            "POST",
+            "/api/conversations/conversation-1/messages/stream",
+            json={"content": "A question"},
+        ) as response:
+            body = "\n".join(response.iter_lines())
+
+        self.assertEqual(response.status_code, 200, body)
+        events = _parse_sse_events(body)
+        self.assertEqual(
+            [event["event_type"] for event in events],
+            ["stream_start", "error"],
+        )
+        self.assertIn("message was saved", events[-1]["detail"])
+        self.assertNotIn("private provider failure", events[-1]["detail"])
+        self.assertFalse(self.service.assistant_was_saved)
+
 
 class ConversationAuthenticationTests(unittest.TestCase):
     def test_conversation_routes_fail_closed_without_bearer_token(self) -> None:
@@ -375,6 +450,43 @@ class ConversationAuthenticationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.headers["www-authenticate"], "Bearer")
         self.assertEqual(service.calls, [])
+
+    def test_conversation_stream_fails_closed_before_starting_work(self) -> None:
+        service = _FakeConversationService()
+        app = FastAPI()
+        app.include_router(
+            conversation_routes.router,
+            prefix="/api/conversations",
+        )
+        app.dependency_overrides[conversation_routes.get_conversation_service] = (
+            lambda: service
+        )
+        app.dependency_overrides[conversation_routes.get_conversation_graph] = (
+            _FakeGraph
+        )
+
+        with TestClient(app) as client:
+            response = client.post(
+                "/api/conversations/conversation-1/messages/stream",
+                json={"content": "A question"},
+            )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.headers["www-authenticate"], "Bearer")
+        self.assertEqual(service.calls, [])
+
+
+def _parse_sse_events(body: str) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for frame in body.replace("\r\n", "\n").split("\n\n"):
+        data_lines = [
+            line.removeprefix("data: ")
+            for line in frame.splitlines()
+            if line.startswith("data: ")
+        ]
+        if data_lines:
+            events.append(json.loads("\n".join(data_lines)))
+    return events
 
 
 class ApplicationLifespanTests(unittest.IsolatedAsyncioTestCase):

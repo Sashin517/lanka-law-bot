@@ -15,9 +15,12 @@ should have already handled this, but a guard is included for safety.
 from __future__ import annotations
 
 import logging
+from typing import Optional
 
+from evaluation.ablation import retrieval_search_kwargs
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
@@ -44,8 +47,8 @@ from app.agents.shared import (
     retrieval_service as _retrieval,
 )
 from app.agents.state import AgentState
+from app.agents.streaming import get_emitter
 from app.core.config import settings
-from evaluation.ablation import retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -64,11 +67,22 @@ _REVIEW_USER_DOC_TOP_K = 8
 
 
 @traceable(name="ReviewNode")
-async def review_node(state: AgentState) -> dict:
+async def review_node(
+    state: AgentState,
+    config: Optional[RunnableConfig] = None,  # noqa: UP045
+) -> dict:
     """Execute the document review pipeline."""
+    emitter = get_emitter(config)
+    emitter.emit_step_start("review", "Analysing uploaded document")
+
     # ── Guard: require document_ids ──
     if not state.document_ids:
         logger.warning("Review node invoked without document_ids.")
+        emitter.emit_step_done(
+            "review",
+            "A document is required before review can begin",
+            source_count=0,
+        )
         return {
             "summary": "Please upload or attach the document you want reviewed.",
             "markdown_content": (
@@ -86,6 +100,7 @@ async def review_node(state: AgentState) -> dict:
 
     # ── Step 1: Retrieve user document chunks (primary source) ──
     user_doc_results: list[dict] = []
+    emitter.emit_step_detail("review", "Reviewing document clauses and obligations")
     try:
         user_doc_results = get_user_doc_retrieval().search(
             query=state.question,
@@ -100,6 +115,10 @@ async def review_node(state: AgentState) -> dict:
     # ── Step 2: Cross-reference against legal corpus ──
     legal_results: list[dict] = []
     if state.use_legal_corpus:
+        emitter.emit_step_detail(
+            "review",
+            "Cross-referencing clauses against legal authorities",
+        )
         legal_results = _retrieval.search(
             query=state.question,
             top_k=state.legal_top_k,
@@ -109,6 +128,12 @@ async def review_node(state: AgentState) -> dict:
     # Handle empty retrieval
     if not user_doc_results and not legal_results:
         logger.warning("No retrieval results for review: '%s'", state.question[:80])
+        emitter.emit_sources_found(0, [])
+        emitter.emit_step_done(
+            "review",
+            "Review completed with no retrievable document content",
+            source_count=0,
+        )
         return {
             "summary": "No document content or legal references were retrieved.",
             "markdown_content": (
@@ -131,12 +156,17 @@ async def review_node(state: AgentState) -> dict:
         len(citation_map),
         len(context_str),
     )
+    emitter.emit_sources_found(
+        len(citation_map),
+        [source.title for source in citation_map.values()],
+    )
 
     # ── Enrich with upstream agent outputs (when running in a multi-step plan) ──
     context_str = enrich_context_with_upstream(state, context_str, logger)
     llm_context = enrich_context_with_conversation(state, context_str)
 
     # ── Step 4: Generate risk report (hybrid JSON) ──
+    emitter.emit_step_detail("review", "Generating clause-by-clause risk report")
     question_for_llm = state.question
     grounding_feedback = state.working_memory.get("grounding_feedback")
     if grounding_feedback:
@@ -170,10 +200,17 @@ async def review_node(state: AgentState) -> dict:
     sources_used = raw.get("sources_used", [])
 
     if not state.ablation_config.get("skip_verification"):
+        emitter.emit_step_start("verification", "Verifying review citations")
         valid_ids = build_and_verify_sources(
             sources_used, citation_map, _verifier, markdown_content=markdown
         )
         markdown = strip_invalid_anchors(markdown, valid_ids)
+        emitter.emit_step_done(
+            "verification",
+            f"{len(valid_ids)}/{len(citation_map)} source citations verified",
+            verified_count=len(valid_ids),
+            source_count=len(citation_map),
+        )
 
     confidence = normalize_confidence(raw.get("confidence", "medium"))
     sources = to_source_chunks(citation_map)
@@ -183,6 +220,12 @@ async def review_node(state: AgentState) -> dict:
         len(sources),
         raw.get("risk_count", 0),
         confidence,
+    )
+    emitter.emit_step_done(
+        "review",
+        "Document review report complete",
+        risk_count=raw.get("risk_count", 0),
+        source_count=len(sources),
     )
 
     return emit_message(

@@ -99,9 +99,7 @@ def step_detail(
     )
 
 
-def step_done(
-    session_id: str, step_name: str, label: str, **meta: Any
-) -> StreamEvent:
+def step_done(session_id: str, step_name: str, label: str, **meta: Any) -> StreamEvent:
     return StreamEvent(
         event_type=StreamEventType.STEP_DONE,
         session_id=session_id,
@@ -112,9 +110,7 @@ def step_done(
     )
 
 
-def sources_found(
-    session_id: str, count: int, titles: list[str]
-) -> StreamEvent:
+def sources_found(session_id: str, count: int, titles: list[str]) -> StreamEvent:
     return StreamEvent(
         event_type=StreamEventType.SOURCES_FOUND,
         session_id=session_id,
@@ -142,7 +138,7 @@ def plan_generated(
     )
 
 
-def final_event(session_id: str, response: dict) -> StreamEvent:
+def final_event(session_id: str, response: dict[str, Any]) -> StreamEvent:
     return StreamEvent(
         event_type=StreamEventType.FINAL,
         session_id=session_id,

@@ -12,6 +12,11 @@ const apiFilename = path.resolve(
   testDirectory,
   "../src/lib/conversationApi.ts",
 );
+const sseFilename = path.resolve(testDirectory, "../src/lib/sseClient.ts");
+const streamingTypesFilename = path.resolve(
+  testDirectory,
+  "../src/types/streaming.ts",
+);
 
 function loadTypeScriptModule(filename, dependencies = {}) {
   const source = fs.readFileSync(filename, "utf8");
@@ -31,8 +36,14 @@ function loadTypeScriptModule(filename, dependencies = {}) {
 }
 
 function loadApi(auth = { currentUser: null }) {
+  const streamingTypes = loadTypeScriptModule(streamingTypesFilename);
+  const sseClient = loadTypeScriptModule(sseFilename, {
+    "@/lib/api": { API_BASE_URL: "https://unused.example.test" },
+    "@/types/streaming": streamingTypes,
+  });
   return loadTypeScriptModule(apiFilename, {
     "@/lib/firebase/firebase": { auth },
+    "@/lib/sseClient": sseClient,
   });
 }
 
@@ -41,6 +52,34 @@ function jsonResponse(body, status = 200, statusText = "") {
     status,
     statusText,
     headers: { "Content-Type": "application/json" },
+  });
+}
+
+function streamEvent(eventType, overrides = {}) {
+  return {
+    event_type: eventType,
+    session_id: "conversation-stream-1",
+    event_id: `conversation-stream-1:${eventType}`,
+    timestamp: 1_786_500_000,
+    step_name: "router",
+    step_label: "Analyzing request",
+    step_status: eventType === "final" ? "done" : "running",
+    detail: "",
+    metadata: {},
+    ...overrides,
+  };
+}
+
+function sseResponse(events) {
+  const body = events
+    .map(
+      (event) =>
+        `id: ${event.event_id}\nevent: ${event.event_type}\ndata: ${JSON.stringify(event)}\n\n`,
+    )
+    .join("");
+  return new Response(body, {
+    status: 200,
+    headers: { "Content-Type": "text/event-stream" },
   });
 }
 
@@ -119,6 +158,141 @@ test("send facade encodes IDs and preserves the backend request contract", async
   assert.equal(
     new Headers(requests[0].options.headers).get("Content-Type"),
     "application/json",
+  );
+});
+
+test("streaming send authenticates, forwards activity, and returns persisted turns", async () => {
+  const { ConversationApiClient } = loadApi();
+  const requests = [];
+  const received = [];
+  const finalResponse = {
+    user_message: { id: "user-1" },
+    assistant_message: { id: "assistant-1" },
+    response: { answer: "Persisted streamed answer" },
+  };
+  const client = new ConversationApiClient(
+    "https://api.example.test/",
+    { getToken: async () => "stream-token" },
+    async (url, options) => {
+      requests.push({ url, options });
+      return sseResponse([
+        streamEvent("step_start"),
+        streamEvent("final", {
+          event_id: "conversation-stream-1:final",
+          step_name: "conversation",
+          final_response: finalResponse,
+        }),
+      ]);
+    },
+  );
+
+  const result = await client.sendMessageStream(
+    "conversation/one",
+    "Question",
+    "reasoning",
+    ["doc-1"],
+    [{ document_id: "doc-1", filename: "law.pdf", status: "completed" }],
+    { onEvent: (event) => received.push(event.event_type) },
+  );
+
+  assert.deepEqual(result, finalResponse);
+  assert.deepEqual(received, ["step_start", "final"]);
+  assert.equal(
+    requests[0].url,
+    "https://api.example.test/api/conversations/conversation%2Fone/messages/stream",
+  );
+  const headers = new Headers(requests[0].options.headers);
+  assert.equal(headers.get("Authorization"), "Bearer stream-token");
+  assert.equal(headers.get("Accept"), "text/event-stream");
+  assert.deepEqual(JSON.parse(requests[0].options.body), {
+    content: "Question",
+    query_mode: "reasoning",
+    document_ids: ["doc-1"],
+    attachments: [
+      { document_id: "doc-1", filename: "law.pdf", status: "completed" },
+    ],
+  });
+});
+
+test("streaming send refreshes one expired token before consuming events", async () => {
+  const { ConversationApiClient } = loadApi();
+  const tokenCalls = [];
+  const authorizationHeaders = [];
+  let requestCount = 0;
+  const finalResponse = {
+    user_message: { id: "user-1" },
+    assistant_message: { id: "assistant-1" },
+    response: { answer: "Answer" },
+  };
+  const client = new ConversationApiClient(
+    "https://api.example.test",
+    {
+      async getToken(forceRefresh) {
+        tokenCalls.push(forceRefresh);
+        return forceRefresh ? "fresh-token" : "cached-token";
+      },
+    },
+    async (_url, options) => {
+      requestCount += 1;
+      authorizationHeaders.push(
+        new Headers(options.headers).get("Authorization"),
+      );
+      return requestCount === 1
+        ? jsonResponse({ detail: "Expired" }, 401)
+        : sseResponse([
+            streamEvent("final", {
+              final_response: finalResponse,
+            }),
+          ]);
+    },
+  );
+
+  const result = await client.sendMessageStream(
+    "conversation-1",
+    "Question",
+    "quick_qa",
+    [],
+    [],
+    { onEvent: () => undefined },
+  );
+
+  assert.deepEqual(result, finalResponse);
+  assert.deepEqual(tokenCalls, [false, true]);
+  assert.deepEqual(authorizationHeaders, [
+    "Bearer cached-token",
+    "Bearer fresh-token",
+  ]);
+});
+
+test("only an unavailable streaming route is classified for legacy fallback", async () => {
+  const {
+    ConversationApiClient,
+    ConversationStreamError,
+    isConversationStreamUnavailableError,
+  } = loadApi();
+  const client = new ConversationApiClient(
+    "https://api.example.test",
+    { getToken: async () => "token" },
+    async () => jsonResponse({ detail: "Not Found" }, 404),
+  );
+
+  await assert.rejects(
+    () =>
+      client.sendMessageStream(
+        "conversation-1",
+        "Question",
+        "quick_qa",
+        [],
+        [],
+        { onEvent: () => undefined },
+      ),
+    (error) => {
+      assert.ok(error instanceof ConversationStreamError);
+      assert.equal(error.status, 404);
+      assert.equal(error.endpointUnavailable, true);
+      assert.equal(isConversationStreamUnavailableError(error), true);
+      return true;
+    },
   );
 });
 

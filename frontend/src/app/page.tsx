@@ -21,6 +21,7 @@ import Link from "next/link";
 
 import { ChatInputBar } from "@/components/ChatInputBar";
 import { ChatHistorySidebar } from "@/components/ChatHistorySidebar";
+import { ActivityStream } from "@/components/ActivityStream";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { PromptSuggestionPanel } from "@/components/PromptSuggestionPanel";
 import {
@@ -36,6 +37,7 @@ import { sourceCardId } from "@/lib/sources";
 import { useAuth } from "@/contexts/AuthProvider";
 import { useDraftDocumentStore } from "@/store/draftDocumentStore";
 import { useConversationStore } from "@/store/conversationStore";
+import { useActivityStreamStore } from "@/store/activityStreamStore";
 import type { UploadedDocument } from "@/types/documents";
 import type { QueryMode } from "@/types/QueryMode";
 
@@ -69,6 +71,11 @@ export default function ResearchDashboard() {
   const clearActiveConversation = useConversationStore(
     (state) => state.clearActive,
   );
+  const activitySteps = useActivityStreamStore((state) => state.steps);
+  const activityStreaming = useActivityStreamStore(
+    (state) => state.isStreaming,
+  );
+  const activityError = useActivityStreamStore((state) => state.error);
   const [inputQuery, setInputQuery] = useState("");
   const isLoading = isSending || isCreating;
   const [uploadedDocuments, setUploadedDocuments] = useState<
@@ -99,7 +106,7 @@ export default function ResearchDashboard() {
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+  }, [activitySteps, isLoading, messages]);
 
   useEffect(() => {
     setExpandedSources(new Set());
@@ -663,29 +670,45 @@ export default function ResearchDashboard() {
                 ),
               )}
 
-              {/* Typing indicator */}
-              {(isLoading || isMessagesLoading) && (
+              {/* Live execution activity for the active research request. */}
+              {activitySteps.length > 0 && (isSending || activityError) ? (
                 <div className="flex justify-start">
-                  <div className="bg-[#161B28] border border-slate-700/50 rounded-2xl rounded-bl-md px-5 py-4 shadow-lg">
+                  <div className="w-full max-w-[85%] rounded-2xl rounded-bl-md border border-slate-700/50 bg-[#161B28] px-5 py-4 shadow-lg">
                     <div className="flex items-center gap-2">
                       <Scale size={14} className="text-[#D4AF37]" />
                       <span className="text-[#D4AF37] text-sm font-semibold">
                         LankaLawBot
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-2">
-                      <span className="typing-dot w-2 h-2 rounded-full bg-slate-400" />
-                      <span className="typing-dot w-2 h-2 rounded-full bg-slate-400" />
-                      <span className="typing-dot w-2 h-2 rounded-full bg-slate-400" />
-                      <span className="text-xs text-slate-500 ml-2">
+                    <ActivityStream
+                      steps={activitySteps}
+                      isStreaming={activityStreaming}
+                      className="mt-3 max-h-64 pr-1 chat-scroll"
+                    />
+                  </div>
+                </div>
+              ) : isLoading || isMessagesLoading ? (
+                <div className="flex justify-start">
+                  <div className="rounded-2xl rounded-bl-md border border-slate-700/50 bg-[#161B28] px-5 py-4 shadow-lg">
+                    <div className="flex items-center gap-2">
+                      <Scale size={14} className="text-[#D4AF37]" />
+                      <span className="text-[#D4AF37] text-sm font-semibold">
+                        LankaLawBot
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span className="typing-dot h-2 w-2 rounded-full bg-slate-400" />
+                      <span className="typing-dot h-2 w-2 rounded-full bg-slate-400" />
+                      <span className="typing-dot h-2 w-2 rounded-full bg-slate-400" />
+                      <span className="ml-2 text-xs text-slate-500">
                         {isMessagesLoading
                           ? "Loading conversation…"
-                          : "Analyzing Sri Lankan law…"}
+                          : "Preparing your request…"}
                       </span>
                     </div>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               <div ref={chatEndRef} />
             </div>

@@ -51,10 +51,42 @@ class _FakeGraph:
     def __init__(self, final_state: dict) -> None:
         self.final_state = final_state
         self.state: dict | None = None
+        self.config: dict | None = None
 
-    async def ainvoke(self, state: dict) -> dict:
+    async def ainvoke(self, state: dict, config: dict | None = None) -> dict:
         self.state = state
+        self.config = config
+        if config is not None:
+            emitter = config["configurable"]["stream_emitter"]
+            emitter.emit_step_start("drafting", "Drafting")
+            emitter.emit_final({"answer": "Internal graph response"})
         return self.final_state
+
+
+class _RecordingEmitter:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def emit_step_start(self, *args, **kwargs) -> None:
+        self.calls.append("step_start")
+
+    def emit_step_detail(self, *args, **kwargs) -> None:
+        self.calls.append("step_detail")
+
+    def emit_step_done(self, *args, **kwargs) -> None:
+        self.calls.append("step_done")
+
+    def emit_sources_found(self, *args, **kwargs) -> None:
+        self.calls.append("sources_found")
+
+    def emit_plan(self, *args, **kwargs) -> None:
+        self.calls.append("plan")
+
+    def emit_final(self, *args, **kwargs) -> None:
+        self.calls.append("final")
+
+    def emit_error(self, *args, **kwargs) -> None:
+        self.calls.append("error")
 
 
 class TestLightDraftEdit(unittest.TestCase):
@@ -154,6 +186,36 @@ class TestHeavyDraftEdit(unittest.TestCase):
         self.assertEqual(memory["existing_draft"], content)
         self.assertEqual(memory["revision_instruction"], request.instruction)
         self.assertLess(len(graph.state["question"]), len(content) + 500)
+
+    def test_streaming_heavy_edit_forwards_activity_but_suppresses_child_final(self):
+        graph = _FakeGraph(
+            {
+                "final_response": {
+                    "markdown_content": "# Revised Agreement",
+                    "sources": [],
+                    "confidence": "high",
+                }
+            }
+        )
+        emitter = _RecordingEmitter()
+        request = DraftEditRequest(
+            draft_id="draft-2",
+            instruction="Rewrite the entire document",
+            current_content="Old agreement",
+        )
+
+        with patch.object(draft_edit_service, "get_graph", return_value=graph):
+            result = asyncio.run(
+                draft_edit_service.process_heavy_edit(
+                    request,
+                    stream_emitter=emitter,
+                )
+            )
+
+        self.assertEqual(result.edit_path, "heavy")
+        self.assertIsNotNone(graph.config)
+        self.assertIn("step_start", emitter.calls)
+        self.assertNotIn("final", emitter.calls)
 
 
 if __name__ == "__main__":
