@@ -130,7 +130,8 @@ Open your web browser and navigate to **`http://localhost:3000`**. You can now t
 - **Frontend:** Next.js 14, React, Tailwind CSS, TypeScript
 - **Backend:** Python 3.12, FastAPI, Uvicorn, Pydantic
 - **AI & Machine Learning:** LangChain, HuggingFace (`all-MiniLM-L6-v2`), Sentence-Transformers, Numpy
-- **Database:** ChromaDB (Local SQLite Vector Storage)
+- **Relational Database:** PostgreSQL for conversations, uploaded-document metadata, ingestion jobs, and drafting/version history
+- **Vector Database:** Pinecone for legal-corpus and uploaded-document retrieval
 
 ---
 

@@ -1,5 +1,8 @@
-This migration tree owns only the PostgreSQL research-chat schema. The legacy
-SQLite document and drafting metadata remains separate and is not migrated.
+This migration tree owns the complete PostgreSQL relational schema:
+
+- research-chat conversations, messages, citations, summaries, and agent runs;
+- uploaded-document metadata, ingestion jobs, and chunk references;
+- draft documents, immutable versions, changes, and context snapshots.
 
 Configure these environment variables in backend/.env before connecting:
 
@@ -13,25 +16,25 @@ Configure these environment variables in backend/.env before connecting:
     POSTGRES_AUTO_CREATE_SCHEMA=false
 
 Keep ``POSTGRES_AUTO_CREATE_SCHEMA=false`` in production. Application startup
-then verifies PostgreSQL connectivity and expects the versioned migrations to
-already be applied. Set it to ``true`` only for an explicit local/test bootstrap.
+then verifies PostgreSQL connectivity and expects versioned migrations to be
+applied. Set it to ``true`` only for an explicit local/test bootstrap.
 
-For local development, start the isolated PostgreSQL service from the backend
-directory after setting POSTGRES_PASSWORD in your shell:
-
-    docker compose -f docker-compose.postgres.yml up -d
-
-From the backend directory, apply migrations with:
+Apply migrations from the backend directory:
 
     alembic upgrade head
 
-Generate future revisions only after importing all conversation models into
-alembic/env.py:
+Migrate an existing metadata SQLite file after upgrading the schema:
+
+    python scripts/migrate_sqlite_metadata_to_postgres.py \
+        --source database/metadata.sqlite3
+
+Add ``--delete-source-after-verify`` only after reviewing the reported source
+and destination row counts. The importer is transactional and refuses data
+conflicts instead of silently overwriting PostgreSQL rows.
+
+Generate future revisions only after importing all model modules into
+``alembic/env.py``:
 
     alembic revision --autogenerate -m "describe schema change"
 
-The legacy SQLite metadata database is intentionally outside this migration
-tree.
-
-Do not call init_postgres() during a production startup. It is an explicit
-local/test bootstrap helper; production schema changes must go through Alembic.
+Do not use auto-creation for production schema changes; use Alembic revisions.

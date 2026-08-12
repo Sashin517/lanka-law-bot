@@ -5,11 +5,11 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.session import Base
+from app.database.postgres_session import Base
 
 
 def utcnow() -> datetime:
-    # SQLite stores naive timestamps; derive them from an explicit UTC clock.
+    # Retain naive UTC values for existing API wire-format compatibility.
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 

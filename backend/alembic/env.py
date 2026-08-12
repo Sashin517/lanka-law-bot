@@ -1,17 +1,24 @@
-"""Alembic environment for the isolated conversation PostgreSQL schema."""
+"""Alembic environment for the complete PostgreSQL relational schema."""
 
 from __future__ import annotations
 
 import asyncio
+import importlib
 from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import app.models.conversation  # noqa: F401
 from alembic import context
 from app.core.config import settings
-from app.database.postgres_session import ConversationBase
+from app.database.postgres_session import Base
+
+for model_module in (
+    "app.models.conversation",
+    "app.models.document",
+    "app.models.draft",
+):
+    importlib.import_module(model_module)
 
 config = context.config
 
@@ -24,7 +31,7 @@ config.set_main_option(
     "sqlalchemy.url",
     settings.postgres_dsn.replace("%", "%%"),
 )
-target_metadata = ConversationBase.metadata
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:

@@ -5,8 +5,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
-from app.database.postgres_session import ConversationBase
-from app.database.session import Base
+from app.database.postgres_session import Base
 from app.models.conversation import (
     AgentRun,
     Conversation,
@@ -18,13 +17,23 @@ from app.models.conversation import (
     MessageRole,
 )
 
-EXPECTED_TABLES = {
+EXPECTED_CONVERSATION_TABLES = {
     "agent_runs",
     "conversation_summaries",
     "conversations",
     "message_attachments",
     "message_citations",
     "messages",
+}
+
+EXPECTED_METADATA_TABLES = {
+    "document_chunks",
+    "draft_context_snapshots",
+    "draft_document_changes",
+    "draft_document_versions",
+    "draft_documents",
+    "ingestion_jobs",
+    "user_documents",
 }
 
 
@@ -47,16 +56,24 @@ def test_postgres_dsn_escapes_credentials() -> None:
     assert parsed.port == 5544
     assert parsed.database == "legal_chat"
 
+    sync_parsed = make_url(config.postgres_sync_dsn)
+    assert sync_parsed.drivername == "postgresql+psycopg"
+    assert sync_parsed.username == "legal user"
+    assert sync_parsed.password == "p@ss:/?#word"
+    assert sync_parsed.host == "db.internal"
+    assert sync_parsed.port == 5544
+    assert sync_parsed.database == "legal_chat"
 
-def test_conversation_metadata_is_isolated_from_sqlite_metadata() -> None:
-    assert ConversationBase is not Base
-    assert set(ConversationBase.metadata.tables) == EXPECTED_TABLES
-    assert EXPECTED_TABLES.isdisjoint(Base.metadata.tables)
+
+def test_all_relational_models_share_postgres_metadata() -> None:
+    assert set(Base.metadata.tables) == (
+        EXPECTED_CONVERSATION_TABLES | EXPECTED_METADATA_TABLES
+    )
 
 
 def test_models_persist_relationships_and_enum_values() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:")
-    ConversationBase.metadata.create_all(engine)
+    Base.metadata.create_all(engine)
 
     conversation = Conversation(
         id="conversation-1",

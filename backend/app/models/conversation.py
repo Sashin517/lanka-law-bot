@@ -21,7 +21,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.postgres_session import ConversationBase
+from app.database.postgres_session import Base
 
 
 def utcnow() -> datetime:
@@ -59,7 +59,7 @@ message_role_enum = Enum(
 )
 
 
-class Conversation(ConversationBase):
+class Conversation(Base):
     """A chat conversation owned by one Firebase-authenticated user."""
 
     __tablename__ = "conversations"
@@ -137,7 +137,7 @@ class Conversation(ConversationBase):
     )
 
 
-class Message(ConversationBase):
+class Message(Base):
     """One ordered user, assistant, or system message in a conversation."""
 
     __tablename__ = "messages"
@@ -207,7 +207,7 @@ class Message(ConversationBase):
     agent_run: Mapped[AgentRun | None] = relationship(back_populates="messages")
 
 
-class MessageCitation(ConversationBase):
+class MessageCitation(Base):
     """Immutable source details captured with an assistant message."""
 
     __tablename__ = "message_citations"
@@ -258,7 +258,7 @@ class MessageCitation(ConversationBase):
     message: Mapped[Message] = relationship(back_populates="citations")
 
 
-class MessageAttachment(ConversationBase):
+class MessageAttachment(Base):
     """Snapshot of an uploaded document attached when a message was sent."""
 
     __tablename__ = "message_attachments"
@@ -279,7 +279,7 @@ class MessageAttachment(ConversationBase):
     message: Mapped[Message] = relationship(back_populates="attachments")
 
 
-class AgentRun(ConversationBase):
+class AgentRun(Base):
     """Auditable metadata for one execution of the agent pipeline."""
 
     __tablename__ = "agent_runs"
@@ -334,7 +334,7 @@ class AgentRun(ConversationBase):
     )
 
 
-class ConversationSummary(ConversationBase):
+class ConversationSummary(Base):
     """Compressed context covering an inclusive message-sequence range."""
 
     __tablename__ = "conversation_summaries"

@@ -18,9 +18,9 @@ from app.core.config import settings
 from app.database.postgres_session import (
     check_postgres_connection,
     close_postgres,
+    init_db,
     init_postgres,
 )
-from app.database.session import init_db
 
 # Configure logging
 logging.basicConfig(
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    """Initialize local metadata and optional chat infrastructure safely."""
+    """Initialize PostgreSQL-backed application infrastructure safely."""
     init_db()
     if settings.POSTGRES_AUTO_CREATE_SCHEMA:
         await init_postgres()

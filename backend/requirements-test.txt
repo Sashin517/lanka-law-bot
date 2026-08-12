@@ -1,0 +1,7 @@
+-r requirements.txt
+
+# SQLite remains only as an isolated in-memory SQLAlchemy test double. The
+# application has no SQLite runtime persistence path.
+aiosqlite>=0.20.0,<1.0.0
+pytest>=8.0.0,<9.0.0
+ruff>=0.11.0,<1.0.0

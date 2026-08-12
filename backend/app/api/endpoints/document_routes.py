@@ -13,7 +13,7 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db, init_db
+from app.database.postgres_session import get_db, init_db
 from app.models.document import DocumentChunk, IngestionJob, UserDocument
 from app.schemas.documents import (
     DeleteDocumentResponse,

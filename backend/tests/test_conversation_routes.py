@@ -495,7 +495,7 @@ class ApplicationLifespanTests(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch.object(main.settings, "POSTGRES_AUTO_CREATE_SCHEMA", False),
-            patch.object(main, "init_db") as init_sqlite,
+            patch.object(main, "init_db") as init_metadata,
             patch.object(
                 main, "check_postgres_connection", new_callable=AsyncMock
             ) as check_postgres,
@@ -508,7 +508,7 @@ class ApplicationLifespanTests(unittest.IsolatedAsyncioTestCase):
             ) as close_postgres,
         ):
             async with main.lifespan(main.app):
-                init_sqlite.assert_called_once_with()
+                init_metadata.assert_called_once_with()
                 check_postgres.assert_awaited_once_with()
                 create_schema.assert_not_awaited()
                 init_firebase.assert_called_once_with()

@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db, init_db
+from app.database.postgres_session import get_db, init_db
 from app.schemas.drafts import (
     AgentEditDocumentRequest,
     AgentEditDocumentResponse,

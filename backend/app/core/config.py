@@ -28,8 +28,6 @@ class Settings(BaseSettings):
 
     USER_UPLOAD_DIR: str = os.path.join(_BACKEND_DIR, "storage", "uploads")
     USER_MARKDOWN_DIR: str = os.path.join(_BACKEND_DIR, "storage", "processed_markdown")
-    METADATA_DB_PATH: str = os.path.join(_BACKEND_DIR, "database", "metadata.sqlite3")
-
     PINECONE_API_KEY: str = ""
     PINECONE_INDEX_HOST: str = ""
     PINECONE_INDEX_NAME: str = "lawdex-index"
@@ -107,8 +105,8 @@ class Settings(BaseSettings):
     NEO4J_AUTHORITY_WEIGHT: float = 0.8
     NEO4J_BATCH_SIZE: int = 100
 
-    # PostgreSQL is intentionally separate from the legacy SQLite metadata
-    # store. It owns only research-chat conversation data.
+    # PostgreSQL is the single relational persistence layer for conversations,
+    # uploaded-document metadata, ingestion jobs, and drafting/version data.
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = Field(default=5432, ge=1, le=65535)
     POSTGRES_USER: str = "lankalawbot"
@@ -148,6 +146,16 @@ class Settings(BaseSettings):
     def postgres_dsn(self) -> str:
         """Return the async PostgreSQL DSN with safely escaped credentials."""
         return self.postgres_url.render_as_string(hide_password=False)
+
+    @property
+    def postgres_sync_url(self) -> URL:
+        """Return the PostgreSQL URL used by existing synchronous services."""
+        return self.postgres_url.set(drivername="postgresql+psycopg")
+
+    @property
+    def postgres_sync_dsn(self) -> str:
+        """Return the synchronous PostgreSQL DSN with escaped credentials."""
+        return self.postgres_sync_url.render_as_string(hide_password=False)
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(_BACKEND_DIR, ".env"),

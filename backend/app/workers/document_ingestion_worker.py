@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime
 
-from app.database.session import SessionLocal, init_db
+from app.database.postgres_session import SessionLocal, init_db
 from app.models.document import DocumentChunk, IngestionJob, UserDocument
 from app.services.ingestion.document_parser import DocumentParser
 from app.services.ingestion.document_storage import DocumentStorage

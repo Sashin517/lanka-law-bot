@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.config import settings
-from app.database.postgres_session import ConversationBase
+from app.database.postgres_session import Base
 from app.models.conversation import AgentRun, Conversation, ConversationSummary, Message
 from app.repositories.exceptions import (
     ConversationNotFoundError,
@@ -28,7 +28,7 @@ class ConversationServiceIntegrationTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.engine = create_async_engine("sqlite+aiosqlite:///:memory:")
         async with self.engine.begin() as connection:
-            await connection.run_sync(ConversationBase.metadata.create_all)
+            await connection.run_sync(Base.metadata.create_all)
         self.sessions = async_sessionmaker(self.engine, expire_on_commit=False)
 
     async def asyncTearDown(self) -> None:
