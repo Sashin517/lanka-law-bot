@@ -1,11 +1,10 @@
-name: LankaLawBot CI/CD Pipeline
 name: LankaLawBot CI Pipeline
 
 on:
   push:
-    branches: ["main"]
+    branches: ["deploy", "main"]
   pull_request:
-    branches: ["main"]
+    branches: ["deploy", "main"]
 
 env:
   PYTHON_VERSION: "3.12"
