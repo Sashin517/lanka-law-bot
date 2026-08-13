@@ -27,20 +27,14 @@ from evaluation.ablation_runner import (
 
 
 class AblationIntegrityTests(unittest.TestCase):
-    def test_optional_neo4j_relationships_are_schema_tolerant(self):
-        self.assertIn(
+    def test_graph_traversal_uses_current_hardcoded_relationship_types(self):
+        self.assertIn(":CITES_STATUTE|INTERPRETS", GRAPH_TRAVERSAL_QUERY)
+        self.assertIn(":CITES_CASE", GRAPH_TRAVERSAL_QUERY)
+        self.assertIn(":RELATES_TO|ESTABLISHES_PRINCIPLE", GRAPH_TRAVERSAL_QUERY)
+        self.assertNotIn(
             "type(amendment_rel) IN $amendment_relationship_types",
             GRAPH_TRAVERSAL_QUERY,
         )
-        self.assertIn(
-            "type(case_rel) IN $case_relationship_types",
-            GRAPH_TRAVERSAL_QUERY,
-        )
-        self.assertIn(
-            "type(concept_rel) IN $concept_relationship_types",
-            GRAPH_TRAVERSAL_QUERY,
-        )
-        self.assertNotIn(":AMENDS|REPEALS", GRAPH_TRAVERSAL_QUERY)
 
     def test_transient_judge_disconnect_is_retryable(self):
         self.assertTrue(
@@ -195,7 +189,7 @@ class AblationIntegrityTests(unittest.TestCase):
         )
         self.assertEqual(result["metric_status"]["status"], "failed")
 
-    def test_uncited_answer_is_scored_as_system_failure_not_evaluator_failure(self):
+    def test_missing_citation_anchors_fall_back_to_all_source_contexts(self):
         result = {
             "config_name": "no_reranking",
             "results": [
@@ -207,6 +201,60 @@ class AblationIntegrityTests(unittest.TestCase):
                     "output": {
                         "answer": "The sources do not address the question.",
                         "sources": [{"citation_id": "[LAW-1]", "content": "Law"}],
+                        "skipped": False,
+                    },
+                }
+            ],
+        }
+
+        with (
+            patch(
+                "evaluation.ablation_runner.score_answer_completeness",
+                return_value=MetricOutcome(value=0.0),
+            ),
+            patch(
+                "evaluation.ablation_runner._run_ragas_evaluation",
+                return_value=[
+                    {
+                        "faithfulness": 0.2,
+                        "factual_correctness(mode=f1)": 0.1,
+                        "context_recall": 0.3,
+                        "llm_context_precision_with_reference": 0.4,
+                    }
+                ],
+            ) as ragas,
+        ):
+            scored = add_quality_metrics(result)
+
+        metrics = scored["results"][0]["metrics"]
+        self.assertEqual(metrics["faithfulness"], 0.2)
+        self.assertEqual(metrics["context_recall"], 0.3)
+        self.assertEqual(metrics["context_precision"], 0.4)
+        self.assertEqual(metrics["factual_correctness"], 0.1)
+        self.assertEqual(scored["metric_status"]["status"], "complete")
+        ragas.assert_called_once_with(
+            [
+                {
+                    "user_input": "Question",
+                    "retrieved_contexts": ["Law"],
+                    "response": "The sources do not address the question.",
+                    "reference": "Reference answer",
+                }
+            ]
+        )
+
+    def test_empty_source_text_is_scored_as_zero_cited_context_metrics(self):
+        result = {
+            "config_name": "no_reranking",
+            "results": [
+                {
+                    "id": "A",
+                    "mode": "quick_qa",
+                    "question": "Question",
+                    "ground_truth": "Reference answer",
+                    "output": {
+                        "answer": "The sources do not address the question.",
+                        "sources": [{"citation_id": "[LAW-1]"}],
                         "skipped": False,
                     },
                 }

@@ -4,23 +4,28 @@ import unittest
 from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-PROMPT_FILE = BACKEND_DIR / "app" / "services" / "generation" / "prompt_improvement_prompt.py"
-SERVICE_FILE = BACKEND_DIR / "app" / "services" / "generation" / "prompt_improvement_service.py"
+PROMPT_FILE = (
+    BACKEND_DIR / "app" / "services" / "generation" / "prompt_improvement_prompt.py"
+)
+SERVICE_FILE = (
+    BACKEND_DIR / "app" / "services" / "generation" / "prompt_improvement_service.py"
+)
 
 
 class TestPromptImprovementContract(unittest.TestCase):
-    def test_prompt_requires_fact_pattern_preservation(self):
+    def test_prompt_requires_intent_and_fact_preservation(self):
         prompt = PROMPT_FILE.read_text(encoding="utf-8").lower()
 
-        self.assertIn("retain legally material facts", prompt)
-        self.assertIn("requested remedy", prompt)
-        self.assertIn("do not introduce a new remedy", prompt)
-        self.assertIn("without materially shortening it", prompt)
+        self.assertIn("preserving intent", prompt)
+        self.assertIn("preserve user intent and key facts", prompt)
+        self.assertIn("do not invent facts, legal outcomes, sections, or case details", prompt)
+        self.assertIn("[fact_needed]", prompt)
 
-    def test_quick_qa_guidance_does_not_encourage_fact_loss(self):
+    def test_quick_qa_guidance_stays_focused_without_inventing_details(self):
         guidance = PROMPT_FILE.read_text(encoding="utf-8").lower()
 
-        self.assertIn("compress away material facts", guidance)
+        self.assertIn("produce one focused legal question", guidance)
+        self.assertIn("remove fluff and keep concise", guidance)
 
     def test_service_has_overcompression_guard_and_fallback(self):
         service = SERVICE_FILE.read_text(encoding="utf-8")

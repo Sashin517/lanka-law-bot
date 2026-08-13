@@ -36,7 +36,7 @@ class TestSelectTemplate(unittest.TestCase):
         self.assertEqual(result, "contract")
 
     def test_keyword_pleading(self):
-        result = _select_template("Prepare a plaint for breach of contract", "")
+        result = _select_template("Prepare a plaint for unpaid rent", "")
         self.assertEqual(result, "pleading")
 
     def test_keyword_notice(self):

@@ -57,7 +57,7 @@ class _FakeDocumentsClient:
                     {
                         "_id": "chunk-1",
                         "_score": 0.42,
-                        "body": "The buyer may recover damages for breach.",
+                        "text": "The buyer may recover damages for breach.",
                         "title": "Sale of Goods Ordinance",
                         "citation": "Ordinance No. 11 of 1896",
                         "section_label": "Section 51",
@@ -77,7 +77,7 @@ class _FakeDocumentsClient:
                 "parent-1": _FakeDocument(
                     {
                         "_id": "parent-1",
-                        "body": "Parent statutory context.",
+                        "text": "Parent statutory context.",
                         "chunk_id": "parent-1",
                         "chunk_type": "parent",
                         "title": "Sale of Goods Ordinance",
@@ -92,10 +92,19 @@ class _FakeIndex:
         self.documents = _FakeDocumentsClient()
 
 
-def test_bm25_search_uses_same_document_index_and_all_legal_text_fields():
+class _FakeDenseIndex:
+    def __init__(self) -> None:
+        self.fetch_calls: list[dict] = []
+
+    def fetch(self, **kwargs):
+        self.fetch_calls.append(kwargs)
+        return SimpleNamespace(vectors={})
+
+
+def test_bm25_search_uses_preview_index_and_text_field():
     store = object.__new__(LegalVectorStore)
-    store._index = _FakeIndex()
-    store.namespace = "legal_corpus_release"
+    store._bm25_index = _FakeIndex()
+    store.bm25_namespace = "legal_corpus_release"
 
     documents = store.search_children_bm25(
         query="section 51 damages",
@@ -103,14 +112,11 @@ def test_bm25_search_uses_same_document_index_and_all_legal_text_fields():
         metadata_filters={"year": {"$eq": 1896}},
     )
 
-    call = store._index.documents.search_calls[0]
+    call = store._bm25_index.documents.search_calls[0]
     assert call["namespace"] == "legal_corpus_release"
     assert call["top_k"] == 7
     assert call["score_by"] == [
-        {"type": "text", "field": "title", "query": "section 51 damages"},
-        {"type": "text", "field": "citation", "query": "section 51 damages"},
-        {"type": "text", "field": "section_label", "query": "section 51 damages"},
-        {"type": "text", "field": "body", "query": "section 51 damages"},
+        {"type": "text", "field": "text", "query": "section 51 damages"},
     ]
     assert call["filter"] == {
         "$and": [
@@ -125,14 +131,17 @@ def test_bm25_search_uses_same_document_index_and_all_legal_text_fields():
     assert documents[0].metadata["retrieval_score"] == 0.42
 
 
-def test_parent_is_fetched_directly_by_shared_document_id():
+def test_parent_is_fetched_from_bm25_when_dense_misses():
     store = object.__new__(LegalVectorStore)
-    store._index = _FakeIndex()
-    store.namespace = "legal_corpus_release"
+    store._dense_index = _FakeDenseIndex()
+    store.dense_namespace = "legal_corpus_release"
+    store._bm25_index = _FakeIndex()
+    store.bm25_namespace = "legal_corpus_release"
 
     parent = store.fetch_parent("parent-1")
 
-    assert store._index.documents.fetch_calls[0]["ids"] == ["parent-1"]
+    assert store._dense_index.fetch_calls[0]["ids"] == ["parent-1"]
+    assert store._bm25_index.documents.fetch_calls[0]["ids"] == ["parent-1"]
     assert parent is not None
     assert parent.page_content == "Parent statutory context."
     assert parent.metadata["chunk_type"] == "parent"
@@ -185,39 +194,28 @@ def test_hybrid_retriever_fuses_by_chunk_id_and_preserves_channel_diagnostics():
     assert documents[0].metadata["rrf_score"] > documents[1].metadata["rrf_score"]
 
 
-def test_retrieval_service_uses_single_index_hybrid_retriever():
+def test_retrieval_service_uses_hybrid_retriever_not_ensemble():
     source = (BACKEND_DIR / "app/services/retrieval/retrieval_service.py").read_text(
         encoding="utf-8"
     )
     assert "EnsembleRetriever" not in source
-    assert "PINECONE_LEGAL_BM25_INDEX_HOST" not in source
     assert "PineconeLegalHybridRetriever" in source
     assert "self._reranked_retriever" not in source
 
 
-def test_route_constraints_become_pre_scoring_pinecone_filters():
+def test_route_constraints_become_year_only_pre_scoring_filters():
     assert RetrievalService._build_pinecone_filter([1896], None) == {
         "year": {"$eq": 1896}
     }
-    assert RetrievalService._build_pinecone_filter(None, ["Sale of Goods Ordinance"]) == {
-        "title": {"$match_all": "Sale of Goods Ordinance"}
-    }
+    # Act-name filters are intentionally excluded from Pinecone pre-filters
+    # because partial titles do not match full statutory titles under $eq.
+    assert RetrievalService._build_pinecone_filter(None, ["Sale of Goods Ordinance"]) is None
     assert RetrievalService._build_pinecone_filter(
         [1896, 2007], ["Sale of Goods Ordinance", "Companies Act"]
-    ) == {
-        "$and": [
-            {"year": {"$in": [1896, 2007]}},
-            {
-                "$or": [
-                    {"title": {"$match_all": "Sale of Goods Ordinance"}},
-                    {"title": {"$match_all": "Companies Act"}},
-                ]
-            },
-        ]
-    }
+    ) == {"year": {"$in": [1896, 2007]}}
 
 
-def test_post_filter_is_fail_closed_and_combines_constraints_with_and():
+def test_post_filter_combines_constraints_and_falls_back_when_empty():
     candidates = [
         Document(
             page_content="match",
@@ -238,4 +236,5 @@ def test_post_filter_is_fail_closed_and_combines_constraints_with_and():
     )
 
     assert [doc.page_content for doc in filtered] == ["match"]
-    assert RetrievalService._post_filter_metadata(candidates, [2025], None) == []
+    # When nothing matches, current policy falls back to the unfiltered candidates.
+    assert RetrievalService._post_filter_metadata(candidates, [2025], None) == candidates

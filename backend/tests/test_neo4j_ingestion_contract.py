@@ -11,6 +11,13 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
+_NEO4J_INGESTION_SCRIPT = REPOSITORY_ROOT / "act_and_case_law_ingestion_process_neo4j.py"
+if not _NEO4J_INGESTION_SCRIPT.exists():
+    pytest.skip(
+        "Corpus Neo4j ingestion script is not present in this checkout",
+        allow_module_level=True,
+    )
+
 import act_and_case_law_ingestion_process_neo4j as ingestion
 from app.services.retrieval.neo4j_queries import CHUNK_PROJECTION, GRAPH_TRAVERSAL_QUERY
 from app.services.retrieval.neo4j_graph_store import _as_of_value, _lucene_escape

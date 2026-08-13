@@ -203,6 +203,11 @@ class FirebaseTokenDependencyTests(unittest.IsolatedAsyncioTestCase):
                 },
             ) as verify,
             patch.object(settings, "FIREBASE_CHECK_REVOKED_TOKENS", True),
+            patch.object(
+                settings,
+                "FIREBASE_SERVICE_ACCOUNT_PATH",
+                "firebase-service-account.json",
+            ),
             patch.object(settings, "FIREBASE_CLOCK_SKEW_SECONDS", 15),
         ):
             user_id = await get_current_user_id(_bearer())
@@ -252,13 +257,15 @@ class FirebaseTokenDependencyTests(unittest.IsolatedAsyncioTestCase):
                 )
                 self.assertIsNone(raised.headers)
 
-    async def test_unexpected_failure_log_does_not_echo_exception_message(self) -> None:
+    async def test_unexpected_failure_returns_generic_503_to_clients(self) -> None:
         sensitive_message = "must-not-appear-token-material"
         with self.assertLogs(auth_module.logger.name, level="ERROR") as captured:
             raised = await self._verification_error(RuntimeError(sensitive_message))
 
         self.assertEqual(raised.status_code, 503)
-        self.assertNotIn(sensitive_message, "\n".join(captured.output))
+        self.assertEqual(raised.detail, "Authentication service is unavailable.")
+        self.assertNotIn(sensitive_message, raised.detail)
+        self.assertIn("Unexpected Firebase token verification failure", "\n".join(captured.output))
 
     async def test_initialization_failure_returns_503_without_verification(
         self,

@@ -13,8 +13,8 @@ def test_pinecone_sparse_keyword_pipeline_integration():
     """
     store = LegalVectorStore()
     
-    # Dense and BM25 ranking use the same document-schema index.
-    assert store._index is not None, "Document index should be initialized"
+    # BM25 ranking uses the dedicated preview document index.
+    assert store._bm25_index is not None, "BM25 document index should be initialized"
     
     # 1. Test raw vector store search
     keyword_query = (

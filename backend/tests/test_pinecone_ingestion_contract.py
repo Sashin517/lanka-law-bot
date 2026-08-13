@@ -11,6 +11,12 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "act_and_case_law_ingestion_process_pinecone.py"
 
+if not SCRIPT.exists():
+    pytest.skip(
+        "Corpus Pinecone ingestion script is not present in this checkout",
+        allow_module_level=True,
+    )
+
 
 def _load_ingestion():
     spec = importlib.util.spec_from_file_location("pinecone_ingestion_under_test", SCRIPT)

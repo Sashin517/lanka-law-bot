@@ -147,7 +147,12 @@
     "requires_multi_source": true,
     "expected_grounding_min": 0.7,
     "expected_confidence": "medium",
-    "tags": ["computer_crimes", "intellectual_property", "multi_hop", "penalties"]
+    "tags": [
+      "computer_crimes",
+      "intellectual_property",
+      "multi_hop",
+      "penalties"
+    ]
   },
   {
     "id": "SL-EVAL-DR-001",
@@ -182,7 +187,13 @@
     "requires_multi_source": true,
     "expected_grounding_min": 0.85,
     "expected_confidence": "high",
-    "tags": ["unfair_contract_terms", "negligence", "liability", "deep_research", "multi_hop"]
+    "tags": [
+      "unfair_contract_terms",
+      "negligence",
+      "liability",
+      "deep_research",
+      "multi_hop"
+    ]
   },
   {
     "id": "SL-EVAL-DR-002",
@@ -217,7 +228,13 @@
     "requires_multi_source": true,
     "expected_grounding_min": 0.85,
     "expected_confidence": "high",
-    "tags": ["prevention_of_frauds", "property_transfer", "corporate_body", "deep_research", "multi_hop"]
+    "tags": [
+      "prevention_of_frauds",
+      "property_transfer",
+      "corporate_body",
+      "deep_research",
+      "multi_hop"
+    ]
   },
   {
     "id": "SL-EVAL-DR-003",
@@ -288,11 +305,23 @@
         "source_type": "legal_authority"
       }
     ],
-    "relevant_sections": ["Section 4", "Section 5", "Section 13", "Section 32", "Section 34"],
+    "relevant_sections": [
+      "Section 4",
+      "Section 5",
+      "Section 13",
+      "Section 32",
+      "Section 34"
+    ],
     "requires_multi_source": true,
     "expected_grounding_min": 0.7,
     "expected_confidence": "medium",
-    "tags": ["arbitration", "civil_procedure", "dispute_resolution", "deep_research", "multi_hop"]
+    "tags": [
+      "arbitration",
+      "civil_procedure",
+      "dispute_resolution",
+      "deep_research",
+      "multi_hop"
+    ]
   },
   {
     "id": "SL-EVAL-DT-001",
@@ -402,7 +431,13 @@
     "requires_multi_source": true,
     "expected_grounding_min": 0.5,
     "expected_confidence": "medium",
-    "tags": ["drafting", "employment", "multi_hop", "planned_execution", "complex"]
+    "tags": [
+      "drafting",
+      "employment",
+      "multi_hop",
+      "planned_execution",
+      "complex"
+    ]
   },
   {
     "id": "SL-EVAL-DT-004",
@@ -442,7 +477,14 @@
     "requires_multi_source": true,
     "expected_grounding_min": 0.5,
     "expected_confidence": "medium",
-    "tags": ["drafting", "lease", "rent_act", "multi_hop", "planned_execution", "complex"]
+    "tags": [
+      "drafting",
+      "lease",
+      "rent_act",
+      "multi_hop",
+      "planned_execution",
+      "complex"
+    ]
   },
   {
     "id": "SL-EVAL-RS-001",
@@ -477,7 +519,12 @@
     "requires_multi_source": false,
     "expected_grounding_min": 0.8,
     "expected_confidence": "high",
-    "tags": ["prevention_of_frauds", "immovable_property", "scenario", "reasoning"]
+    "tags": [
+      "prevention_of_frauds",
+      "immovable_property",
+      "scenario",
+      "reasoning"
+    ]
   },
   {
     "id": "SL-EVAL-RS-002",
@@ -512,7 +559,13 @@
     "requires_multi_source": false,
     "expected_grounding_min": 0.8,
     "expected_confidence": "high",
-    "tags": ["unfair_contract_terms", "negligence", "exclusion_clause", "scenario", "reasoning"]
+    "tags": [
+      "unfair_contract_terms",
+      "negligence",
+      "exclusion_clause",
+      "scenario",
+      "reasoning"
+    ]
   },
   {
     "id": "SL-EVAL-RS-003",
@@ -547,7 +600,13 @@
     "requires_multi_source": true,
     "expected_grounding_min": 0.7,
     "expected_confidence": "medium",
-    "tags": ["electronic_transactions", "contract_formation", "click_wrap", "multi_hop", "reasoning"]
+    "tags": [
+      "electronic_transactions",
+      "contract_formation",
+      "click_wrap",
+      "multi_hop",
+      "reasoning"
+    ]
   },
   {
     "id": "SL-EVAL-RS-004",
@@ -582,7 +641,13 @@
     "requires_multi_source": true,
     "expected_grounding_min": 0.7,
     "expected_confidence": "medium",
-    "tags": ["arbitration", "foreign_awards", "enforcement", "multi_hop", "reasoning"]
+    "tags": [
+      "arbitration",
+      "foreign_awards",
+      "enforcement",
+      "multi_hop",
+      "reasoning"
+    ]
   },
   {
     "id": "SL-EVAL-RV-001",
@@ -759,12 +824,3 @@
     "tags": ["review", "industrial_supply", "indemnity", "liability"]
   }
 ]
-
-""Act as experienced tech lead software / ai engineer with deep expertise in ai/ml system engineering: 
-You have to provide comprehensive detailed step by step architectural system engineering/design, guides/planes and implementation guides/planes when user requested.
-Also you have to write clean, modular, maintainable codes when user requested following the best insdustry standards, production grade best practices.""
-
-I want to implement Dark / Light theme mode toggle in the header section of this application.
-
-For Dark theme current dark blue / black theme is fine, keep that.
-For Light theme, I want these colors:

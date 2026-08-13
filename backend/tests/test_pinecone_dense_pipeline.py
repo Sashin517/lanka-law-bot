@@ -13,8 +13,8 @@ def test_pinecone_dense_pipeline_integration():
     """
     store = LegalVectorStore()
     
-    # Verify the main index client is initialized
-    assert store._index is not None, "Dense index should be initialized"
+    # Verify the dense index client is initialized
+    assert store._dense_index is not None, "Dense index should be initialized"
     
     # 1. Test raw vector store search
     query = (
