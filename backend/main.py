@@ -11,6 +11,7 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.api_routes import api_router
 from app.auth.firebase_auth import init_firebase_admin
@@ -22,11 +23,10 @@ from app.database.postgres_session import (
     init_postgres,
 )
 
+from app.core.logging_config import configure_logging
+
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(name)-30s | %(levelname)-7s | %(message)s",
-)
+configure_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -56,12 +56,18 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.effective_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+
+@app.get("/healthz", tags=["infrastructure"])
+async def health_check():
+    """Lightweight probe for App Runner liveness/startup checks."""
+    return JSONResponse({"status": "healthy"})
 
 
 app.include_router(api_router)

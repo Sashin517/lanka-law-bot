@@ -16,10 +16,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://10.148.67.159:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
     ]
+    # Comma-separated override: CORS_ORIGINS_STR="https://a.awsapprunner.com,https://b.awsapprunner.com"
+    CORS_ORIGINS_STR: str = ""
 
     BASE_DIR: str = _BACKEND_DIR
     DATA_PATH: str = os.path.join(_BACKEND_DIR, "data")
@@ -115,10 +114,12 @@ class Settings(BaseSettings):
     POSTGRES_POOL_SIZE: int = Field(default=10, ge=1)
     POSTGRES_MAX_OVERFLOW: int = Field(default=5, ge=0)
     POSTGRES_AUTO_CREATE_SCHEMA: bool = False
+    POSTGRES_SSLMODE: str = ""  # "require" for Neon
 
     # Firebase Admin uses this file when supplied and otherwise relies on
     # Application Default Credentials.
     FIREBASE_SERVICE_ACCOUNT_PATH: str = ""
+    FIREBASE_SERVICE_ACCOUNT_JSON: str = ""  # JSON string from SSM Parameter Store
     FIREBASE_PROJECT_ID: str = ""
     FIREBASE_CHECK_REVOKED_TOKENS: bool = False
     FIREBASE_CLOCK_SKEW_SECONDS: int = Field(default=0, ge=0, le=60)
@@ -133,7 +134,7 @@ class Settings(BaseSettings):
     @property
     def postgres_url(self) -> URL:
         """Return a structured URL without hand-assembling credentials."""
-        return URL.create(
+        url = URL.create(
             drivername="postgresql+asyncpg",
             username=self.POSTGRES_USER,
             password=self.POSTGRES_PASSWORD,
@@ -141,6 +142,19 @@ class Settings(BaseSettings):
             port=self.POSTGRES_PORT,
             database=self.POSTGRES_DB,
         )
+        if self.POSTGRES_SSLMODE:
+            url = url.update_query_dict({"ssl": self.POSTGRES_SSLMODE})
+        return url
+
+    @property
+    def effective_cors_origins(self) -> list[str]:
+        """Merge static CORS_ORIGINS with runtime CORS_ORIGINS_STR."""
+        origins = list(self.CORS_ORIGINS)
+        if self.CORS_ORIGINS_STR:
+            origins.extend(
+                o.strip() for o in self.CORS_ORIGINS_STR.split(",") if o.strip()
+            )
+        return origins
 
     @property
     def postgres_dsn(self) -> str:

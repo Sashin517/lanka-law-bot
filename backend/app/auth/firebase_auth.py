@@ -15,6 +15,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from firebase_admin import auth as firebase_auth
 from firebase_admin import credentials
 from firebase_admin import exceptions as firebase_exceptions
+import json
 
 from app.core.config import settings
 
@@ -120,11 +121,22 @@ def _get_default_app() -> firebase_admin.App | None:
 
 def _initialize_default_app() -> firebase_admin.App:
     service_account_path = settings.FIREBASE_SERVICE_ACCOUNT_PATH.strip()
+    service_account_json = settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip()
     project_id = settings.FIREBASE_PROJECT_ID.strip()
     options = {"projectId": project_id} if project_id else None
 
     app: firebase_admin.App | None = None
     try:
+        # Priority 1: JSON string from env (SSM Parameter Store)
+        if service_account_json:
+            sa_info = json.loads(service_account_json)
+            credential: Any = credentials.Certificate(sa_info)
+            app = firebase_admin.initialize_app(credential, options=options)
+            _require_project_identity(app)
+            logger.info("Firebase Admin initialized from JSON environment variable.")
+            return app
+
+        # Priority 2: File path (local development)
         if service_account_path:
             path = Path(service_account_path).expanduser().resolve()
             if not path.is_file():

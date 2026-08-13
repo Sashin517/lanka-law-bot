@@ -8,6 +8,7 @@ asyncpg. Both paths share one declarative metadata registry and database.
 from __future__ import annotations
 
 import importlib
+import ssl
 import threading
 from collections.abc import AsyncGenerator, Generator
 
@@ -44,12 +45,18 @@ class Base(DeclarativeBase):
 
 
 def _create_async_engine() -> AsyncEngine:
+    connect_args = {}
+    if settings.POSTGRES_SSLMODE:
+        ssl_context = ssl.create_default_context()
+        connect_args["ssl"] = ssl_context
+
     return create_async_engine(
         settings.postgres_url,
         pool_size=settings.POSTGRES_POOL_SIZE,
         max_overflow=settings.POSTGRES_MAX_OVERFLOW,
         pool_pre_ping=True,
         echo=False,
+        connect_args=connect_args,
     )
 
 
