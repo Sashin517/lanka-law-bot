@@ -53,15 +53,4 @@ module "s3" {
   project_name = var.project_name
 }
 
-module "codepipeline" {
-  source = "./modules/codepipeline"
-  project_name = var.project_name
-  aws_region = var.aws_region
-  account_id = data.aws_caller_identity.current.account_id
-  github_repo = var.github_repo
-  github_connection_arn = var.github_connection_arn
-  pipeline_bucket = module.s3.pipeline_bucket_id
-  pipeline_bucket_arn = module.s3.pipeline_bucket_arn
-  codebuild_role_arn = module.iam.codebuild_role_arn
-  codepipeline_role_arn = module.iam.codepipeline_role_arn
-}
+
