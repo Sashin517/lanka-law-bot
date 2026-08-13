@@ -73,45 +73,45 @@ function createMdComponents(
 
   return {
     h1: ({ children }) => (
-      <h1 className="text-xl font-bold text-white mt-4 mb-2 border-b border-slate-700/50 pb-1">
+      <h1 className="text-xl font-bold text-app-strong mt-4 mb-2 border-b border-app-border/50 pb-1">
         {children}
       </h1>
     ),
     h2: ({ children }) => (
-      <h2 className="text-lg font-semibold text-slate-100 mt-4 mb-2">
+      <h2 className="text-lg font-semibold text-app-primary mt-4 mb-2">
         {children}
       </h2>
     ),
     h3: ({ children }) => (
-      <h3 className="text-base font-semibold text-slate-200 mt-3 mb-1">
+      <h3 className="text-base font-semibold text-app-secondary mt-3 mb-1">
         {children}
       </h3>
     ),
     h4: ({ children }) => (
-      <h4 className="text-sm font-semibold text-slate-300 mt-2 mb-1">
+      <h4 className="text-sm font-semibold text-app-tertiary mt-2 mb-1">
         {children}
       </h4>
     ),
     p: ({ children }) => (
-      <p className="text-slate-300 text-sm leading-relaxed mb-2">
+      <p className="text-app-tertiary text-sm leading-relaxed mb-2">
         {process(children)}
       </p>
     ),
     strong: ({ children }) => (
-      <strong className="text-slate-100 font-semibold">
+      <strong className="text-app-primary font-semibold">
         {process(children)}
       </strong>
     ),
     em: ({ children }) => (
-      <em className="text-slate-300 italic">{process(children)}</em>
+      <em className="text-app-tertiary italic">{process(children)}</em>
     ),
     ul: ({ children }) => (
-      <ul className="list-disc list-inside text-slate-300 text-sm space-y-1 mb-2 ml-2">
+      <ul className="list-disc list-inside text-app-tertiary text-sm space-y-1 mb-2 ml-2">
         {children}
       </ul>
     ),
     ol: ({ children }) => (
-      <ol className="list-decimal list-inside text-slate-300 text-sm space-y-1 mb-2 ml-2">
+      <ol className="list-decimal list-inside text-app-tertiary text-sm space-y-1 mb-2 ml-2">
         {children}
       </ol>
     ),
@@ -119,7 +119,7 @@ function createMdComponents(
       <li className="leading-relaxed">{process(children)}</li>
     ),
     blockquote: ({ children }) => (
-      <blockquote className="border-l-3 border-[#D4AF37]/60 pl-3 my-2 text-slate-400 text-sm italic">
+      <blockquote className="border-l-3 border-app-accent/60 pl-3 my-2 text-app-muted text-sm italic">
         {children}
       </blockquote>
     ),
@@ -127,41 +127,41 @@ function createMdComponents(
       const isBlock = className?.startsWith("language-");
       if (isBlock) {
         return (
-          <code className="block bg-slate-900/60 rounded-lg p-3 text-xs text-slate-300 overflow-x-auto my-2 font-mono">
+          <code className="block bg-app-overlay/60 rounded-lg p-3 text-xs text-app-tertiary overflow-x-auto my-2 font-mono">
             {children}
           </code>
         );
       }
       return (
-        <code className="bg-slate-700/50 text-[#D4AF37] px-1.5 py-0.5 rounded text-xs font-mono">
+        <code className="bg-app-hover/50 text-app-accent px-1.5 py-0.5 rounded text-xs font-mono">
           {children}
         </code>
       );
     },
     pre: ({ children }) => <pre className="my-2">{children}</pre>,
     table: ({ children }) => (
-      <div className="overflow-x-auto my-3 rounded-lg border border-slate-700/50">
+      <div className="overflow-x-auto my-3 rounded-lg border border-app-border/50">
         <table className="w-full text-sm">{children}</table>
       </div>
     ),
     thead: ({ children }) => (
-      <thead className="bg-slate-800/60 text-slate-200">{children}</thead>
+      <thead className="bg-app-elevated/60 text-app-secondary">{children}</thead>
     ),
     tbody: ({ children }) => <tbody>{children}</tbody>,
     tr: ({ children }) => (
-      <tr className="border-b border-slate-700/30">{children}</tr>
+      <tr className="border-b border-app-border/30">{children}</tr>
     ),
     th: ({ children }) => (
       <th className="px-3 py-2 text-left font-semibold text-xs">{children}</th>
     ),
     td: ({ children }) => (
-      <td className="px-3 py-2 text-slate-300 text-xs">{process(children)}</td>
+      <td className="px-3 py-2 text-app-tertiary text-xs">{process(children)}</td>
     ),
-    hr: () => <hr className="border-slate-700/50 my-4" />,
+    hr: () => <hr className="border-app-border/50 my-4" />,
     a: ({ children, href }) => (
       <a
         href={href}
-        className="text-[#D4AF37] hover:text-[#E5C040] underline underline-offset-2"
+        className="text-app-accent hover:text-app-accent-hover underline underline-offset-2"
         target="_blank"
         rel="noopener noreferrer"
       >

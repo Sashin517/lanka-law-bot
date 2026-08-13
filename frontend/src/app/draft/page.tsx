@@ -43,6 +43,7 @@ import {
   type DraftSidebarView,
 } from "@/components/drafting/DraftSidebar";
 import { ShowEditsLegend } from "@/components/drafting/ShowEditsLegend";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ExportModal } from "@/components/drafting/ExportModal";
 import { documentBuilder } from "@/lib/drafting/documentBuilder";
 import { diffService } from "@/lib/drafting/diffService";
@@ -302,89 +303,92 @@ export default function DraftPage() {
 
   // ── Render ──
   return (
-    <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-[#2A3241] font-sans">
+    <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-app-canvas font-sans text-app-primary">
       {/* ── NAVBAR ── */}
       <header
-        className="bg-[#161B28] text-white flex items-center justify-between px-8 py-4 z-10 border-b border-slate-700/50 shrink-0"
+        className="bg-app-panel text-app-strong flex items-center justify-between px-8 py-4 z-10 border-b border-app-border/50 shrink-0"
         id="draft-navbar"
       >
         <Link
           href="/"
-          className="text-2xl font-serif tracking-wide text-white flex items-center gap-2 hover:opacity-90 transition"
+          className="text-2xl font-serif tracking-wide text-app-strong flex items-center gap-2 hover:opacity-90 transition"
         >
-          <Scale size={24} className="text-[#D4AF37]" />
+          <Scale size={24} className="text-app-accent" />
           LankaLawBot
         </Link>
 
         <nav className="flex space-x-12">
           <Link
             href="/"
-            className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+            className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition"
           >
             <Search size={18} />
             <span>Research</span>
           </Link>
-          <button className="flex items-center space-x-2 text-[#D4AF37] border-b-2 border-[#D4AF37] pb-1">
+          <button className="flex items-center space-x-2 text-app-accent border-b-2 border-app-accent pb-1">
             <PenTool size={18} />
             <span>Draft</span>
           </button>
           <Link
             href="/"
-            className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+            className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition"
           >
             <CheckSquare size={18} />
             <span>Verify</span>
           </Link>
           <Link
             href="/"
-            className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+            className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition"
           >
             <BarChart2 size={18} />
             <span>Analyze</span>
           </Link>
         </nav>
 
-        {/* User avatar */}
-        {authLoading ? (
-          <div className="h-10 w-10 rounded-full bg-[#2A3241] animate-pulse" />
-        ) : user ? (
-          <div className="flex items-center gap-3">
-            {user.photoURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.photoURL}
-                alt={user.displayName ?? "User avatar"}
-                className="h-9 w-9 rounded-full object-cover"
-              />
-            ) : (
-              <div className="bg-[#2A3241] p-2 rounded-full">
-                <User size={20} className="text-slate-300" />
-              </div>
-            )}
-            <div className="text-right">
-              <p className="text-sm text-white truncate max-w-[160px]">
-                {user.displayName || user.email}
-              </p>
-              {user.displayName && user.email && (
-                <p className="text-xs text-slate-400 truncate max-w-[160px]">
-                  {user.email}
-                </p>
+        {/* Theme and user controls */}
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          {authLoading ? (
+            <div className="h-10 w-10 rounded-full bg-app-elevated animate-pulse" />
+          ) : user ? (
+            <div className="flex items-center gap-3">
+              {user.photoURL ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName ?? "User avatar"}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              ) : (
+                <div className="bg-app-elevated p-2 rounded-full">
+                  <User size={20} className="text-app-tertiary" />
+                </div>
               )}
+              <div className="text-right">
+                <p className="text-sm text-app-strong truncate max-w-[160px]">
+                  {user.displayName || user.email}
+                </p>
+                {user.displayName && user.email && (
+                  <p className="text-xs text-app-muted truncate max-w-[160px]">
+                    {user.email}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => void logOut()}
+                className="text-xs text-app-muted hover:text-app-strong transition cursor-pointer hover:bg-app-disabled p-2 rounded-full border border-app-border/50"
+                aria-label="Sign out"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => void logOut()}
-              className="text-xs text-slate-400 hover:text-white transition cursor-pointer hover:bg-slate-600 p-2 rounded-full border border-slate-700/50"
-              aria-label="Sign out"
-            >
-              <LogOut size={16} />
-            </button>
-          </div>
-        ) : (
-          <div className="bg-[#2A3241] p-2 rounded-full">
-            <User size={20} className="text-slate-300" />
-          </div>
-        )}
+          ) : (
+            <div className="bg-app-elevated p-2 rounded-full">
+              <User size={20} className="text-app-tertiary" />
+            </div>
+          )}
+        </div>
       </header>
 
       {/* ── DRAFT TOOLBAR (Sub-header) ── */}
@@ -454,13 +458,13 @@ export default function DraftPage() {
           >
             {isLoading ? (
               <div className="flex w-full max-w-md flex-col items-center justify-center gap-4">
-                <div className="w-full rounded-xl border border-slate-700/50 bg-[#161B28] p-5 shadow-xl">
+                <div className="w-full rounded-xl border border-app-border/50 bg-app-panel p-5 shadow-xl">
                   <div className="mb-4 flex items-center gap-3">
                     <div
-                      className="h-6 w-6 rounded-full border-2 border-[#D4AF37] border-t-transparent animate-spin"
+                      className="h-6 w-6 rounded-full border-2 border-app-accent border-t-transparent animate-spin"
                       aria-hidden="true"
                     />
-                    <p className="text-sm font-medium text-slate-200">
+                    <p className="text-sm font-medium text-app-secondary">
                       Generating your legal draft…
                     </p>
                   </div>
@@ -475,9 +479,9 @@ export default function DraftPage() {
                 </div>
               </div>
             ) : error ? (
-              <div className="flex flex-col items-center justify-center gap-3 text-red-400">
+              <div className="flex flex-col items-center justify-center gap-3 text-app-danger">
                 <p className="text-sm font-medium">Failed to generate draft</p>
-                <p className="text-xs text-slate-500 max-w-md text-center">
+                <p className="text-xs text-app-subtle max-w-md text-center">
                   {error}
                 </p>
               </div>

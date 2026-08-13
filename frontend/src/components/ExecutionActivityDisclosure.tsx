@@ -50,12 +50,12 @@ export function ExecutionActivityDisclosure({
 
   return (
     <section
-      className={`overflow-hidden rounded-lg border border-slate-700/50 bg-slate-900/25 ${className}`.trim()}
+      className={`overflow-hidden rounded-lg border border-app-border/50 bg-app-overlay/25 ${className}`.trim()}
       aria-label="Execution activity"
     >
       <button
         type="button"
-        className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-slate-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/70"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-app-elevated/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent/70"
         aria-controls={contentId}
         aria-expanded={isExpanded}
         onClick={() => {
@@ -66,22 +66,22 @@ export function ExecutionActivityDisclosure({
       >
         <StatusIcon isStreaming={isStreaming} hasError={Boolean(error)} />
         <span className="min-w-0 flex-1">
-          <span className="block text-xs font-medium text-slate-300">
+          <span className="block text-xs font-medium text-app-tertiary">
             Execution activity
           </span>
-          <span className="block truncate text-[10px] text-slate-500">
+          <span className="block truncate text-[10px] text-app-subtle">
             {status}
           </span>
         </span>
         <ChevronDown
           size={14}
-          className={`shrink-0 text-slate-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+          className={`shrink-0 text-app-subtle transition-transform ${isExpanded ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
       </button>
 
       {isExpanded && (
-        <div id={contentId} className="border-t border-slate-700/40 px-3 py-2.5">
+        <div id={contentId} className="border-t border-app-border/40 px-3 py-2.5">
           <ActivityStream
             steps={steps}
             isStreaming={isStreaming}
@@ -89,7 +89,7 @@ export function ExecutionActivityDisclosure({
             className={streamClassName}
           />
           {error && (
-            <p className="mt-2 text-[10px] leading-relaxed text-red-400" role="alert">
+            <p className="mt-2 text-[10px] leading-relaxed text-app-danger" role="alert">
               {error}
             </p>
           )}
@@ -110,7 +110,7 @@ function StatusIcon({
     return (
       <Loader2
         size={14}
-        className="shrink-0 animate-spin text-[#D4AF37]"
+        className="shrink-0 animate-spin text-app-accent"
         aria-hidden="true"
       />
     );
@@ -119,7 +119,7 @@ function StatusIcon({
     return (
       <AlertTriangle
         size={14}
-        className="shrink-0 text-red-400"
+        className="shrink-0 text-app-danger"
         aria-hidden="true"
       />
     );
@@ -127,7 +127,7 @@ function StatusIcon({
   return (
     <Check
       size={14}
-      className="shrink-0 text-emerald-400"
+      className="shrink-0 text-app-success"
       aria-hidden="true"
     />
   );

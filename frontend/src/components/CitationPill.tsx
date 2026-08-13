@@ -152,8 +152,8 @@ export function CitationPill({
   }, [open, citationId]);
 
   const pillClass = isDoc
-    ? "bg-purple-400/20 text-purple-400 hover:bg-purple-400/30"
-    : "bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/30";
+    ? "bg-app-document/20 text-app-document hover:bg-app-document/30"
+    : "bg-app-accent/20 text-app-accent hover:bg-app-accent/30";
 
   return (
     <>

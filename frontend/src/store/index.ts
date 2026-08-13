@@ -22,3 +22,6 @@ export type { ConversationStore } from "./conversationStore";
 
 export { useActivityStreamStore } from "./activityStreamStore";
 export type { ActivityStreamStore } from "./activityStreamStore";
+
+export { THEME_STORAGE_KEY, useThemeStore } from "./themeStore";
+export type { Theme, ThemeStore } from "./themeStore";

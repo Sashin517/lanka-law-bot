@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Lato } from "next/font/google";
+import Script from "next/script";
 
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import "./globals.css";
 
@@ -24,6 +26,19 @@ export const metadata: Metadata = {
     "A Generative AI Agentic Framework for Personalized Legal Drafting and Case Intelligence within the Sri Lankan Jurisdiction.",
 };
 
+const themeInitializer = `
+(function () {
+  var theme = "dark";
+  try {
+    var stored = localStorage.getItem("lankalawbot-theme");
+    var parsed = stored ? JSON.parse(stored) : null;
+    var savedTheme = parsed && parsed.state && parsed.state.theme;
+    if (savedTheme === "light" || savedTheme === "dark") theme = savedTheme;
+  } catch (_) {}
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,10 +47,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
       className={`${playfair.variable} ${lato.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans text-slate-800 bg-[#F5F6F8]">
-        <AuthProvider>{children}</AuthProvider>
+      <body className="flex min-h-full flex-col bg-app-canvas font-sans text-app-primary">
+        <Script id="theme-initializer" strategy="beforeInteractive">
+          {themeInitializer}
+        </Script>
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

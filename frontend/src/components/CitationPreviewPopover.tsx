@@ -74,8 +74,8 @@ export function CitationPreviewPopover({
     source!.content!.length > (source?.excerpt?.length ?? 0);
 
   const accentClass = isDoc
-    ? "bg-purple-400/20 text-purple-400"
-    : "bg-[#D4AF37]/20 text-[#D4AF37]";
+    ? "bg-app-document/20 text-app-document"
+    : "bg-app-accent/20 text-app-accent";
 
   const displayTitle =
     source?.source_type === "user_document" && source.filename
@@ -90,7 +90,7 @@ export function CitationPreviewPopover({
     <div
       role="dialog"
       aria-label={`Source preview for ${citationId}`}
-      className="fixed z-[100] rounded-lg border border-slate-600/80 bg-[#1e2433] shadow-2xl shadow-black/50"
+      className="fixed z-[100] rounded-lg border border-app-border/80 bg-app-overlay shadow-2xl shadow-black/50"
       style={{
         top: position.top,
         left: position.left,
@@ -101,7 +101,7 @@ export function CitationPreviewPopover({
       onMouseLeave={onMouseLeave}
     >
       <div className="flex flex-col max-h-[280px] overflow-hidden">
-        <div className="px-3 pt-3 pb-2 border-b border-slate-700/50 shrink-0">
+        <div className="px-3 pt-3 pb-2 border-b border-app-border/50 shrink-0">
           <div className="flex items-start gap-2">
             <span
               className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${accentClass}`}
@@ -109,16 +109,16 @@ export function CitationPreviewPopover({
               {citationId}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-slate-100 leading-snug line-clamp-2">
+              <p className="text-xs font-semibold text-app-primary leading-snug line-clamp-2">
                 {displayTitle || "Unknown source"}
               </p>
               {metaParts.length > 0 && (
-                <p className="text-[10px] text-slate-400 mt-0.5">
+                <p className="text-[10px] text-app-muted mt-0.5">
                   {metaParts.join(" · ")}
                 </p>
               )}
               {source?.breadcrumb && (
-                <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">
+                <p className="text-[10px] text-app-subtle mt-0.5 line-clamp-1">
                   {source.breadcrumb}
                 </p>
               )}
@@ -128,17 +128,17 @@ export function CitationPreviewPopover({
 
         <div className="px-3 py-2 overflow-y-auto flex-1 min-h-0">
           {!source ? (
-            <p className="text-xs text-slate-500 italic">Source not found.</p>
+            <p className="text-xs text-app-subtle italic">Source not found.</p>
           ) : (
             <>
-              <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+              <p className="text-xs text-app-tertiary leading-relaxed whitespace-pre-wrap">
                 {expanded && fullText ? fullText : source.excerpt || fullText}
               </p>
               {hasExpandable && (
                 <button
                   type="button"
                   onClick={() => setExpanded((v) => !v)}
-                  className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-[#D4AF37] hover:text-[#E5C040] transition"
+                  className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-app-accent hover:text-app-accent-hover transition"
                 >
                   {expanded ? (
                     <>
@@ -158,11 +158,11 @@ export function CitationPreviewPopover({
         </div>
 
         {onViewInSources && source && (
-          <div className="px-3 py-2 border-t border-slate-700/50 shrink-0">
+          <div className="px-3 py-2 border-t border-app-border/50 shrink-0">
             <button
               type="button"
               onClick={onViewInSources}
-              className="text-[10px] font-semibold text-sky-400 hover:text-sky-300 transition"
+              className="text-[10px] font-semibold text-app-info hover:text-app-info transition"
             >
               View in Sources
             </button>

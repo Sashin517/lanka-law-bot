@@ -114,15 +114,15 @@ export function ExportModal({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="w-full max-w-lg overflow-hidden rounded-xl border border-slate-700 bg-[#161B28] shadow-2xl"
+        className="w-full max-w-lg overflow-hidden rounded-xl border border-app-border bg-app-panel shadow-2xl"
       >
-        <header className="flex items-start justify-between border-b border-slate-700/70 px-5 py-4">
+        <header className="flex items-start justify-between border-b border-app-border/70 px-5 py-4">
           <div>
-            <h2 id={titleId} className="flex items-center gap-2 text-base font-semibold text-white">
-              <Download size={17} className="text-[#D4AF37]" />
+            <h2 id={titleId} className="flex items-center gap-2 text-base font-semibold text-app-strong">
+              <Download size={17} className="text-app-accent" />
               Export accepted draft
             </h2>
-            <p id={descriptionId} className="mt-1 text-xs text-slate-400">
+            <p id={descriptionId} className="mt-1 text-xs text-app-muted">
               Version {version?.versionNumber ?? "—"} will be exported without
               pending AI suggestions or Show Edits overlays.
             </p>
@@ -132,7 +132,7 @@ export function ExportModal({
             type="button"
             onClick={onClose}
             disabled={isExporting}
-            className="rounded p-1 text-slate-400 transition hover:bg-slate-700 hover:text-white disabled:opacity-40"
+            className="rounded p-1 text-app-muted transition hover:bg-app-hover hover:text-app-strong disabled:opacity-40"
             aria-label="Close export dialog"
           >
             <X size={18} />
@@ -141,7 +141,7 @@ export function ExportModal({
 
         <div className="space-y-5 p-5">
           <fieldset>
-            <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-app-muted">
               Format
             </legend>
             <div className="grid grid-cols-2 gap-3">
@@ -161,10 +161,10 @@ export function ExportModal({
           </fieldset>
 
           <fieldset>
-            <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-app-muted">
               Include
             </legend>
-            <div className="space-y-2 rounded-lg border border-slate-700/60 bg-[#1D2530]/60 p-3">
+            <div className="space-y-2 rounded-lg border border-app-border/60 bg-app-panel-muted/60 p-3">
               <OptionCheckbox
                 label="Document metadata"
                 checked={options.includeMetadata}
@@ -189,7 +189,7 @@ export function ExportModal({
             </div>
           </fieldset>
 
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-app-muted">
             Page size
             <select
               value={options.pageSize}
@@ -199,33 +199,33 @@ export function ExportModal({
                   pageSize: event.target.value as ExportOptions["pageSize"],
                 }))
               }
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-[#1D2530] px-3 py-2.5 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#D4AF37]"
+              className="mt-2 w-full rounded-lg border border-app-border bg-app-panel-muted px-3 py-2.5 text-sm font-normal normal-case tracking-normal text-app-strong outline-none focus:border-app-accent"
             >
               <option value="A4">A4</option>
               <option value="Letter">Letter</option>
             </select>
           </label>
 
-          <div className="flex items-start gap-2 rounded-lg bg-emerald-500/8 p-3 text-[11px] leading-relaxed text-emerald-300">
+          <div className="flex items-start gap-2 rounded-lg bg-app-success/8 p-3 text-[11px] leading-relaxed text-app-success">
             <ShieldCheck size={14} className="mt-0.5 shrink-0" />
             Export uses the latest immutable accepted version and its matching
             source snapshot.
           </div>
 
           {error && (
-            <p className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3 text-xs text-red-300" role="alert">
+            <p className="flex items-start gap-2 rounded-lg bg-app-danger/10 p-3 text-xs text-app-danger" role="alert">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               {error}
             </p>
           )}
         </div>
 
-        <footer className="flex justify-end gap-3 border-t border-slate-700/70 px-5 py-4">
+        <footer className="flex justify-end gap-3 border-t border-app-border/70 px-5 py-4">
           <button
             type="button"
             onClick={onClose}
             disabled={isExporting}
-            className="rounded-lg px-4 py-2 text-sm text-slate-300 transition hover:bg-slate-700 disabled:opacity-40"
+            className="rounded-lg px-4 py-2 text-sm text-app-tertiary transition hover:bg-app-hover disabled:opacity-40"
           >
             Cancel
           </button>
@@ -233,7 +233,7 @@ export function ExportModal({
             type="button"
             onClick={() => void handleDownload()}
             disabled={!version || isExporting}
-            className="flex items-center gap-2 rounded-lg bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-[#161B28] transition hover:bg-[#e1c35d] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 rounded-lg bg-app-accent px-4 py-2 text-sm font-semibold text-app-accent-contrast transition hover:bg-app-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isExporting ? (
               <Loader2 size={15} className="animate-spin" />
@@ -263,8 +263,8 @@ function FormatOption({
     <label
       className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition ${
         selected
-          ? "border-[#D4AF37]/60 bg-[#D4AF37]/10"
-          : "border-slate-700 bg-[#1D2530]/60 hover:border-slate-600"
+          ? "border-app-accent/60 bg-app-accent/10"
+          : "border-app-border bg-app-panel-muted/60 hover:border-app-border"
       }`}
     >
       <input
@@ -273,14 +273,14 @@ function FormatOption({
         value={format}
         checked={selected}
         onChange={() => onSelect(format)}
-        className="mt-1 accent-[#D4AF37]"
+        className="mt-1 accent-app-accent"
       />
       <span>
-        <span className="flex items-center gap-1.5 text-sm font-semibold uppercase text-white">
-          <FileText size={14} className="text-[#D4AF37]" />
+        <span className="flex items-center gap-1.5 text-sm font-semibold uppercase text-app-strong">
+          <FileText size={14} className="text-app-accent" />
           {format}
         </span>
-        <span className="mt-0.5 block text-[10px] text-slate-500">
+        <span className="mt-0.5 block text-[10px] text-app-subtle">
           {description}
         </span>
       </span>
@@ -298,12 +298,12 @@ function OptionCheckbox({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-300">
+    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-app-tertiary">
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="accent-[#D4AF37]"
+        className="accent-app-accent"
       />
       {label}
     </label>

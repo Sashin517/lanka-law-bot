@@ -315,7 +315,7 @@ export function DraftChatPanel({
 
   return (
     <aside
-      className="flex min-h-0 w-[360px] shrink-0 flex-col overflow-hidden border-l border-slate-700/50 bg-[#161B28]"
+      className="flex min-h-0 w-[360px] shrink-0 flex-col overflow-hidden border-l border-app-border/50 bg-app-panel"
       id="draft-chat-panel"
       aria-label="Drafting assistant"
     >
@@ -327,11 +327,11 @@ export function DraftChatPanel({
       >
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center px-5 text-center">
-            <Sparkles size={24} className="mb-3 text-[#D4AF37]" />
-            <p className="text-sm font-medium text-slate-200">
+            <Sparkles size={24} className="mb-3 text-app-accent" />
+            <p className="text-sm font-medium text-app-secondary">
               Refine your draft
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            <p className="mt-1 text-xs leading-relaxed text-app-subtle">
               Select text to ask a question or request an edit. AI edits remain
               pending until you apply them.
             </p>
@@ -367,17 +367,17 @@ export function DraftChatPanel({
 
       <form
         onSubmit={(event) => void handleSubmit(event)}
-        className="shrink-0 border-t border-slate-700/50 p-3"
+        className="shrink-0 border-t border-app-border/50 p-3"
       >
         {currentSelection && (
-          <div className="mb-2 flex items-start gap-2 rounded-lg border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-2.5 py-2">
-            <span className="min-w-0 flex-1 truncate text-[10px] italic text-slate-400">
+          <div className="mb-2 flex items-start gap-2 rounded-lg border border-app-accent/20 bg-app-accent/5 px-2.5 py-2">
+            <span className="min-w-0 flex-1 truncate text-[10px] italic text-app-muted">
               “{currentSelection.text}”
             </span>
             <button
               type="button"
               onClick={() => setSelection(null)}
-              className="text-slate-500 transition hover:text-white"
+              className="text-app-subtle transition hover:text-app-strong"
               aria-label="Clear selected text context"
             >
               <X size={12} />
@@ -385,7 +385,7 @@ export function DraftChatPanel({
           </div>
         )}
 
-        <div className="rounded-lg border border-slate-700/50 bg-[#1D2530] px-3 py-2.5 focus-within:border-[#D4AF37]/50">
+        <div className="rounded-lg border border-app-border/50 bg-app-panel-muted px-3 py-2.5 focus-within:border-app-accent/50">
           <textarea
             ref={inputRef}
             value={input}
@@ -404,11 +404,11 @@ export function DraftChatPanel({
                 : "Edit this document…"
             }
             disabled={!editor || isProcessing}
-            className="w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed"
+            className="w-full resize-none bg-transparent text-sm text-app-strong outline-none placeholder:text-app-subtle disabled:cursor-not-allowed"
             id="draft-chat-input"
           />
           <div className="mt-1 flex items-center justify-between">
-            <div className="flex items-center gap-1 rounded-md bg-slate-900/30 p-0.5">
+            <div className="flex items-center gap-1 rounded-md bg-app-overlay/30 p-0.5">
               <ModeButton
                 active={chatMode === "ask"}
                 icon={<MessageCircleQuestion size={12} />}
@@ -425,7 +425,7 @@ export function DraftChatPanel({
             <button
               type="submit"
               disabled={!canSubmit}
-              className="rounded-md bg-[#D4AF37] p-1.5 text-[#161B28] transition hover:bg-[#E5C040] disabled:cursor-not-allowed disabled:opacity-30"
+              className="rounded-md bg-app-accent p-1.5 text-app-accent-contrast transition hover:bg-app-accent-hover disabled:cursor-not-allowed disabled:opacity-30"
               aria-label={chatMode === "ask" ? "Ask question" : "Request edit"}
             >
               <Send size={14} />
@@ -434,7 +434,7 @@ export function DraftChatPanel({
         </div>
         {error && (
           <p
-            className="mt-2 flex items-start gap-1.5 text-[10px] text-red-400"
+            className="mt-2 flex items-start gap-1.5 text-[10px] text-app-danger"
             role="alert"
           >
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
@@ -463,8 +463,8 @@ function ModeButton({
       onClick={onClick}
       className={`flex items-center gap-1 rounded px-2 py-1 text-[10px] transition ${
         active
-          ? "bg-[#D4AF37]/15 text-[#D4AF37]"
-          : "text-slate-500 hover:text-slate-300"
+          ? "bg-app-accent/15 text-app-accent"
+          : "text-app-subtle hover:text-app-tertiary"
       }`}
       aria-pressed={active}
     >
@@ -491,12 +491,12 @@ function ChatMessage({
       <div
         className={`max-w-[92%] rounded-xl px-3 py-2.5 ${
           isUser
-            ? "bg-[#D4AF37]/15 text-slate-100"
-            : "border border-slate-700/50 bg-[#1D2530] text-slate-300"
+            ? "bg-app-accent/15 text-app-primary"
+            : "border border-app-border/50 bg-app-panel-muted text-app-tertiary"
         }`}
       >
         {message.selection && isUser && (
-          <p className="mb-1.5 truncate border-l-2 border-[#D4AF37]/50 pl-2 text-[9px] italic text-slate-400">
+          <p className="mb-1.5 truncate border-l-2 border-app-accent/50 pl-2 text-[9px] italic text-app-muted">
             {message.selection.text}
           </p>
         )}
@@ -525,7 +525,7 @@ function ChatMessage({
         )}
 
         <div className="mt-1.5 flex items-center justify-between gap-2">
-          <span className="text-[9px] text-slate-600">
+          <span className="text-[9px] text-app-faint">
             {new Date(message.timestamp).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -553,31 +553,31 @@ function SuggestionCard({
   const pending = message.status === "pending";
 
   return (
-    <div className="mt-2.5 rounded-lg border border-slate-600/60 bg-slate-900/30 p-2.5">
+    <div className="mt-2.5 rounded-lg border border-app-border/60 bg-app-overlay/30 p-2.5">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#D4AF37]">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-app-accent">
           {result.edit_path === "heavy" ? "Full revision" : "Suggested edit"}
         </span>
-        <span className="text-[9px] text-slate-500">
+        <span className="text-[9px] text-app-subtle">
           {result.confidence} confidence
         </span>
       </div>
-      <p className="max-h-28 overflow-y-auto whitespace-pre-wrap text-[10px] leading-relaxed text-slate-400 chat-scroll">
+      <p className="max-h-28 overflow-y-auto whitespace-pre-wrap text-[10px] leading-relaxed text-app-muted chat-scroll">
         {preview}
         {result.edited_text.length > preview.length ? "…" : ""}
       </p>
 
       {result.execution_trace && (
-        <details className="mt-2 text-[10px] text-slate-400">
-          <summary className="flex cursor-pointer list-none items-center gap-1 text-slate-300">
+        <details className="mt-2 text-[10px] text-app-muted">
+          <summary className="flex cursor-pointer list-none items-center gap-1 text-app-tertiary">
             <ChevronDown size={11} />
             Execution trace ({result.execution_trace.steps_executed.length}{" "}
             agents)
           </summary>
-          <ol className="mt-1.5 space-y-1 border-l border-slate-600 pl-3">
+          <ol className="mt-1.5 space-y-1 border-l border-app-border pl-3">
             {result.execution_trace.steps_executed.map((step, index) => (
               <li key={`${step.agent}-${index}`}>
-                <span className="font-medium text-slate-300">{step.agent}</span>
+                <span className="font-medium text-app-tertiary">{step.agent}</span>
                 : {step.purpose}
               </li>
             ))}
@@ -590,14 +590,14 @@ function SuggestionCard({
           <button
             type="button"
             onClick={onApply}
-            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-emerald-500/15 px-2 py-1.5 text-[10px] font-medium text-emerald-400 transition hover:bg-emerald-500/25"
+            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-app-success/15 px-2 py-1.5 text-[10px] font-medium text-app-success transition hover:bg-app-success/25"
           >
             <Check size={12} /> Apply
           </button>
           <button
             type="button"
             onClick={onReject}
-            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-red-500/10 px-2 py-1.5 text-[10px] font-medium text-red-400 transition hover:bg-red-500/20"
+            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-app-danger/10 px-2 py-1.5 text-[10px] font-medium text-app-danger transition hover:bg-app-danger/20"
           >
             <X size={12} /> Reject
           </button>
@@ -618,10 +618,10 @@ function StatusBadge({ status }: { status: ChatMessageStatus }) {
   };
   const color =
     status === "applied" || status === "informational"
-      ? "text-emerald-400"
+      ? "text-app-success"
       : status === "pending"
-        ? "text-[#D4AF37]"
-        : "text-red-400";
+        ? "text-app-accent"
+        : "text-app-danger";
   return (
     <span className={`flex items-center gap-1 text-[9px] ${color}`}>
       {(status === "applied" || status === "informational") && (
@@ -643,8 +643,8 @@ function ProcessingIndicator({
 }) {
   if (kind === "edit" && showHeavyProgress) {
     return (
-      <div className="rounded-xl border border-[#D4AF37]/20 bg-[#1D2530] p-3">
-        <p className="mb-2 text-[10px] font-medium text-slate-300">
+      <div className="rounded-xl border border-app-accent/20 bg-app-panel-muted p-3">
+        <p className="mb-2 text-[10px] font-medium text-app-tertiary">
           Complex revision in progress…
         </p>
         <div className="grid grid-cols-4 gap-1">
@@ -652,11 +652,11 @@ function ProcessingIndicator({
             <div key={step} className="min-w-0">
               <div
                 className={`mb-1 h-1 rounded-full ${
-                  index <= heavyStep ? "bg-[#D4AF37]" : "bg-slate-700"
+                  index <= heavyStep ? "bg-app-accent" : "bg-app-hover"
                 }`}
               />
               <span
-                className={`text-[8px] ${index <= heavyStep ? "text-[#D4AF37]" : "text-slate-600"}`}
+                className={`text-[8px] ${index <= heavyStep ? "text-app-accent" : "text-app-faint"}`}
               >
                 {step}
               </span>
@@ -668,8 +668,8 @@ function ProcessingIndicator({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-slate-700/50 bg-[#1D2530] px-3 py-2.5 text-[11px] text-slate-400">
-      <LoaderCircle size={14} className="animate-spin text-[#D4AF37]" />
+    <div className="flex items-center gap-2 rounded-xl border border-app-border/50 bg-app-panel-muted px-3 py-2.5 text-[11px] text-app-muted">
+      <LoaderCircle size={14} className="animate-spin text-app-accent" />
       {kind === "ask"
         ? "Researching your question…"
         : "Applying edit analysis…"}

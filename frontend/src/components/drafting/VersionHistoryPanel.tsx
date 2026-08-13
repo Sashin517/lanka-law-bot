@@ -59,14 +59,14 @@ export function VersionHistoryPanel({
       aria-label="Document version history"
     >
       <div className="flex items-center gap-2 px-4 py-3">
-        <History size={13} className="text-[#D4AF37]" />
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <History size={13} className="text-app-accent" />
+        <p className="text-xs font-semibold uppercase tracking-wider text-app-muted">
           Version History
         </p>
       </div>
 
       {error && (
-        <p className="mx-3 mb-2 flex items-start gap-1.5 rounded-md bg-red-500/10 p-2 text-[10px] text-red-400" role="alert">
+        <p className="mx-3 mb-2 flex items-start gap-1.5 rounded-md bg-app-danger/10 p-2 text-[10px] text-app-danger" role="alert">
           <AlertTriangle size={11} className="mt-0.5 shrink-0" />
           {error}
         </p>
@@ -74,7 +74,7 @@ export function VersionHistoryPanel({
 
       <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-4 chat-scroll">
         {visibleVersions.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-700 p-3 text-center text-[10px] text-slate-500">
+          <p className="rounded-lg border border-dashed border-app-border p-3 text-center text-[10px] text-app-subtle">
             Version history begins when the draft is generated.
           </p>
         ) : (

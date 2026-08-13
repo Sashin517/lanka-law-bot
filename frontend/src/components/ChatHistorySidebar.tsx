@@ -171,7 +171,7 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
     <aside
       ref={sidebarRef}
       aria-label="Chat history"
-      className="chat-scroll flex w-[280px] shrink-0 flex-col overflow-y-auto border-r border-slate-700/40 bg-[#161B28] p-4 text-white"
+      className="chat-scroll flex w-[280px] shrink-0 flex-col overflow-y-auto border-r border-app-border/40 bg-app-panel p-4 text-app-strong"
     >
       <button
         type="button"
@@ -179,7 +179,7 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
           void Promise.resolve(onNewChat()).catch(() => undefined);
         }}
         disabled={!user || isCreating}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#D4AF37] px-4 py-2.5 text-sm font-bold text-[#161B28] transition hover:bg-[#E0BF55] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-app-accent px-4 py-2.5 text-sm font-bold text-app-accent-contrast transition hover:bg-app-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isCreating ? (
           <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
@@ -193,13 +193,13 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
         <span className="sr-only">Search chats</span>
         <Search
           aria-hidden="true"
-          className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500"
+          className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-app-subtle"
         />
         <input
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search chats"
-          className="w-full rounded-lg border border-slate-700 bg-[#1E2636] py-2 pl-9 pr-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[#D4AF37]"
+          className="w-full rounded-lg border border-app-border bg-app-panel-muted py-2 pl-9 pr-3 text-sm text-app-primary outline-none transition placeholder:text-app-subtle focus:border-app-accent"
         />
       </label>
 
@@ -207,7 +207,7 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
         <button
           type="button"
           onClick={clearError}
-          className="mt-3 rounded-md border border-red-400/30 bg-red-400/10 px-3 py-2 text-left text-xs text-red-200"
+          className="mt-3 rounded-md border border-app-danger/30 bg-app-danger/10 px-3 py-2 text-left text-xs text-app-danger"
           title="Dismiss error"
         >
           {error}
@@ -215,10 +215,10 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
       )}
 
       <div className="mt-4 flex items-center justify-between px-1">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-app-muted">
           Recent chats
         </h2>
-        <span className="text-[10px] text-slate-600">{conversations.length}</span>
+        <span className="text-[10px] text-app-faint">{conversations.length}</span>
       </div>
 
       <div className="mt-2 space-y-1">
@@ -227,25 +227,25 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
             <div
               key={index}
               aria-hidden="true"
-              className="animate-pulse rounded-lg bg-slate-800/40 p-3"
+              className="animate-pulse rounded-lg bg-app-elevated/40 p-3"
             >
-              <div className="h-3 w-3/4 rounded bg-slate-700" />
-              <div className="mt-2 h-2 w-full rounded bg-slate-800" />
+              <div className="h-3 w-3/4 rounded bg-app-hover" />
+              <div className="mt-2 h-2 w-full rounded bg-app-elevated" />
             </div>
           ))}
 
         {!authLoading && user && !isListLoading && conversations.length === 0 && (
           <div className="flex flex-col items-center px-4 py-12 text-center">
-            <MessageSquare aria-hidden="true" className="size-8 text-slate-600" />
-            <p className="mt-3 text-sm font-medium text-slate-300">No chats yet</p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            <MessageSquare aria-hidden="true" className="size-8 text-app-faint" />
+            <p className="mt-3 text-sm font-medium text-app-tertiary">No chats yet</p>
+            <p className="mt-1 text-xs leading-relaxed text-app-subtle">
               Start a new legal research conversation.
             </p>
           </div>
         )}
 
         {conversations.length > 0 && filteredConversations.length === 0 && (
-          <p className="px-3 py-8 text-center text-xs text-slate-500">
+          <p className="px-3 py-8 text-center text-xs text-app-subtle">
             No chat titles match your search.
           </p>
         )}
@@ -258,8 +258,8 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
               key={conversation.id}
               className={`group relative rounded-lg border transition ${
                 isActive
-                  ? "border-[#D4AF37]/50 bg-[#D4AF37]/10"
-                  : "border-transparent hover:bg-slate-800/50"
+                  ? "border-app-accent/50 bg-app-accent/10"
+                  : "border-transparent hover:bg-app-elevated/50"
               }`}
             >
               {editingId === conversation.id ? (
@@ -274,10 +274,10 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
                     onKeyDown={(event) =>
                       handleRenameKeyDown(event)
                     }
-                    className="w-full rounded border border-[#D4AF37] bg-[#111722] px-2 py-1 text-sm text-white outline-none"
+                    className="w-full rounded border border-app-accent bg-app-overlay px-2 py-1 text-sm text-app-strong outline-none"
                     aria-label="Rename chat"
                   />
-                  <p className="mt-1 truncate text-xs text-slate-500">
+                  <p className="mt-1 truncate text-xs text-app-subtle">
                     {conversation.last_message_preview || "No messages yet"}
                   </p>
                 </div>
@@ -292,13 +292,13 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
                   aria-current={isActive ? "page" : undefined}
                   className="w-full px-3 py-2.5 pr-9 text-left disabled:opacity-50"
                 >
-                  <p className="truncate text-sm font-medium text-slate-200">
+                  <p className="truncate text-sm font-medium text-app-secondary">
                     {conversation.title}
                   </p>
-                  <p className="mt-1 truncate text-xs text-slate-500">
+                  <p className="mt-1 truncate text-xs text-app-subtle">
                     {conversation.last_message_preview || "No messages yet"}
                   </p>
-                  <p className="mt-1 text-[10px] text-slate-600">
+                  <p className="mt-1 text-[10px] text-app-faint">
                     {formatTimestamp(conversation.updated_at)}
                   </p>
                 </button>
@@ -316,7 +316,7 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
                   aria-label={`Actions for ${conversation.title}`}
                   aria-expanded={menuId === conversation.id}
                   data-chat-actions
-                  className="absolute right-1.5 top-2 rounded p-1 text-slate-500 opacity-0 transition hover:bg-slate-700 hover:text-white focus:opacity-100 group-hover:opacity-100"
+                  className="absolute right-1.5 top-2 rounded p-1 text-app-subtle opacity-0 transition hover:bg-app-hover hover:text-app-strong focus:opacity-100 group-hover:opacity-100"
                 >
                   <MoreHorizontal aria-hidden="true" className="size-4" />
                 </button>
@@ -325,19 +325,19 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
               {menuId === conversation.id && (
                 <div
                   data-chat-actions
-                  className="absolute right-2 top-9 z-20 w-32 rounded-lg border border-slate-700 bg-[#111722] p-1 shadow-xl"
+                  className="absolute right-2 top-9 z-20 w-32 rounded-lg border border-app-border bg-app-overlay p-1 shadow-xl"
                 >
                   <button
                     type="button"
                     onClick={() => beginRename(conversation.id, conversation.title)}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-slate-200 hover:bg-slate-700"
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-app-secondary hover:bg-app-hover"
                   >
                     <Pencil aria-hidden="true" className="size-3.5" /> Rename
                   </button>
                   <button
                     type="button"
                     onClick={() => void deleteChat(conversation.id, conversation.title)}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-red-300 hover:bg-red-400/10"
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-app-danger hover:bg-app-danger/10"
                   >
                     <Trash2 aria-hidden="true" className="size-3.5" /> Delete
                   </button>
@@ -352,7 +352,7 @@ export function ChatHistorySidebar({ onNewChat }: ChatHistorySidebarProps) {
       {isListLoading && conversations.length > 0 && (
         <LoaderCircle
           aria-label="Loading more chats"
-          className="mx-auto my-3 size-4 animate-spin text-slate-500"
+          className="mx-auto my-3 size-4 animate-spin text-app-subtle"
         />
       )}
     </aside>

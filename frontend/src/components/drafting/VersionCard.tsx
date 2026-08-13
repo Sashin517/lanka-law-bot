@@ -21,36 +21,36 @@ export function VersionCard({
     <article
       className={`rounded-lg border p-3 transition ${
         selected
-          ? "border-[#D4AF37]/40 bg-[#D4AF37]/10"
-          : "border-slate-700/50 bg-[#1D2530]/60 hover:border-slate-600"
+          ? "border-app-accent/40 bg-app-accent/10"
+          : "border-app-border/50 bg-app-panel-muted/60 hover:border-app-border"
       }`}
       aria-current={selected ? "true" : undefined}
     >
       <div className="mb-1.5 flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           {version.createdBy === "ai" ? (
-            <Bot size={13} className="shrink-0 text-[#D4AF37]" />
+            <Bot size={13} className="shrink-0 text-app-accent" />
           ) : (
-            <UserRound size={13} className="shrink-0 text-sky-400" />
+            <UserRound size={13} className="shrink-0 text-app-info" />
           )}
-          <span className="truncate text-xs font-medium text-white">
+          <span className="truncate text-xs font-medium text-app-strong">
             {version.label}
           </span>
         </div>
         {selected && (
-          <span className="rounded bg-[#D4AF37]/20 px-1.5 py-0.5 text-[9px] font-medium text-[#D4AF37]">
+          <span className="rounded bg-app-accent/20 px-1.5 py-0.5 text-[9px] font-medium text-app-accent">
             Selected
           </span>
         )}
       </div>
 
-      <p className="line-clamp-3 text-[10px] leading-relaxed text-slate-400">
+      <p className="line-clamp-3 text-[10px] leading-relaxed text-app-muted">
         {version.editSummary}
       </p>
       <div className="mt-2 flex items-center justify-between gap-2">
         <time
           dateTime={version.createdAt}
-          className="text-[9px] text-slate-600"
+          className="text-[9px] text-app-faint"
         >
           {formatVersionTime(version.createdAt)}
         </time>
@@ -59,7 +59,7 @@ export function VersionCard({
             type="button"
             disabled={disabled}
             onClick={() => onRestore(version.id)}
-            className="flex items-center gap-1 rounded px-1.5 py-1 text-[9px] font-medium text-slate-400 transition hover:bg-slate-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-1 rounded px-1.5 py-1 text-[9px] font-medium text-app-muted transition hover:bg-app-hover hover:text-app-strong disabled:cursor-not-allowed disabled:opacity-40"
             aria-label={`Restore ${version.label}`}
           >
             <RotateCcw size={10} />

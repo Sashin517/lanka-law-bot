@@ -71,7 +71,7 @@ export function DraftToolbar({
 }: DraftToolbarProps) {
   return (
     <div
-      className="flex items-center justify-between px-6 py-2.5 bg-[#161B28] border-b border-slate-700/50 text-sm shrink-0"
+      className="flex items-center justify-between px-6 py-2.5 bg-app-panel border-b border-app-border/50 text-sm shrink-0"
       id="draft-toolbar"
     >
       {/* ── Left: Close + Title ── */}
@@ -79,17 +79,17 @@ export function DraftToolbar({
         <button
           type="button"
           onClick={onClose}
-          className="text-slate-400 hover:text-white transition p-1 rounded hover:bg-slate-700/50"
+          className="text-app-muted hover:text-app-strong transition p-1 rounded hover:bg-app-hover/50"
           aria-label="Close draft"
           id="draft-toolbar-close"
         >
           <X size={18} />
         </button>
 
-        <span className="text-slate-500">|</span>
+        <span className="text-app-subtle">|</span>
 
-        <div className="flex items-center gap-2 text-white">
-          <ChevronLeft size={16} className="text-slate-400" />
+        <div className="flex items-center gap-2 text-app-strong">
+          <ChevronLeft size={16} className="text-app-muted" />
           <span className="font-medium truncate max-w-[300px]">
             {title || "Untitled Draft"}
           </span>
@@ -104,8 +104,8 @@ export function DraftToolbar({
           onClick={onShowVersions}
           className={`flex items-center gap-1.5 rounded px-3 py-1.5 transition ${
             versionsActive
-              ? "bg-[#D4AF37]/10 text-[#D4AF37]"
-              : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+              ? "bg-app-accent/10 text-app-accent"
+              : "text-app-tertiary hover:bg-app-hover/50 hover:text-app-strong"
           }`}
           aria-label={`Version ${versionNumber}`}
           aria-pressed={versionsActive}
@@ -115,7 +115,7 @@ export function DraftToolbar({
           <span>Version {versionNumber}</span>
         </button>
 
-        <span className="text-slate-600 mx-1">|</span>
+        <span className="text-app-faint mx-1">|</span>
 
         {/* Show Edits Toggle */}
         <button
@@ -124,8 +124,8 @@ export function DraftToolbar({
           disabled={showEditsDisabled}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition ${
             showEditsActive
-              ? "text-[#D4AF37] bg-[#D4AF37]/10"
-              : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+              ? "text-app-accent bg-app-accent/10"
+              : "text-app-tertiary hover:text-app-strong hover:bg-app-hover/50"
           } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
           aria-label="Toggle show edits"
           aria-pressed={showEditsActive}
@@ -141,8 +141,8 @@ export function DraftToolbar({
           onClick={onVerifySources}
           className={`flex items-center gap-1.5 rounded px-3 py-1.5 transition ${
             verifySourcesActive
-              ? "bg-[#D4AF37]/10 text-[#D4AF37]"
-              : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+              ? "bg-app-accent/10 text-app-accent"
+              : "text-app-tertiary hover:bg-app-hover/50 hover:text-app-strong"
           }`}
           aria-label="Verify sources"
           aria-pressed={verifySourcesActive}
@@ -157,7 +157,7 @@ export function DraftToolbar({
           type="button"
           onClick={onExport}
           disabled={exportDisabled}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-app-tertiary hover:text-app-strong hover:bg-app-hover/50 rounded transition disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="Export draft"
           id="draft-toolbar-export"
         >
@@ -172,8 +172,8 @@ export function DraftToolbar({
         onClick={onToggleChatPanel}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition ${
           chatPanelOpen
-            ? "text-[#D4AF37] bg-[#D4AF37]/10"
-            : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+            ? "text-app-accent bg-app-accent/10"
+            : "text-app-tertiary hover:text-app-strong hover:bg-app-hover/50"
         }`}
         aria-label="Toggle chat panel"
         aria-pressed={chatPanelOpen}

@@ -30,33 +30,33 @@ export function ChatAttachmentCard({ document, onRemove }: ChatAttachmentCardPro
       title={isFailed && document.error ? document.error : document.filename}
       className={`flex w-full max-w-[390px] items-center gap-3 rounded-xl border px-3 py-2.5 ${
         isFailed
-          ? "border-red-400/40 bg-red-950/20"
-          : "border-slate-600/60 bg-[#202020]"
+          ? "border-app-danger/40 bg-app-danger/20"
+          : "border-app-border/60 bg-app-input"
       }`}
     >
       <div
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-          isFailed ? "bg-red-500" : "bg-[#ff3b44]"
+          isFailed ? "bg-app-danger" : "bg-[#ff3b44]"
         }`}
       >
-        <FileText size={21} className="text-white" />
+        <FileText size={21} className="text-app-strong" />
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-slate-100">
+        <div className="truncate text-sm font-semibold text-app-primary">
           {document.filename}
         </div>
-        <div className="mt-0.5 flex min-h-5 items-center gap-1.5 text-xs text-slate-300">
+        <div className="mt-0.5 flex min-h-5 items-center gap-1.5 text-xs text-app-tertiary">
           <span>{fileType(document.filename)}</span>
-          <span className="text-slate-500">·</span>
-          {isProcessing && <Loader2 size={12} className="animate-spin text-slate-300" />}
-          {document.status === "completed" && <Check size={13} className="text-emerald-400" />}
-          {isFailed && <AlertTriangle size={13} className="text-red-300" />}
-          <span className={isFailed ? "text-red-300" : "text-slate-300"}>
+          <span className="text-app-subtle">·</span>
+          {isProcessing && <Loader2 size={12} className="animate-spin text-app-tertiary" />}
+          {document.status === "completed" && <Check size={13} className="text-app-success" />}
+          {isFailed && <AlertTriangle size={13} className="text-app-danger" />}
+          <span className={isFailed ? "text-app-danger" : "text-app-tertiary"}>
             {statusLabel[document.status]}
           </span>
           {document.status === "completed" && typeof document.chunk_count === "number" && (
-            <span className="text-slate-500">({document.chunk_count} chunks)</span>
+            <span className="text-app-subtle">({document.chunk_count} chunks)</span>
           )}
         </div>
       </div>

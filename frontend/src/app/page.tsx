@@ -24,6 +24,7 @@ import { ChatHistorySidebar } from "@/components/ChatHistorySidebar";
 import { ExecutionActivityDisclosure } from "@/components/ExecutionActivityDisclosure";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { PromptSuggestionPanel } from "@/components/PromptSuggestionPanel";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   deleteDocument,
   getDocumentStatus,
@@ -402,10 +403,10 @@ export default function ResearchDashboard() {
 
   const confidenceColor = (c?: string) => {
     if (c === "high")
-      return "text-emerald-400 bg-emerald-400/10 border-emerald-400/30";
+      return "text-app-success bg-app-success/10 border-app-success/30";
     if (c === "medium")
-      return "text-amber-400 bg-amber-400/10 border-amber-400/30";
-    return "text-red-400 bg-red-400/10 border-red-400/30";
+      return "text-app-warning bg-app-warning/10 border-app-warning/30";
+    return "text-app-danger bg-app-danger/10 border-app-danger/30";
   };
 
   const confidenceDots = (c?: string) => {
@@ -413,7 +414,7 @@ export default function ResearchDashboard() {
     return Array.from({ length: 3 }, (_, i) => (
       <span
         key={i}
-        className={`inline-block w-2 h-2 rounded-full mr-0.5 ${i < filled ? "bg-current" : "bg-slate-600"}`}
+        className={`inline-block w-2 h-2 rounded-full mr-0.5 ${i < filled ? "bg-current" : "bg-app-disabled"}`}
       />
     ));
   };
@@ -427,10 +428,10 @@ export default function ResearchDashboard() {
 
   const renderResearchActivity = () => (
     <div className="flex justify-start">
-      <div className="w-full max-w-[85%] rounded-2xl rounded-bl-md border border-slate-700/50 bg-[#161B28] px-5 py-4 shadow-lg">
+      <div className="w-full max-w-[85%] rounded-2xl rounded-bl-md border border-app-border/50 bg-app-panel px-5 py-4 shadow-lg">
         <div className="flex items-center gap-2">
-          <Scale size={14} className="text-[#D4AF37]" />
-          <span className="text-[#D4AF37] text-sm font-semibold">
+          <Scale size={14} className="text-app-accent" />
+          <span className="text-app-accent text-sm font-semibold">
             LankaLawBot
           </span>
         </div>
@@ -451,77 +452,80 @@ export default function ResearchDashboard() {
   /* ---------------------------------------------------------------- */
 
   return (
-    <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-[#2A3241] font-sans">
+    <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-app-canvas font-sans text-app-primary">
       {/* ── NAVBAR ── */}
-      <header className="bg-[#161B28] text-white flex items-center justify-between px-8 py-4 z-10 border-b border-slate-700/50 shrink-0">
-        <div className="text-2xl font-serif tracking-wide text-white flex items-center gap-2">
-          <Scale size={24} className="text-[#D4AF37]" />
+      <header className="bg-app-panel text-app-strong flex items-center justify-between px-8 py-4 z-10 border-b border-app-border/50 shrink-0">
+        <div className="text-2xl font-serif tracking-wide text-app-strong flex items-center gap-2">
+          <Scale size={24} className="text-app-accent" />
           LankaLawBot
         </div>
         <nav className="flex space-x-12">
-          <button className="flex items-center space-x-2 text-[#D4AF37] border-b-2 border-[#D4AF37] pb-1">
+          <button className="flex items-center space-x-2 text-app-accent border-b-2 border-app-accent pb-1">
             <Search size={18} />
             <span>Research</span>
           </button>
           <Link
             href="/draft"
-            className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+            className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition"
           >
             <PenTool size={18} />
             <span>Draft</span>
           </Link>
-          <button className="flex items-center space-x-2 text-slate-400 hover:text-white transition">
+          <button className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition">
             <CheckSquare size={18} />
             <span>Verify</span>
           </button>
-          <button className="flex items-center space-x-2 text-slate-400 hover:text-white transition">
+          <button className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition">
             <BarChart2 size={18} />
             <span>Analyze</span>
           </button>
         </nav>
 
-        {authLoading ? (
-          <div className="h-10 w-10 rounded-full bg-[#2A3241] animate-pulse" />
-        ) : user ? (
-          <div className="flex items-center gap-3">
-            {user.photoURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.photoURL}
-                alt={user.displayName ?? "User avatar"}
-                className="h-9 w-9 rounded-full object-cover"
-              />
-            ) : (
-              <div className="bg-[#2A3241] p-2 rounded-full">
-                <User size={20} className="text-slate-300" />
-              </div>
-            )}
-            <div className="text-right">
-              <p className="text-sm text-white truncate max-w-[160px]">
-                {user.displayName || user.email}
-              </p>
-              {user.displayName && user.email && (
-                <p className="text-xs text-slate-400 truncate max-w-[160px]">
-                  {user.email}
-                </p>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          {authLoading ? (
+            <div className="h-10 w-10 rounded-full bg-app-elevated animate-pulse" />
+          ) : user ? (
+            <div className="flex items-center gap-3">
+              {user.photoURL ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName ?? "User avatar"}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              ) : (
+                <div className="bg-app-elevated p-2 rounded-full">
+                  <User size={20} className="text-app-tertiary" />
+                </div>
               )}
+              <div className="text-right">
+                <p className="text-sm text-app-strong truncate max-w-[160px]">
+                  {user.displayName || user.email}
+                </p>
+                {user.displayName && user.email && (
+                  <p className="text-xs text-app-muted truncate max-w-[160px]">
+                    {user.email}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => void logOut()}
+                className="text-xs text-app-muted hover:text-app-strong transition cursor-pointer hover:bg-app-disabled p-2 rounded-full border border-app-border/50"
+              >
+                Log out <LogOut className="inline size-4" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => void logOut()}
-              className="text-xs text-slate-400 hover:text-white transition cursor-pointer hover:bg-slate-600 p-2 rounded-full border border-slate-700/50"
+          ) : (
+            <Link
+              href="/login"
+              className="bg-app-elevated p-2 rounded-full cursor-pointer hover:bg-app-disabled transition"
             >
-              Log out <LogOut className="inline size-4" />
-            </button>
-          </div>
-        ) : (
-          <Link
-            href="/login"
-            className="bg-[#2A3241] p-2 rounded-full cursor-pointer hover:bg-slate-600 transition"
-          >
-            <User size={20} className="text-slate-300" />
-          </Link>
-        )}
+              <User size={20} className="text-app-tertiary" />
+            </Link>
+          )}
+        </div>
       </header>
 
       {/* ── BODY: 3-column layout ── */}
@@ -529,7 +533,7 @@ export default function ResearchDashboard() {
         <ChatHistorySidebar onNewChat={handleNewChat} />
 
         {/* ──────── CENTER: CHAT AREA ──────── */}
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#2A3241]">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-app-elevated">
           {/* Messages */}
           <div
             ref={chatScrollRef}
@@ -540,11 +544,11 @@ export default function ResearchDashboard() {
               {/* Welcome state */}
               {messages.length === 0 && !isLoading && !isMessagesLoading && (
                 <div className="flex flex-col items-center justify-center h-full py-24 text-center">
-                  <Scale size={48} className="text-[#D4AF37] mb-4" />
-                  <h2 className="text-xl font-serif text-white mb-2">
+                  <Scale size={48} className="text-app-accent mb-4" />
+                  <h2 className="text-xl font-serif text-app-strong mb-2">
                     Welcome to LankaLawBot
                   </h2>
-                  <p className="text-slate-400 text-sm max-w-md">
+                  <p className="text-app-muted text-sm max-w-md">
                     Ask any question about Sri Lankan law. The AI will search
                     through acts and case laws, then provide a cited, structured
                     answer.
@@ -558,7 +562,7 @@ export default function ResearchDashboard() {
                   /* ── User bubble ── */
                   <div key={msg.id} className="flex justify-end">
                     <div className="max-w-[75%]">
-                      <div className="bg-[#D4AF37] text-[#161B28] px-5 py-3 rounded-2xl rounded-br-md shadow-md">
+                      <div className="bg-app-accent text-app-accent-contrast px-5 py-3 rounded-2xl rounded-br-md shadow-md">
                         <p className="text-sm font-medium leading-relaxed">
                           {msg.content}
                         </p>
@@ -567,7 +571,7 @@ export default function ResearchDashboard() {
                               {msg.attachments.map((doc) => (
                                 <div
                                   key={doc.document_id}
-                                  className="flex max-w-full items-center gap-1.5 rounded-lg bg-[#161B28]/15 px-2 py-1 text-[11px] font-semibold"
+                                  className="flex max-w-full items-center gap-1.5 rounded-lg bg-app-panel/15 px-2 py-1 text-[11px] font-semibold"
                                   title={doc.filename}
                                 >
                                   <FileText size={12} />
@@ -579,7 +583,7 @@ export default function ResearchDashboard() {
                             </div>
                           )}
                       </div>
-                      <p className="text-[10px] text-slate-500 text-right mt-1 mr-1">
+                      <p className="text-[10px] text-app-subtle text-right mt-1 mr-1">
                         {new Date(msg.created_at).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -594,11 +598,11 @@ export default function ResearchDashboard() {
                       renderResearchActivity()}
                   <div className="flex justify-start">
                     <div className="max-w-[85%] w-full">
-                      <div className="bg-[#161B28] border border-slate-700/50 rounded-2xl rounded-bl-md shadow-lg overflow-hidden">
+                      <div className="bg-app-panel border border-app-border/50 rounded-2xl rounded-bl-md shadow-lg overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center gap-2 px-5 pt-4 pb-2">
-                          <Scale size={16} className="text-[#D4AF37]" />
-                          <span className="text-[#D4AF37] font-semibold text-sm">
+                          <Scale size={16} className="text-app-accent" />
+                          <span className="text-app-accent font-semibold text-sm">
                             LankaLawBot
                           </span>
                           {msg.confidence && (
@@ -624,7 +628,7 @@ export default function ResearchDashboard() {
                               }
                             />
                           ) : (
-                            <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
+                            <p className="text-app-secondary text-sm leading-relaxed whitespace-pre-wrap">
                               {msg.content}
                             </p>
                           )}
@@ -632,13 +636,13 @@ export default function ResearchDashboard() {
 
                         {/* Sources section (collapsible) */}
                         {msg.citations.length > 0 && (
-                          <div className="border-t border-slate-700/40">
+                          <div className="border-t border-app-border/40">
                             <button
                               onClick={() => toggleSources(msg.id)}
-                              className="w-full flex items-center justify-between px-5 py-2.5 text-sm text-slate-300 hover:bg-slate-800/40 transition"
+                              className="w-full flex items-center justify-between px-5 py-2.5 text-sm text-app-tertiary hover:bg-app-elevated/40 transition"
                             >
                               <span className="flex items-center gap-2">
-                                <Info size={14} className="text-sky-400" />
+                                <Info size={14} className="text-app-info" />
                                 Sources ({msg.citations.length})
                               </span>
                               {expandedSources.has(msg.id) ? (
@@ -653,32 +657,32 @@ export default function ResearchDashboard() {
                                   <div
                                     key={src.citation_id}
                                     id={sourceCardId(msg.id, src.citation_id)}
-                                    className="bg-slate-800/30 rounded-lg p-3 flex items-start justify-between gap-3 scroll-mt-4"
+                                    className="bg-app-elevated/30 rounded-lg p-3 flex items-start justify-between gap-3 scroll-mt-4"
                                   >
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[10px] font-bold bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded shrink-0">
+                                        <span className="text-[10px] font-bold bg-app-info/20 text-app-info px-1.5 py-0.5 rounded shrink-0">
                                           {src.citation_id}
                                         </span>
-                                        <span className="text-sm font-medium text-slate-200 truncate">
+                                        <span className="text-sm font-medium text-app-secondary truncate">
                                           {src.title}
                                         </span>
                                       </div>
-                                      <p className="text-[11px] text-slate-400">
+                                      <p className="text-[11px] text-app-muted">
                                         {src.year > 0
                                           ? `Year: ${src.year}`
                                           : ""}
                                         {src.section ? ` · ${src.section}` : ""}
                                       </p>
                                       {src.excerpt && (
-                                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                                        <p className="text-xs text-app-subtle mt-1 line-clamp-2">
                                           {src.excerpt}
                                         </p>
                                       )}
                                     </div>
                                     <button
                                       onClick={() => addMaterial(src)}
-                                      className="text-[10px] font-semibold bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/30 px-2 py-1 rounded transition shrink-0"
+                                      className="text-[10px] font-semibold bg-app-accent/20 text-app-accent hover:bg-app-accent/30 px-2 py-1 rounded transition shrink-0"
                                       title="Add to materials"
                                     >
                                       + Add
@@ -692,18 +696,18 @@ export default function ResearchDashboard() {
 
                         {/* Disclaimer */}
                         {msg.disclaimer && (
-                          <div className="border-t border-slate-700/40 px-5 py-2.5 flex items-start gap-2">
+                          <div className="border-t border-app-border/40 px-5 py-2.5 flex items-start gap-2">
                             <AlertTriangle
                               size={12}
-                              className="text-amber-500 mt-0.5 shrink-0"
+                              className="text-app-warning mt-0.5 shrink-0"
                             />
-                            <p className="text-[11px] text-slate-500 leading-relaxed">
+                            <p className="text-[11px] text-app-subtle leading-relaxed">
                               {msg.disclaimer}
                             </p>
                           </div>
                         )}
                       </div>
-                      <p className="text-[10px] text-slate-500 mt-1 ml-1">
+                      <p className="text-[10px] text-app-subtle mt-1 ml-1">
                         {new Date(msg.created_at).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -721,18 +725,18 @@ export default function ResearchDashboard() {
                 renderResearchActivity()
               ) : isLoading || isMessagesLoading ? (
                 <div className="flex justify-start">
-                  <div className="rounded-2xl rounded-bl-md border border-slate-700/50 bg-[#161B28] px-5 py-4 shadow-lg">
+                  <div className="rounded-2xl rounded-bl-md border border-app-border/50 bg-app-panel px-5 py-4 shadow-lg">
                     <div className="flex items-center gap-2">
-                      <Scale size={14} className="text-[#D4AF37]" />
-                      <span className="text-[#D4AF37] text-sm font-semibold">
+                      <Scale size={14} className="text-app-accent" />
+                      <span className="text-app-accent text-sm font-semibold">
                         LankaLawBot
                       </span>
                     </div>
                     <div className="mt-2 flex items-center gap-1.5">
-                      <span className="typing-dot h-2 w-2 rounded-full bg-slate-400" />
-                      <span className="typing-dot h-2 w-2 rounded-full bg-slate-400" />
-                      <span className="typing-dot h-2 w-2 rounded-full bg-slate-400" />
-                      <span className="ml-2 text-xs text-slate-500">
+                      <span className="typing-dot h-2 w-2 rounded-full bg-app-muted" />
+                      <span className="typing-dot h-2 w-2 rounded-full bg-app-muted" />
+                      <span className="typing-dot h-2 w-2 rounded-full bg-app-muted" />
+                      <span className="ml-2 text-xs text-app-subtle">
                         {isMessagesLoading
                           ? "Loading conversation…"
                           : "Preparing your request…"}
@@ -747,12 +751,12 @@ export default function ResearchDashboard() {
           </div>
 
           {/* ── Input bar (bottom-pinned) ── */}
-          <div className="shrink-0 border-t border-slate-700/40 bg-[#1E2636] px-6 py-4">
+          <div className="shrink-0 border-t border-app-border/40 bg-app-panel-muted px-6 py-4">
             {documentError && (
               <button
                 type="button"
                 onClick={() => setDocumentError(null)}
-                className="mx-auto mb-3 block w-full max-w-3xl rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-left text-xs text-amber-200"
+                className="mx-auto mb-3 block w-full max-w-3xl rounded-lg border border-app-warning/30 bg-app-warning/10 px-3 py-2 text-left text-xs text-app-warning"
                 title="Dismiss document warning"
               >
                 {documentError}
@@ -793,14 +797,14 @@ export default function ResearchDashboard() {
         </main>
 
         {/* ──────── RIGHT SIDEBAR: ADDED MATERIALS ──────── */}
-        <aside className="min-h-0 w-[280px] shrink-0 overflow-y-auto border-l border-slate-700/40 bg-[#161B28] p-5 text-white chat-scroll">
-          <h2 className="text-base font-semibold mb-4 pb-3 border-b border-slate-700 text-slate-200">
+        <aside className="min-h-0 w-[280px] shrink-0 overflow-y-auto border-l border-app-border/40 bg-app-panel p-5 text-app-strong chat-scroll">
+          <h2 className="text-base font-semibold mb-4 pb-3 border-b border-app-border text-app-secondary">
             Added Materials
           </h2>
 
           <div className="space-y-3">
             {addedMaterials.length === 0 ? (
-              <p className="text-slate-500 text-xs italic leading-relaxed">
+              <p className="text-app-subtle text-xs italic leading-relaxed">
                 No materials added yet. Expand &quot;Sources&quot; in a response
                 and click &quot;+ Add&quot; to save references here for
                 drafting.
@@ -809,25 +813,25 @@ export default function ResearchDashboard() {
               addedMaterials.map((item) => (
                 <div
                   key={item.citation_id}
-                  className="flex justify-between items-start group bg-slate-800/30 rounded-lg p-3"
+                  className="flex justify-between items-start group bg-app-elevated/30 rounded-lg p-3"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[10px] font-bold bg-sky-400/20 text-sky-400 px-1.5 py-0.5 rounded shrink-0">
+                      <span className="text-[10px] font-bold bg-app-info/20 text-app-info px-1.5 py-0.5 rounded shrink-0">
                         {item.citation_id}
                       </span>
                     </div>
-                    <h4 className="text-xs text-slate-200 group-hover:text-white transition leading-snug">
+                    <h4 className="text-xs text-app-secondary group-hover:text-app-strong transition leading-snug">
                       {item.title}
                     </h4>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
+                    <p className="text-[10px] text-app-subtle mt-0.5">
                       {item.year > 0 ? `Year: ${item.year}` : ""}
                       {item.section ? ` · ${item.section}` : ""}
                     </p>
                   </div>
                   <button
                     onClick={() => removeMaterial(item.citation_id)}
-                    className="text-slate-500 hover:text-white bg-slate-700/50 hover:bg-slate-600 rounded-full p-1 ml-2 transition shrink-0"
+                    className="text-app-subtle hover:text-app-strong bg-app-hover/50 hover:bg-app-disabled rounded-full p-1 ml-2 transition shrink-0"
                   >
                     <X size={12} />
                   </button>

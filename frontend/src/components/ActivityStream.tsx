@@ -50,12 +50,12 @@ export function ActivityStream({
 
       {waitingForNextStep && (
         <div
-          className="flex items-center gap-2 py-1 text-xs text-slate-500"
+          className="flex items-center gap-2 py-1 text-xs text-app-subtle"
           role="status"
         >
           <Loader2
             size={12}
-            className="shrink-0 animate-spin text-[#D4AF37]"
+            className="shrink-0 animate-spin text-app-accent"
             aria-hidden="true"
           />
           <span>Processing…</span>
@@ -84,7 +84,7 @@ function StepItem({ step, compact }: { step: ActivityStep; compact: boolean }) {
 
       {!compact && hasDetails && (
         <details className="ml-5 pb-1" open={step.status === "running" || step.status === "error"}>
-          <summary className="cursor-pointer select-none text-[10px] text-slate-500 hover:text-slate-400">
+          <summary className="cursor-pointer select-none text-[10px] text-app-subtle hover:text-app-muted">
             {titles.length > 0
               ? `${titles.length} source${titles.length === 1 ? "" : "s"}`
               : `${details.length} detail${details.length === 1 ? "" : "s"}`}
@@ -94,7 +94,7 @@ function StepItem({ step, compact }: { step: ActivityStep; compact: boolean }) {
             {details.map((detail, index) => (
               <p
                 key={`${step.id}-detail-${index}`}
-                className="text-[10px] leading-relaxed text-slate-500"
+                className="text-[10px] leading-relaxed text-app-subtle"
               >
                 {detail}
               </p>
@@ -103,14 +103,14 @@ function StepItem({ step, compact }: { step: ActivityStep; compact: boolean }) {
             {titles.slice(0, 5).map((title, index) => (
               <p
                 key={`${step.id}-source-${index}-${title}`}
-                className="truncate text-[10px] text-slate-600"
+                className="truncate text-[10px] text-app-faint"
                 title={title}
               >
                 {title}
               </p>
             ))}
             {titles.length > 5 && (
-              <p className="text-[10px] text-slate-600">
+              <p className="text-[10px] text-app-faint">
                 …and {titles.length - 5} more
               </p>
             )}
@@ -127,7 +127,7 @@ function StepIcon({ status }: { status: StreamStepStatus }) {
       return (
         <Loader2
           size={12}
-          className="mt-0.5 shrink-0 animate-spin text-[#D4AF37]"
+          className="mt-0.5 shrink-0 animate-spin text-app-accent"
           aria-hidden="true"
         />
       );
@@ -135,7 +135,7 @@ function StepIcon({ status }: { status: StreamStepStatus }) {
       return (
         <Check
           size={12}
-          className="mt-0.5 shrink-0 text-emerald-400"
+          className="mt-0.5 shrink-0 text-app-success"
           aria-hidden="true"
         />
       );
@@ -143,14 +143,14 @@ function StepIcon({ status }: { status: StreamStepStatus }) {
       return (
         <AlertTriangle
           size={12}
-          className="mt-0.5 shrink-0 text-red-400"
+          className="mt-0.5 shrink-0 text-app-danger"
           aria-hidden="true"
         />
       );
     default:
       return (
         <span
-          className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-600"
+          className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-app-disabled"
           aria-hidden="true"
         />
       );
@@ -160,13 +160,13 @@ function StepIcon({ status }: { status: StreamStepStatus }) {
 function statusClass(status: StreamStepStatus): string {
   switch (status) {
     case "running":
-      return "font-medium text-slate-200";
+      return "font-medium text-app-secondary";
     case "done":
-      return "text-slate-400";
+      return "text-app-muted";
     case "error":
-      return "text-red-400";
+      return "text-app-danger";
     default:
-      return "text-slate-500";
+      return "text-app-subtle";
   }
 }
 

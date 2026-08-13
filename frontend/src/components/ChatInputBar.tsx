@@ -89,7 +89,7 @@ export function ChatInputBar({
   return (
     <form
       onSubmit={submit}
-      className="mx-auto flex max-w-3xl flex-col rounded-[28px] border border-slate-600/40 bg-[#202020] px-4 py-3 shadow-lg"
+      className="mx-auto flex max-w-3xl flex-col rounded-[28px] border border-app-border/40 bg-app-input px-4 py-3 shadow-lg"
     >
       {documents.length > 0 && (
         <div className="mb-3 flex flex-col gap-2">
@@ -121,7 +121,7 @@ export function ChatInputBar({
           aria-label="Attach document"
           onClick={() => inputRef.current?.click()}
           disabled={isLoading}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-200 transition hover:bg-slate-700/70 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-app-secondary transition hover:bg-app-hover/70 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus size={26} strokeWidth={1.8} />
         </button>
@@ -134,14 +134,14 @@ export function ChatInputBar({
             hasPendingDocument ? "Document is still processing..." : "Ask anything"
           }
           disabled={isLoading}
-          className="min-w-0 flex-1 bg-transparent py-2 text-base text-white placeholder:text-slate-400 focus:outline-none disabled:opacity-50"
+          className="min-w-0 flex-1 bg-transparent py-2 text-base text-app-strong placeholder:text-app-muted focus:outline-none disabled:opacity-50"
         />
 
         <button
           type="button"
           disabled={!canImprove}
           onClick={onImprove}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700/70 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-app-border px-3 py-2 text-xs font-semibold text-app-secondary transition hover:bg-app-hover/70 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Improve prompt"
         >
           <Sparkles size={14} aria-hidden="true" />
@@ -152,7 +152,7 @@ export function ChatInputBar({
           <button
             type="button"
             onClick={onStop}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] text-[#161B28] transition hover:bg-[#C5A030]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-app-accent text-app-accent-contrast transition hover:bg-app-accent-hover"
             aria-label="Stop generating response"
             title="Stop generating"
           >
@@ -162,7 +162,7 @@ export function ChatInputBar({
           <button
             type="submit"
             disabled={!canSubmit}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] text-[#161B28] transition hover:bg-[#C5A030] disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-400"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-app-accent text-app-accent-contrast transition hover:bg-app-accent-hover disabled:cursor-not-allowed disabled:bg-app-disabled disabled:text-app-muted"
             aria-label="Send message"
           >
             <Send size={17} aria-hidden="true" />
@@ -184,8 +184,8 @@ export function ChatInputBar({
               className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150
                 ${
                   isActive
-                    ? "bg-[#D4AF37]/20 text-[#D4AF37] ring-1 ring-[#D4AF37]/40"
-                    : "text-slate-400 hover:bg-slate-700/50 hover:text-slate-200"
+                    ? "bg-app-accent/20 text-app-accent ring-1 ring-app-accent/40"
+                    : "text-app-muted hover:bg-app-hover/50 hover:text-app-secondary"
                 }
                 disabled:cursor-not-allowed disabled:opacity-50`}
               aria-pressed={isActive}
@@ -201,12 +201,12 @@ export function ChatInputBar({
       {(hasPendingDocument || hasFailedDocument) && (
         <div className="mt-2 px-12 text-xs">
           {hasPendingDocument && (
-            <span className="text-slate-400">
+            <span className="text-app-muted">
               Wait until the document is ready before sending the query.
             </span>
           )}
           {hasFailedDocument && (
-            <span className="text-red-300">
+            <span className="text-app-danger">
               Remove failed documents before sending.
             </span>
           )}

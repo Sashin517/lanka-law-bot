@@ -64,8 +64,8 @@ function SourceVerificationRow({
       id={rowId(citation.citationId)}
       className={`rounded-lg border p-3 transition-colors ${
         active
-          ? "border-[#D4AF37] bg-[#D4AF37]/10"
-          : "border-slate-700/60 bg-[#1D2530]/70"
+          ? "border-app-accent bg-app-accent/10"
+          : "border-app-border/60 bg-app-panel-muted/70"
       }`}
       tabIndex={-1}
       aria-label={`Source details for ${citation.citationId}`}
@@ -74,8 +74,8 @@ function SourceVerificationRow({
         <div
           className={`mt-0.5 shrink-0 rounded-md p-1.5 ${
             isDocument
-              ? "bg-purple-400/10 text-purple-400"
-              : "bg-[#D4AF37]/10 text-[#D4AF37]"
+              ? "bg-app-document/10 text-app-document"
+              : "bg-app-accent/10 text-app-accent"
           }`}
           aria-hidden="true"
         >
@@ -87,51 +87,51 @@ function SourceVerificationRow({
             <span
               className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
                 isDocument
-                  ? "bg-purple-400/20 text-purple-300"
-                  : "bg-[#D4AF37]/20 text-[#D4AF37]"
+                  ? "bg-app-document/20 text-app-document"
+                  : "bg-app-accent/20 text-app-accent"
               }`}
             >
               {citation.citationId}
             </span>
             {citation.status === "linked" ? (
-              <span className="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-400">
+              <span className="inline-flex items-center gap-1 text-[9px] font-medium text-app-success">
                 <CheckCircle2 size={10} /> Linked
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[9px] font-medium text-amber-400">
+              <span className="inline-flex items-center gap-1 text-[9px] font-medium text-app-warning">
                 <AlertTriangle size={10} /> Metadata missing
               </span>
             )}
           </div>
 
-          <h3 className="mt-1.5 break-words text-xs font-semibold leading-snug text-slate-100">
+          <h3 className="mt-1.5 break-words text-xs font-semibold leading-snug text-app-primary">
             {displayTitle(citation)}
           </h3>
 
           {metadata.length > 0 && (
-            <p className="mt-1 text-[10px] leading-relaxed text-slate-400">
+            <p className="mt-1 text-[10px] leading-relaxed text-app-muted">
               {metadata.join(" · ")}
             </p>
           )}
 
           {source?.reporter_citation && (
-            <p className="mt-1 break-words text-[10px] text-slate-400">
+            <p className="mt-1 break-words text-[10px] text-app-muted">
               Reporter: {source.reporter_citation}
             </p>
           )}
 
-          <p className="mt-2 whitespace-pre-wrap text-[11px] leading-relaxed text-slate-300">
+          <p className="mt-2 whitespace-pre-wrap text-[11px] leading-relaxed text-app-tertiary">
             {excerpt || "No source excerpt was returned for this citation."}
           </p>
 
-          <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-[9px] text-slate-500">
+          <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-[9px] text-app-subtle">
             {citation.occurrenceCount > 1 && (
               <span>Used {citation.occurrenceCount} times</span>
             )}
             {source?.authoritative != null && (
               <span
                 className={
-                  source.authoritative ? "text-emerald-400" : "text-amber-400"
+                  source.authoritative ? "text-app-success" : "text-app-warning"
                 }
               >
                 {source.authoritative ? "Marked authoritative" : "Not marked authoritative"}
@@ -173,14 +173,14 @@ export function SourceVerificationPanel({
       className="flex min-h-0 w-full flex-1 flex-col overflow-hidden"
       aria-label="Source verification"
     >
-      <header className="border-b border-slate-700/50 px-4 py-3">
+      <header className="border-b border-app-border/50 px-4 py-3">
         <div className="flex items-center gap-2">
-          <BookOpenCheck size={13} className="text-[#D4AF37]" />
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <BookOpenCheck size={13} className="text-app-accent" />
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-app-tertiary">
             Verify Sources
           </h2>
         </div>
-        <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">
+        <p className="mt-1.5 text-[10px] leading-relaxed text-app-subtle">
           {citations.length === 0
             ? "No citation marks are present in this draft."
             : `${linkedCount} of ${citations.length} unique citations have matching metadata.`}
@@ -197,19 +197,19 @@ export function SourceVerificationPanel({
             />
           ))
         ) : (
-          <div className="flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 px-4 text-center">
-            <BookOpenCheck size={24} className="text-slate-500" />
-            <p className="mt-3 text-xs font-medium text-slate-300">
+          <div className="flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-app-border px-4 text-center">
+            <BookOpenCheck size={24} className="text-app-subtle" />
+            <p className="mt-3 text-xs font-medium text-app-tertiary">
               No citations to inspect
             </p>
-            <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
+            <p className="mt-1 text-[10px] leading-relaxed text-app-subtle">
               Citation anchors such as [LAW-1] and [DOC-1] will appear here.
             </p>
           </div>
         )}
       </div>
 
-      <footer className="border-t border-slate-700/60 px-3 py-2.5 text-[9px] leading-relaxed text-slate-500">
+      <footer className="border-t border-app-border/60 px-3 py-2.5 text-[9px] leading-relaxed text-app-subtle">
         “Linked” confirms matching metadata. Independently verify authority,
         currency, and legal applicability before filing.
       </footer>

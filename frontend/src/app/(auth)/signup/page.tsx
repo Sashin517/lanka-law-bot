@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   getAuthErrorMessage,
   signInWithGoogle,
@@ -56,8 +57,9 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex bg-background text-white flex-col items-center justify-center h-screen">
-      <div className="bg-dark-blue p-8 rounded-lg w-full max-w-md">
+    <div className="relative flex h-screen flex-col items-center justify-center bg-app-canvas text-app-primary">
+      <ThemeToggle className="absolute right-6 top-6" />
+      <div className="w-full max-w-md rounded-lg border border-app-border/40 bg-app-panel p-8 shadow-xl">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-serif tracking-wide">Sign up</h2>
           <p>Welcome to LankaLawBot</p>
@@ -65,7 +67,7 @@ export default function SignupPage() {
 
         <form onSubmit={handleEmailSignup} className="flex flex-col gap-4">
           {error && (
-            <p className="text-sm text-red-400 bg-red-400/10 border border-red-400/30 rounded-lg px-3 py-2">
+            <p className="text-sm text-app-danger bg-app-danger/10 border border-app-danger/30 rounded-lg px-3 py-2">
               {error}
             </p>
           )}
@@ -79,7 +81,7 @@ export default function SignupPage() {
             onChange={(event) => setDisplayName(event.target.value)}
             required
             autoComplete="name"
-            className="bg-light-blue p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg"
           />
 
           <label htmlFor="email">Email</label>
@@ -91,7 +93,7 @@ export default function SignupPage() {
             onChange={(event) => setEmail(event.target.value)}
             required
             autoComplete="email"
-            className="bg-light-blue p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg"
           />
 
           <label htmlFor="password">Password</label>
@@ -104,7 +106,7 @@ export default function SignupPage() {
             required
             minLength={6}
             autoComplete="new-password"
-            className="bg-light-blue p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg"
           />
 
           <label htmlFor="confirm-password">Confirm Password</label>
@@ -117,13 +119,13 @@ export default function SignupPage() {
             required
             minLength={6}
             autoComplete="new-password"
-            className="bg-light-blue p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg"
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="bg-yellow text-dark-blue p-2 rounded-lg disabled:opacity-60"
+            className="bg-app-accent text-app-accent-contrast p-2 rounded-lg disabled:opacity-60"
           >
             {loading ? "Creating account…" : "Sign up"}{" "}
             <User className="inline size-4" />
@@ -135,7 +137,7 @@ export default function SignupPage() {
             type="button"
             onClick={handleGoogleSignup}
             disabled={loading}
-            className="bg-light-blue p-2 rounded-lg disabled:opacity-60"
+            className="bg-app-elevated p-2 rounded-lg disabled:opacity-60"
           >
             Continue with Google
           </button>

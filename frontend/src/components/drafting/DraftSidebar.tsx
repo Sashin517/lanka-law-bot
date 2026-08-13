@@ -33,22 +33,22 @@ export function DraftSidebar({
 }: DraftSidebarProps) {
   return (
     <aside
-      className="flex w-[300px] shrink-0 flex-col overflow-hidden border-r border-slate-700/50 bg-[#161B28]"
+      className="flex w-[300px] shrink-0 flex-col overflow-hidden border-r border-app-border/50 bg-app-panel"
       id="draft-left-sidebar"
       aria-label="Draft navigation"
     >
-      <div className="border-b border-slate-700/50 p-4">
-        <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-500">
+      <div className="border-b border-app-border/50 p-4">
+        <p className="mb-1.5 text-[10px] uppercase tracking-wider text-app-subtle">
           Prompt
         </p>
-        <p className="line-clamp-4 text-xs leading-relaxed text-slate-300">
+        <p className="line-clamp-4 text-xs leading-relaxed text-app-tertiary">
           {originalPrompt || "No prompt provided"}
         </p>
       </div>
 
-      <div className="border-b border-slate-700/50 px-4 py-2">
-        <p className="flex items-center gap-1 text-[10px] text-slate-500">
-          <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+      <div className="border-b border-app-border/50 px-4 py-2">
+        <p className="flex items-center gap-1 text-[10px] text-app-subtle">
+          <span className="inline-block h-2 w-2 rounded-full bg-app-success" />
           Saved locally
         </p>
       </div>
