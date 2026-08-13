@@ -24,14 +24,24 @@ module "iam" {
   account_id = data.aws_caller_identity.current.account_id
 }
 
-module "apprunner" {
-  source = "./modules/apprunner"
+module "networking" {
+  source = "./modules/networking"
   project_name = var.project_name
   environment = var.environment
+}
+
+module "ecs" {
+  source = "./modules/ecs"
+  project_name = var.project_name
+  environment = var.environment
+  vpc_id = module.networking.vpc_id
+  public_subnet_ids = module.networking.public_subnet_ids
+  alb_security_group_id = module.networking.alb_security_group_id
+  ecs_tasks_security_group_id = module.networking.ecs_tasks_security_group_id
   backend_image = module.ecr.backend_repository_url
   frontend_image = module.ecr.frontend_repository_url
-  instance_role_arn = module.iam.apprunner_instance_role_arn
-  access_role_arn = module.iam.apprunner_ecr_access_role_arn
+  task_role_arn = module.iam.ecs_task_role_arn
+  execution_role_arn = module.iam.ecs_task_execution_role_arn
 }
 
 module "ssm" {
@@ -44,8 +54,7 @@ module "monitoring" {
   project_name = var.project_name
   aws_region = var.aws_region
   alert_email = var.alert_email
-  backend_service_name = module.apprunner.backend_service_name
-  frontend_service_name = module.apprunner.frontend_service_name
+  ecs_cluster_name = "${var.project_name}-cluster"
 }
 
 module "s3" {

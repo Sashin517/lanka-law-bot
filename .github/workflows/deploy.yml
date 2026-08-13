@@ -63,3 +63,8 @@ jobs:
             -t $ECR_REGISTRY/$ECR_FRONTEND_REPO:latest -f frontend/Dockerfile frontend/
           
           docker push $ECR_REGISTRY/$ECR_FRONTEND_REPO:latest
+
+      - name: Force ECS Deployment
+        run: |
+          aws ecs update-service --cluster lankalawbot-cluster --service lankalawbot-backend --force-new-deployment --region $AWS_REGION
+          aws ecs update-service --cluster lankalawbot-cluster --service lankalawbot-frontend --force-new-deployment --region $AWS_REGION

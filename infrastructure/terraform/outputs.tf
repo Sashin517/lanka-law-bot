@@ -1,11 +1,6 @@
-output "backend_url" {
-  value = module.apprunner.backend_url
-  description = "The URL of the backend App Runner service"
-}
-
-output "frontend_url" {
-  value = module.apprunner.frontend_url
-  description = "The URL of the frontend App Runner service"
+output "alb_dns_name" {
+  value = module.ecs.alb_dns_name
+  description = "The DNS name of the Application Load Balancer"
 }
 
 output "ecr_backend_url" {
