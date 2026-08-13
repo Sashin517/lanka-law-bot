@@ -11,6 +11,7 @@ import unittest
 
 from app.agents.nodes.formatter_node import formatter_node
 from app.agents.state import (
+    AgentMessage,
     AgentState,
     GroundingResult,
     SourceChunk,
@@ -109,6 +110,47 @@ class TestFormatterNode(unittest.TestCase):
         self.assertEqual(resp["answer"], "No results found.")
         self.assertEqual(resp["sources"], [])
         self.assertEqual(resp["route"]["route"], "quick_qa")
+
+    def test_grounding_post_processing_wins_over_stale_drafting_message(self):
+        warned_markdown = "> Grounding Warning\n\n# Draft"
+        result = asyncio.run(
+            formatter_node(
+                self._make_state(
+                    mode="drafting",
+                    route="drafting",
+                    current_agent="drafting",
+                    markdown_content=warned_markdown,
+                    draft_content="# Draft",
+                    draft_documents=[
+                        {
+                            "title": "Draft",
+                            "document_type": "contract",
+                            "draft_markdown": "# Draft",
+                        }
+                    ],
+                    agent_messages=[
+                        AgentMessage(
+                            sender="drafting",
+                            msg_type="draft_output",
+                            content="# Draft",
+                        )
+                    ],
+                    grounding=GroundingResult(
+                        is_grounded=False,
+                        grounding_score=0.4,
+                    ),
+                )
+            )
+        )
+
+        self.assertEqual(
+            result["final_response"]["markdown_content"],
+            warned_markdown,
+        )
+        self.assertEqual(
+            result["final_response"]["draft_document"]["draft_markdown"],
+            warned_markdown,
+        )
 
 
 if __name__ == "__main__":

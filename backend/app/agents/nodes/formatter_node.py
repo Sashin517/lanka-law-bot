@@ -58,23 +58,36 @@ def _select_mode_output(state: AgentState) -> tuple[str, str]:
                     msg_type,
                     mode,
                 )
-                # For message bus output, content is the full markdown.
-                # Use state.summary if the matching agent was the last writer,
-                # otherwise derive a summary from the first line of content.
-                summary = (
-                    state.summary
-                    if state.current_agent == sender
-                    else msg.content[:200].split("\n")[0]
-                )
-                return summary, msg.content
+                # Grounding may post-process the active agent's markdown after
+                # its message was emitted (for example, adding a final warning
+                # after retry exhaustion). Prefer that authoritative state for
+                # the last writer so formatter cannot resurrect stale output.
+                if state.current_agent == sender:
+                    return state.summary, state.markdown_content or msg.content
+                return msg.content[:200].split("\n")[0], msg.content
 
     # Drafting mode fallback — use state.draft_content if message bus missed it
-    if mode == "drafting" and state.draft_content:
-        return state.summary, state.draft_content
+    if mode == "drafting" and (state.markdown_content or state.draft_content):
+        return state.summary, state.markdown_content or state.draft_content
 
     # Fallback: use whatever is in state (last-write-wins)
     logger.info("Formatter: using default state output for mode '%s'.", mode)
     return state.summary, state.markdown_content
+
+
+def _select_draft_documents(state: AgentState, markdown_content: str) -> list[dict]:
+    """Return draft payloads synchronized with the final visible markdown.
+
+    The drafting worker emits its structured payload before grounding runs.
+    Grounding may subsequently revise the visible markdown, most notably by
+    attaching a warning after retry exhaustion. Keep both public response
+    representations aligned so downstream persistence cannot select stale,
+    pre-grounding draft content.
+    """
+    documents = [dict(document) for document in state.draft_documents]
+    if state.mode == "drafting" and documents:
+        documents[0]["draft_markdown"] = markdown_content
+    return documents
 
 
 @traceable(name="FormatterNode")
@@ -89,6 +102,7 @@ async def formatter_node(
 
     # ── Select the mode-appropriate output ──
     answer, markdown_content = _select_mode_output(state)
+    draft_documents = _select_draft_documents(state, markdown_content)
 
     # Build route metadata for diagnostics
     route_dict = {
@@ -127,8 +141,8 @@ async def formatter_node(
         "confidence": state.confidence,
         "grounding_score": state.grounding.grounding_score,
         "disclaimer": state.disclaimer,
-        "draft_documents": state.draft_documents,
-        "draft_document": state.draft_documents[0] if state.draft_documents else None,
+        "draft_documents": draft_documents,
+        "draft_document": draft_documents[0] if draft_documents else None,
         "draft_title": state.draft_title,
         "draft_document_type": state.draft_document_type,
         "sources_used": state.sources_used,

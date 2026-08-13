@@ -82,15 +82,13 @@ async def grounding_node(
     emitter = get_emitter(config)
     emitter.emit_step_start("grounding", "Verifying factual grounding")
 
-    # ── Skip grounding for empty / clarification responses or when skip_verification is set ──
+    # ── Skip only when grounding is genuinely inapplicable or explicitly disabled ──
     has_content = state.markdown_content or state.summary
     skip_reason = None
     if not has_content:
         skip_reason = "No content to ground."
     elif state.needs_clarification:
         skip_reason = "Clarification response — grounding not applicable."
-    elif state.current_agent == "drafting":
-        skip_reason = "Drafting mode — grounding check skipped (generative output)."
     elif state.ablation_config.get("skip_verification"):
         skip_reason = "Ablation: skip_verification enabled."
 
@@ -139,6 +137,7 @@ async def grounding_node(
                 "summary": state.summary,
                 "claims": claims_text,
                 "sources": state.context_str[:_MAX_CONTEXT_CHARS],
+                "response_mode": state.current_agent or state.mode,
             }
         )
 

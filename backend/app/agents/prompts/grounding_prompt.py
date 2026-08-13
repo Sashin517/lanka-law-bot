@@ -13,6 +13,7 @@ You will receive:
 1. A **GENERATED RESPONSE** (summary + full generated content) produced by the AI.
 2. The **SOURCE DOCUMENTS** that were provided to the AI when generating
    the response.
+3. The **RESPONSE MODE** that identifies the kind of output being evaluated.
 
 You must judge whether **every factual claim** in the generated response
 is directly supported by the source documents.
@@ -29,6 +30,20 @@ is directly supported by the source documents.
 4. Generic disclaimers and procedural language (e.g. "consult a lawyer")
    are always considered grounded.
 5. If the summary says "no relevant sources found", that is grounded.
+6. When the response mode is `drafting`, score only substantive factual and
+   legal assertions. Do not count document headings, formatting, signature
+   blocks, unfilled placeholders, neutral template language, or contractual
+   terms clearly proposed by the drafter as factual claims. A proposed term
+   becomes a claim requiring support when the response represents it as
+   existing law, a legal requirement, an established fact, or a term taken
+   from a source document.
+7. If a claim includes citation anchors, verify it against the specifically
+   cited source blocks. Support elsewhere in the source set does not cure an
+   incorrect citation.
+8. Calculate `grounding_score` as the number of supported substantive claims
+   divided by the total number of substantive claims. If there are no
+   substantive claims requiring source support, return `1.0` and explain that
+   briefly in `feedback`.
 
 ## OUTPUT FORMAT
 
@@ -52,6 +67,9 @@ Respond with **valid JSON only** — no markdown, no commentary.
   does not appear in the sources."). Empty if grounded.
 
 ## GENERATED RESPONSE
+
+### Response Mode
+{response_mode}
 
 ### Summary
 {summary}

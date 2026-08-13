@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import unittest
 
-from app.agents.prompts.grounding_prompt import GROUNDING_JUDGE_PROMPT
+from app.agents.prompts.decomposition_prompt import DECOMPOSITION_PROMPT
 from app.agents.prompts.deep_research_prompt import DEEP_RESEARCH_PROMPT
-from app.agents.prompts.reasoning_prompt import REASONING_PROMPT
 from app.agents.prompts.drafting_prompt import DRAFTING_PROMPT
+from app.agents.prompts.grounding_prompt import GROUNDING_JUDGE_PROMPT
+from app.agents.prompts.reasoning_prompt import REASONING_PROMPT
 from app.agents.prompts.review_prompt import REVIEW_PROMPT
 from app.agents.prompts.verify_prompt import VERIFY_PROMPT
-from app.agents.prompts.decomposition_prompt import DECOMPOSITION_PROMPT
 
 
 class TestGroundingPrompt(unittest.TestCase):
@@ -24,6 +24,7 @@ class TestGroundingPrompt(unittest.TestCase):
         self.assertIn("{summary}", GROUNDING_JUDGE_PROMPT)
         self.assertIn("{claims}", GROUNDING_JUDGE_PROMPT)
         self.assertIn("{sources}", GROUNDING_JUDGE_PROMPT)
+        self.assertIn("{response_mode}", GROUNDING_JUDGE_PROMPT)
 
     def test_instructs_json_output(self):
         self.assertIn("valid JSON only", GROUNDING_JUDGE_PROMPT)
@@ -36,6 +37,12 @@ class TestGroundingPrompt(unittest.TestCase):
         self.assertTrue(
             "not grounded" in lower or "not appear" in lower
         )
+
+    def test_has_drafting_aware_scoring_rubric(self):
+        lower = GROUNDING_JUDGE_PROMPT.lower()
+        self.assertIn("response mode is `drafting`", lower)
+        self.assertIn("unfilled placeholders", lower)
+        self.assertIn("substantive claims", lower)
 
 
 class TestWorkerPrompts(unittest.TestCase):
@@ -92,7 +99,7 @@ class TestWorkerPrompts(unittest.TestCase):
             self.assertIn(
                 "NEVER",
                 prompt,
-                f"Prompt missing anti-hallucination instruction",
+                "Prompt missing anti-hallucination instruction",
             )
 
     def test_all_prompts_require_json(self):
@@ -105,7 +112,7 @@ class TestWorkerPrompts(unittest.TestCase):
             self.assertIn(
                 "valid JSON only",
                 prompt,
-                f"Prompt missing JSON output instruction",
+                "Prompt missing JSON output instruction",
             )
 
 

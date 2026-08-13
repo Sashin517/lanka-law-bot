@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import inspect
 import unittest
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock, patch
 
 from app.agents.nodes.deep_research_node import deep_research_node
 from app.agents.nodes.drafting_node import drafting_node
@@ -94,19 +96,69 @@ class ControlNodeStreamingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(emitter.calls[-1][0], "step_done")
         self.assertEqual(emitter.calls[-1][2]["route"], "quick_qa")
 
-    async def test_grounding_skip_emits_completed_lifecycle(self) -> None:
+    async def test_drafting_output_runs_grounding_judge_and_emits_score(self) -> None:
         emitter = RecordingEmitter()
         state = AgentState(
             mode="drafting",
             current_agent="drafting",
             markdown_content="Draft text",
+            context_str="--- Legal Source [LAW-1] ---\nText: Supporting law.",
         )
 
-        await grounding_node(state, _config(emitter))
+        judge_result = {
+            "is_grounded": True,
+            "grounding_score": 0.92,
+            "ungrounded_claims": [],
+            "feedback": "",
+        }
+        judge = AsyncMock(return_value=judge_result)
+        with patch(
+            "app.agents.nodes.grounding_node._grounding_chain",
+            new=SimpleNamespace(ainvoke=judge),
+        ):
+            await grounding_node(state, _config(emitter))
 
         self.assertEqual(emitter.calls[0][0], "step_start")
         self.assertEqual(emitter.calls[-1][0], "step_done")
-        self.assertTrue(emitter.calls[-1][2]["skipped"])
+        self.assertEqual(emitter.calls[-1][1][1], "Grounding passed")
+        self.assertAlmostEqual(emitter.calls[-1][2]["grounding_score"], 0.92)
+        self.assertNotIn("skipped", emitter.calls[-1][2])
+        judge.assert_awaited_once()
+        judge_input = judge.await_args.args[0]
+        self.assertEqual(judge_input["response_mode"], "drafting")
+        self.assertEqual(judge_input["claims"], "Draft text")
+
+    async def test_ungrounded_drafting_output_routes_back_for_revision(self) -> None:
+        emitter = RecordingEmitter()
+        state = AgentState(
+            mode="drafting",
+            current_agent="drafting",
+            markdown_content="Section 99 requires this clause.",
+            context_str="--- Legal Source [LAW-1] ---\nText: No Section 99.",
+        )
+        judge = AsyncMock(
+            return_value={
+                "is_grounded": False,
+                "grounding_score": 0.25,
+                "ungrounded_claims": ["Section 99 requires this clause."],
+                "feedback": "Remove the unsupported Section 99 assertion.",
+            }
+        )
+
+        with patch(
+            "app.agents.nodes.grounding_node._grounding_chain",
+            new=SimpleNamespace(ainvoke=judge),
+        ):
+            command = await grounding_node(state, _config(emitter))
+
+        self.assertEqual(command.goto, "drafting")
+        self.assertEqual(command.update["retry_count"], 1)
+        self.assertEqual(
+            command.update["working_memory"]["ungrounded_claims"],
+            ["Section 99 requires this clause."],
+        )
+        self.assertEqual(emitter.calls[-1][1][1], "Grounding failed")
+        self.assertAlmostEqual(emitter.calls[-1][2]["grounding_score"], 0.25)
 
     async def test_plan_executor_reports_next_agent(self) -> None:
         emitter = RecordingEmitter()

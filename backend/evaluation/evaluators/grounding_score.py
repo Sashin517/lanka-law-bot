@@ -5,9 +5,8 @@ pass/fail. The binary approach lost too much information and caused
 false negatives when the LLM error fallback score (0.5) fell just below
 a strict threshold (0.8).
 
-Also annotates when the score was an auto-pass (e.g. drafting mode) vs
-a genuine grounding verification result, so downstream analysis can
-distinguish inflated scores from real ones.
+Drafting responses use the same grounding judge as other response modes, so
+their scores are reported without mode-specific adjustment.
 """
 
 
@@ -20,11 +19,6 @@ def grounding_score_evaluator(run, example):
 
     # Try to get grounding score from the response metadata
     actual_score = run.outputs.get("grounding_score", None)
-
-    # Detect auto-pass: drafting mode gets grounding_score=1.0 automatically
-    # from grounding_node.py. We report the score but annotate it.
-    route_data = run.outputs.get("route", {})
-    is_drafting = route_data.get("route", "") == "drafting"
 
     if actual_score is not None:
         # Coerce to float in case of string serialization
@@ -51,8 +45,6 @@ def grounding_score_evaluator(run, example):
 
     # Report continuous score instead of binary threshold check
     comment = f"score={actual_score:.2f}"
-    if is_drafting:
-        comment += " (auto-pass: drafting mode)"
 
     return {
         "key": "grounding_pass",
