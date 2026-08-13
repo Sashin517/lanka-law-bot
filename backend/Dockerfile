@@ -41,7 +41,6 @@ COPY alembic/ alembic/
 COPY app/ app/
 COPY evaluation/ evaluation/
 COPY database/ database/
-COPY tmp/ storage/
 
 # Create writable directories for runtime
 RUN mkdir -p /app/storage/uploads /app/storage/processed_markdown \
@@ -50,7 +49,7 @@ RUN mkdir -p /app/storage/uploads /app/storage/processed_markdown \
 USER appuser
 
 # App Runner injects PORT env var (default 8080)
-ENV PORT=8080
+ENV PORT=8000
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
