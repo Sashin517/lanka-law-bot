@@ -24,6 +24,8 @@ etc/
 
 # temp, backup
 tmp/
+!backend/tmp/
+!backend/tmp/.gitkeep
 temp/
 *.tmp
 *.bak
