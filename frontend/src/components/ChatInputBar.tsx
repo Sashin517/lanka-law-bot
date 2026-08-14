@@ -89,10 +89,14 @@ export function ChatInputBar({
   return (
     <form
       onSubmit={submit}
-      className="mx-auto flex max-w-3xl flex-col rounded-[28px] border border-app-border/40 bg-app-input px-4 py-3 shadow-lg"
+      className="mx-auto flex w-full min-w-0 max-w-3xl flex-col rounded-[28px] border border-app-border/40 bg-app-input px-4 py-3 shadow-lg"
     >
       {documents.length > 0 && (
-        <div className="mb-3 flex flex-col gap-2">
+        <div
+          role="list"
+          aria-label="Attached documents"
+          className="chat-scroll mb-3 flex min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1"
+        >
           {documents.map((doc) => (
             <ChatAttachmentCard
               key={doc.document_id || doc.local_id}

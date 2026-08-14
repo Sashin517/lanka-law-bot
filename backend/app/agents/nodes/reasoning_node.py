@@ -193,7 +193,7 @@ async def reasoning_node(
         markdown = strip_invalid_anchors(markdown, valid_ids)
         emitter.emit_step_done(
             "verification",
-            f"{len(valid_ids)}/{len(citation_map)} source citations verified",
+            "Verifying legal analysis",
             verified_count=len(valid_ids),
             source_count=len(citation_map),
         )

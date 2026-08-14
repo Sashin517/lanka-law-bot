@@ -27,8 +27,9 @@ export function ChatAttachmentCard({ document, onRemove }: ChatAttachmentCardPro
 
   return (
     <div
+      role="listitem"
       title={isFailed && document.error ? document.error : document.filename}
-      className={`flex w-full max-w-[390px] items-center gap-3 rounded-xl border px-3 py-2.5 ${
+      className={`flex w-72 max-w-full shrink-0 items-center gap-3 rounded-xl border px-3 py-2.5 ${
         isFailed
           ? "border-app-danger/40 bg-app-danger/20"
           : "border-app-border/60 bg-app-input"

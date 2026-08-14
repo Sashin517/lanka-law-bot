@@ -121,6 +121,7 @@ body {
 /* ── Custom scrollbar for chat & sidebars ── */
 .chat-scroll::-webkit-scrollbar {
   width: 5px;
+  height: 5px;
 }
 .chat-scroll::-webkit-scrollbar-track {
   background: transparent;

@@ -9,7 +9,9 @@ NOTICE_TEMPLATE = """\
 
 Draft a legal notice / letter of demand with the following sections.
 Fill each section using the retrieved legal context and the user's request.
-Cite the statutory authority using [LAW-*] anchors.
+Name each statutory authority and section in the notice text, then append its
+[LAW-*] anchor as a source annotation. Never use an anchor in place of the
+human-readable authority.
 
 ### 1. HEADER
 - "LEGAL NOTICE" / "LETTER OF DEMAND" / "NOTICE TO QUIT" (as appropriate)
@@ -31,7 +33,8 @@ Cite the statutory authority using [LAW-*] anchors.
 - Reference to any prior communications or agreements
 
 ### 6. BODY — LEGAL BASIS
-- Applicable legal provisions and rights (cite with [LAW-*])
+- Applicable legal provisions and rights (name the instrument and section,
+  then append the matching [LAW-*] source annotation)
 - Breach or obligation giving rise to the notice
 
 ### 7. DEMAND / NOTICE

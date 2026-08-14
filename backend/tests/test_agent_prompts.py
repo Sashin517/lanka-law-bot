@@ -10,11 +10,15 @@ import unittest
 
 from app.agents.prompts.decomposition_prompt import DECOMPOSITION_PROMPT
 from app.agents.prompts.deep_research_prompt import DEEP_RESEARCH_PROMPT
+from app.agents.prompts.draft_edit_prompt import DRAFT_EDIT_PROMPT
 from app.agents.prompts.drafting_prompt import DRAFTING_PROMPT
 from app.agents.prompts.grounding_prompt import GROUNDING_JUDGE_PROMPT
+from app.agents.prompts.legal_rag import LEGAL_RAG_SYSTEM_PROMPT
+from app.agents.prompts.quick_qa_prompt import QUICK_QA_PROMPT
 from app.agents.prompts.reasoning_prompt import REASONING_PROMPT
 from app.agents.prompts.review_prompt import REVIEW_PROMPT
 from app.agents.prompts.verify_prompt import VERIFY_PROMPT
+from app.agents.templates import TEMPLATE_REGISTRY
 
 
 class TestGroundingPrompt(unittest.TestCase):
@@ -113,6 +117,38 @@ class TestWorkerPrompts(unittest.TestCase):
                 "valid JSON only",
                 prompt,
                 "Prompt missing JSON output instruction",
+            )
+
+    def test_all_user_visible_prompts_keep_anchors_as_annotations(self):
+        prompts = [
+            QUICK_QA_PROMPT,
+            DEEP_RESEARCH_PROMPT,
+            REASONING_PROMPT,
+            DRAFTING_PROMPT,
+            REVIEW_PROMPT,
+            VERIFY_PROMPT,
+            LEGAL_RAG_SYSTEM_PROMPT,
+            DRAFT_EDIT_PROMPT,
+        ]
+        for prompt in prompts:
+            normalized_prompt = " ".join(prompt.split())
+            self.assertIn(
+                "grammatical substitute",
+                normalized_prompt,
+                "Response prompt permits an anchor to replace legal authority",
+            )
+            self.assertIn(
+                "[LAW-N][]",
+                prompt,
+                "Response prompt does not reject empty Markdown citation suffixes",
+            )
+
+    def test_all_drafting_templates_require_human_readable_authority(self):
+        for template in TEMPLATE_REGISTRY.values():
+            self.assertIn(
+                "Never use an anchor in place",
+                " ".join(template.split()),
+                "Drafting template permits an anchor to replace legal authority",
             )
 
 

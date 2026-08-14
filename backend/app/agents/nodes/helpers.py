@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 # Matches citation anchors like [LAW-1], [DOC-2], [LAW-12]
 _ANCHOR_RE = re.compile(r"\[(?:LAW|DOC)-\d+\]", re.IGNORECASE)
 _UNBRACKETED_ANCHOR_RE = re.compile(r"\b(?:LAW|DOC)-\d+\b", re.IGNORECASE)
+_EMPTY_CITATION_SUFFIX_RE = re.compile(
+    r"(\[(?:LAW|DOC)-\d+\])\[\s*\]", re.IGNORECASE
+)
 
 
 def conversation_context_block(state: AgentState) -> str:
@@ -165,6 +168,11 @@ def strip_invalid_anchors(markdown: str, valid_ids: set[str]) -> str:
     normalized_valid = {normalize_anchor(v) for v in valid_ids}
     stripped_count = 0
 
+    # Some models emit a valid anchor using Markdown's collapsed reference-link
+    # shape (e.g. ``[LAW-1][]``). The empty suffix is never part of our citation
+    # grammar, so normalize it independently of whether the anchor is valid.
+    cleaned = _EMPTY_CITATION_SUFFIX_RE.sub(r"\1", markdown)
+
     def _replace_bracketed(match: re.Match) -> str:
         nonlocal stripped_count
         anchor = match.group(0)
@@ -173,7 +181,7 @@ def strip_invalid_anchors(markdown: str, valid_ids: set[str]) -> str:
         stripped_count += 1
         return ""
 
-    cleaned = _ANCHOR_RE.sub(_replace_bracketed, markdown)
+    cleaned = _ANCHOR_RE.sub(_replace_bracketed, cleaned)
 
     def _replace_unbracketed(match: re.Match) -> str:
         nonlocal stripped_count

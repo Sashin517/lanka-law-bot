@@ -8,6 +8,8 @@ from __future__ import annotations
 import unittest
 
 from app.agents.nodes.drafting_node import _select_template
+from app.agents.nodes.helpers import strip_invalid_anchors
+from app.agents.prompts.drafting_prompt import DRAFTING_PROMPT
 from app.agents.templates import TEMPLATE_REGISTRY
 
 
@@ -55,6 +57,35 @@ class TestSelectTemplate(unittest.TestCase):
     def test_keyword_case_insensitive(self):
         result = _select_template("Draft a PETITION to the Supreme Court", "")
         self.assertEqual(result, "pleading")
+
+
+class TestDraftCitationContract(unittest.TestCase):
+    def test_prompt_requires_human_readable_authority_before_anchor(self):
+        self.assertIn("instrument or case name and section", DRAFTING_PROMPT)
+        self.assertIn('do not write\n   "under [LAW-1]"', DRAFTING_PROMPT)
+        self.assertIn("never emit `[LAW-N][]`", DRAFTING_PROMPT)
+
+    def test_valid_anchor_empty_suffix_is_always_removed(self):
+        markdown = (
+            "Under Section 35 of the Sale of Goods Ordinance [LAW-1][], "
+            "notice is sufficient [LAW-3][ ]."
+        )
+
+        cleaned = strip_invalid_anchors(markdown, {"[LAW-1]", "[LAW-3]"})
+
+        self.assertEqual(
+            cleaned,
+            "Under Section 35 of the Sale of Goods Ordinance [LAW-1], "
+            "notice is sufficient [LAW-3].",
+        )
+
+    def test_invalid_anchor_and_empty_suffix_are_both_removed(self):
+        cleaned = strip_invalid_anchors(
+            "Unsupported statement [LAW-99][].",
+            {"[LAW-1]"},
+        )
+
+        self.assertEqual(cleaned, "Unsupported statement.")
 
 
 if __name__ == "__main__":

@@ -9,8 +9,9 @@ PLEADING_TEMPLATE = """\
 
 Draft a civil litigation pleading with the following sections.  Fill each
 section using the retrieved legal context and the user's request.
-Cite the statutory authority (e.g. Civil Procedure Code provisions)
-using [LAW-*] anchors.
+Name the statutory authority and section (e.g. Civil Procedure Code
+provisions), then append its [LAW-*] anchor as a source annotation. Never use
+an anchor in place of the human-readable authority.
 
 ### 1. CAPTION
 - Court name and jurisdiction
@@ -26,7 +27,8 @@ using [LAW-*] anchors.
 
 ### 4. JURISDICTION
 - Basis for the court's jurisdiction
-- Relevant statutory provisions (cite with [LAW-*])
+- Relevant statutory provisions (name the instrument and section, then append
+  the matching [LAW-*] source annotation)
 
 ### 5. MATERIAL FACTS
 - Numbered paragraphs setting out each material fact
@@ -35,7 +37,8 @@ using [LAW-*] anchors.
 
 ### 6. CAUSE OF ACTION
 - Legal basis for the claim
-- Relevant statutes and provisions (cite with [LAW-*])
+- Relevant statutes and provisions (name each instrument and section, then
+  append the matching [LAW-*] source annotation)
 - Elements of the cause of action
 
 ### 7. RELIEF / PRAYER

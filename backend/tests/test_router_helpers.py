@@ -50,6 +50,19 @@ class TestBuildRetrievalPlan(unittest.TestCase):
         self.assertTrue(result["use_user_documents"])
         self.assertEqual(result["user_doc_top_k"], 8)
 
+    def test_quick_qa_with_docs_uses_both_corpora(self):
+        result = _build_retrieval_plan(
+            _state(
+                "Does this clause comply with Sri Lankan law?",
+                document_ids=["doc-1"],
+            ),
+            _config("quick_qa"),
+        )
+        self.assertTrue(result["use_legal_corpus"])
+        self.assertTrue(result["use_user_documents"])
+        self.assertEqual(result["legal_top_k"], 10)
+        self.assertEqual(result["user_doc_top_k"], 10)
+
     def test_review_with_docs_uses_both_corpora(self):
         result = _build_retrieval_plan(
             _state("review this contract", mode="review", document_ids=["doc-1"]),

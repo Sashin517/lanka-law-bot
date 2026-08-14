@@ -9,7 +9,9 @@ AFFIDAVIT_TEMPLATE = """\
 
 Draft an affidavit with the following sections.  Fill each section
 using the retrieved legal context and the user's request.
-Cite any relevant statutory authority using [LAW-*] anchors.
+Name any relevant statutory authority and section, then append its [LAW-*]
+anchor as a source annotation. Never use an anchor in place of the
+human-readable authority.
 
 ### 1. TITLE
 - Court name (if filed in court proceedings)

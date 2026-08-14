@@ -618,10 +618,10 @@ def _build_retrieval_plan(state: AgentState, config: ModeConfig) -> dict:
             "act_name_filters": act_name_filters,
         }
 
-    # Default — legal corpus only (or with docs for reasoning)
+    # Default — legal corpus plus attached user documents when available
     return {
         "use_legal_corpus": True,
-        "use_user_documents": has_documents and config.route not in {"quick_qa"},
+        "use_user_documents": has_documents,
         "legal_top_k": config.legal_top_k,
         "user_doc_top_k": config.user_doc_top_k if has_documents else 0,
         "year_filters": year_filters,

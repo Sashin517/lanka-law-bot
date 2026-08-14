@@ -49,6 +49,35 @@ const legalSource = {
   authoritative: true,
 };
 
+test("citation matcher consumes malformed empty Markdown suffixes", () => {
+  const text = "Authority [LAW-1][] and grouped [LAW-1, DOC-2][ ].";
+  const matches = Array.from(
+    text.matchAll(sourcesModule.CITATION_RE),
+    (match) => match[0],
+  );
+
+  assert.deepEqual(matches, ["[LAW-1][]", "[LAW-1, DOC-2][ ]"]);
+  assert.deepEqual(sourcesModule.citationIdsFromGroup(matches[0]), ["[LAW-1]"]);
+  assert.deepEqual(
+    sourcesModule.citationIdsFromGroup(matches[1]),
+    ["[LAW-1]", "[DOC-2]"],
+  );
+});
+
+test("document builder does not preserve empty suffixes as plain text", () => {
+  const builder = new DocumentBuilder();
+  const document = builder.fromMarkdown(
+    "Under Section 5 of the Evidence Ordinance [LAW-1][].",
+    [legalSource],
+  );
+
+  assert.equal(
+    builder.toMarkdown(document),
+    "Under Section 5 of the Evidence Ordinance [LAW-1].",
+  );
+  assert.equal(document.content[0].content.at(-1).text, ".");
+});
+
 function citationText(citationId, attrs = {}) {
   return {
     type: "text",

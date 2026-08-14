@@ -9,7 +9,9 @@ CONTRACT_TEMPLATE = """\
 
 Draft a legally sound contract with the following sections.  Fill each
 section using the retrieved legal context and the user's request.
-Cite the statutory authority for key clauses using [LAW-*] anchors.
+Name the statutory authority and section for key clauses, then append its
+[LAW-*] anchor as a source annotation. Never use an anchor in place of the
+human-readable authority.
 
 ### 1. TITLE AND PARTIES
 - Full title of the agreement

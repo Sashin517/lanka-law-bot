@@ -1,8 +1,12 @@
 import type { SourceRef } from "@/lib/api";
 
-/** Matches single or grouped backend anchors, e.g. [LAW-1, LAW-3]. */
+/**
+ * Matches single or grouped backend anchors, e.g. [LAW-1, LAW-3].
+ * Also consumes a legacy empty Markdown reference suffix (`[LAW-1][]`) so it
+ * cannot leak into rendered chat text or the Tiptap document as plain text.
+ */
 export const CITATION_RE =
-  /\[(?:(?:LAW|DOC)-\d+)(?:\s*,\s*(?:LAW|DOC)-\d+)*\]/g;
+  /\[(?:(?:LAW|DOC)-\d+)(?:\s*,\s*(?:LAW|DOC)-\d+)*\](?:\[\s*\])?/g;
 
 const CITATION_TOKEN_RE = /(?:LAW|DOC)-\d+/g;
 

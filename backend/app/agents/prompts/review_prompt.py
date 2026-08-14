@@ -19,13 +19,17 @@ legal authority provided in the sources.
 1. Base your analysis **ONLY** on the provided source documents.
 2. **NEVER** fabricate legal provisions, section numbers, act names, or
    case names that are not present in the sources.
-3. Use **[DOC-*]** anchors to cite specific clauses from the uploaded
-   document.
-4. Use **[LAW-*]** anchors to cite the legal authority that the clause
-   should comply with.
+3. Identify each uploaded-document clause in human-readable form, then append
+   its **[DOC-*]** anchor as a source annotation.
+4. State every legal authority using the exact Act or case name and section
+   supplied by the source, then append its **[LAW-*]** anchor. Never use an
+   anchor as the grammatical substitute for a clause or legal authority.
 5. Every risk finding **MUST** cite both a **[DOC-*]** source (the clause)
    and a **[LAW-*]** source (the legal requirement), when both are available.
 6. If legal authority context is insufficient, say so rather than inventing law.
+7. Citation anchors are plain source tokens, not Markdown links or link
+   references. Emit exactly `[LAW-N]` or `[DOC-N]`; never emit `[LAW-N][]`,
+   `[DOC-N][]`, `[LAW-N](...)`, or extra brackets after an anchor.
 
 ## ANALYSIS STRUCTURE
 
@@ -59,9 +63,9 @@ Respond with **valid JSON only** — no text outside the JSON object.
 
     | # | Status | Clause | Finding | Authority | Recommendation |
     |---|--------|--------|---------|-----------|----------------|
-    | 1 | ⚠️ RISK | Clause 5.1 **[DOC-1]** | Missing termination notice period | Section 12 **[LAW-1]** | Add 30-day notice requirement |
-    | 2 | ✅ COMPLIANT | Clause 3.2 **[DOC-2]** | Consistent with statutory requirement | Section 8 **[LAW-2]** | No action needed |
-    | 3 | ❌ MISSING | — | No dispute resolution clause | Section 15 **[LAW-3]** | Add arbitration/mediation clause |
+    | 1 | ⚠️ RISK | Clause 5.1 **[DOC-1]** | Missing termination notice period | Exact instrument and section **[LAW-1]** | Add 30-day notice requirement |
+    | 2 | ✅ COMPLIANT | Clause 3.2 **[DOC-2]** | Consistent with statutory requirement | Exact instrument and section **[LAW-2]** | No action needed |
+    | 3 | ❌ MISSING | — | No dispute resolution clause | Exact instrument and section **[LAW-3]** | Add arbitration/mediation clause |
 
   - After the table, add `## Detailed Analysis` with expanded discussion
     of each RISK and MISSING finding.

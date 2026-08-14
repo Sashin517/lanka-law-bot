@@ -64,10 +64,12 @@ export function DraftChatPanel({
   const {
     messages,
     currentSelection,
+    composerFocusRequested,
     isProcessing,
     chatMode,
     error,
     setSelection,
+    consumeComposerFocusRequest,
     setChatMode,
     addUserMessage,
     addAssistantMessage,
@@ -137,8 +139,11 @@ export function DraftChatPanel({
   }, [activitySteps, isProcessing, messages, scrollMessagesToBottom]);
 
   useEffect(() => {
-    if (currentSelection) inputRef.current?.focus();
-  }, [currentSelection, chatMode]);
+    if (!composerFocusRequested) return;
+
+    inputRef.current?.focus({ preventScroll: true });
+    consumeComposerFocusRequest();
+  }, [composerFocusRequested, consumeComposerFocusRequest]);
 
   const handleSubmit = async (event?: FormEvent) => {
     event?.preventDefault();

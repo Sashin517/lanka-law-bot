@@ -91,7 +91,8 @@ export default function DraftPage() {
     initializeDraft,
   } = useVersionStore();
 
-  const { setSelection, setChatMode } = useChatEditStore();
+  const { setSelection, setChatMode, requestComposerFocus } =
+    useChatEditStore();
   const activitySteps = useActivityStreamStore((state) => state.steps);
   const activityStreaming = useActivityStreamStore(
     (state) => state.isStreaming,
@@ -186,8 +187,9 @@ export default function DraftPage() {
       setSelection({ ...selection });
       setChatMode(mode);
       setChatPanelOpen(true);
+      requestComposerFocus();
     },
-    [setChatMode, setSelection],
+    [requestComposerFocus, setChatMode, setSelection],
   );
 
   const exitShowEditsMode = useCallback(() => {

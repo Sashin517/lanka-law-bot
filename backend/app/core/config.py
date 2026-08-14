@@ -49,6 +49,13 @@ class Settings(BaseSettings):
 
     UPLOAD_MAX_MB: int = 50
     ALLOWED_UPLOAD_EXTENSIONS: list[str] = [".pdf", ".docx", ".txt", ".md"]
+    # Docling PDF parsing: keep only what legal chunking needs (text + optional OCR).
+    DOCLING_DEVICE: str = "auto"  # auto | cpu | cuda | cuda:0 | mps
+    DOCLING_NUM_THREADS: int = 1
+    DOCLING_ENABLE_OCR: bool = True
+    DOCLING_ENABLE_TABLE_STRUCTURE: bool = False
+    DOCLING_PREFER_NATIVE_PDF_TEXT: bool = True
+    DOCLING_NATIVE_TEXT_MIN_CHARS: int = 200
     INGESTION_BATCH_SIZE: int = 64
     USER_PARENT_CHUNK_SIZE: int = 2200
     USER_PARENT_CHUNK_OVERLAP: int = 250

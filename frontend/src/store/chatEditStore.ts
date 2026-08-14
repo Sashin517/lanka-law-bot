@@ -30,6 +30,8 @@ interface ChatEditState {
   messages: DraftChatMessage[];
   /** Currently selected text in the Tiptap editor (if any). */
   currentSelection: EditorSelection | null;
+  /** One-shot intent to focus the chat composer after an explicit selection action. */
+  composerFocusRequested: boolean;
   /** Whether the backend is processing an edit request. */
   isProcessing: boolean;
   /** Current chat panel mode: "ask" for questions, "edit" for edits. */
@@ -41,6 +43,12 @@ interface ChatEditState {
 interface ChatEditActions {
   /** Set the current text selection from the Tiptap editor. */
   setSelection: (selection: EditorSelection | null) => void;
+
+  /** Request composer focus after the user sends a selection to Ask/Edit. */
+  requestComposerFocus: () => void;
+
+  /** Clear the one-shot composer focus request after the panel handles it. */
+  consumeComposerFocusRequest: () => void;
 
   /** Switch between "ask" and "edit" chat modes. */
   setChatMode: (mode: ChatMode) => void;
@@ -95,6 +103,7 @@ export type ChatEditStore = ChatEditState & ChatEditActions;
 const initialState: ChatEditState = {
   messages: [],
   currentSelection: null,
+  composerFocusRequested: false,
   isProcessing: false,
   chatMode: "edit",
   error: null,
@@ -107,6 +116,14 @@ export const useChatEditStore = create<ChatEditStore>((set) => ({
 
   setSelection: (selection) => {
     set({ currentSelection: selection });
+  },
+
+  requestComposerFocus: () => {
+    set({ composerFocusRequested: true });
+  },
+
+  consumeComposerFocusRequest: () => {
+    set({ composerFocusRequested: false });
   },
 
   setChatMode: (mode) => {
