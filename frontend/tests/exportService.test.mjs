@@ -64,6 +64,7 @@ const exportServiceModule = loadTypeScriptModule(
 const { DocxExportStrategy } = docxModule;
 const { PdfExportStrategy, renderPdfHtml } = pdfModule;
 const { ExportService, ExportStrategyFactory } = exportServiceModule;
+const { withoutCitationMarks } = exportTypes;
 const JSZip = nodeRequire("jszip");
 
 const source = {
@@ -213,7 +214,34 @@ async function docxXml(blob, filename) {
   return zip.file(filename)?.async("string");
 }
 
-test("DOCX preserves headings, inline formatting, lists, tables, citations, sources, and disclaimer", async () => {
+test("citation removal is recursive and does not mutate the accepted version", () => {
+  const document = richDocument();
+  document.content[1].content.push(
+    { type: "text", text: ", " },
+    {
+      type: "text",
+      text: "[DOC-2]",
+      marks: [
+        {
+          type: "citationMark",
+          attrs: { citationId: "[DOC-2]" },
+        },
+      ],
+    },
+  );
+
+  const exported = withoutCitationMarks(document);
+
+  assert.notStrictEqual(exported, document);
+  assert.match(JSON.stringify(document), /citationMark/);
+  assert.doesNotMatch(JSON.stringify(exported), /citationMark|\[(?:LAW|DOC)-\d+\]/);
+  assert.equal(
+    exported.content[1].content.map((node) => node.text ?? "").join(""),
+    "The Controller shall comply ",
+  );
+});
+
+test("DOCX preserves legal formatting and sources while removing citations", async () => {
   const blob = await new DocxExportStrategy().export(
     richDocument(),
     [source],
@@ -221,7 +249,6 @@ test("DOCX preserves headings, inline formatting, lists, tables, citations, sour
     metadata,
   );
   const documentXml = await docxXml(blob, "word/document.xml");
-  const footnotesXml = await docxXml(blob, "word/footnotes.xml");
   const numberingXml = await docxXml(blob, "word/numbering.xml");
   const coreXml = await docxXml(blob, "docProps/core.xml");
 
@@ -236,11 +263,12 @@ test("DOCX preserves headings, inline formatting, lists, tables, citations, sour
   assert.match(documentXml, /w:after="240"/);
   assert.match(documentXml, /w:line="360"/);
   assert.match(documentXml, /<w:tbl>/);
-  assert.match(documentXml, /footnoteReference/);
+  assert.doesNotMatch(documentXml, /footnoteReference/);
+  assert.doesNotMatch(documentXml, /\[LAW-1\]/);
   assert.match(documentXml, /Sources/);
+  assert.match(documentXml, /Data Protection Act/);
   assert.match(documentXml, /Legal Disclaimer/);
   assert.doesNotMatch(documentXml, /editHighlight/);
-  assert.match(footnotesXml, /Data Protection Act/);
   assert.match(numberingXml, /w:numFmt w:val="decimal"/);
   assert.match(numberingXml, /w:numFmt w:val="bullet"/);
   assert.match(coreXml, /Privacy Agreement/);
@@ -265,7 +293,7 @@ test("DOCX respects disabled metadata, sources, and disclaimer options", async (
   assert.doesNotMatch(documentXml, /footnoteReference/);
 });
 
-test("PDF HTML is print-safe, escaped, and preserves legal structures", () => {
+test("PDF HTML is print-safe, escaped, and removes citations", () => {
   const document = richDocument();
   document.content.push({
     type: "paragraph",
@@ -290,7 +318,8 @@ test("PDF HTML is print-safe, escaped, and preserves legal structures", () => {
     /text-align:justify;margin-left:72pt;line-height:1.5;margin-top:6pt;margin-bottom:12pt/,
   );
   assert.match(html, /<table>/);
-  assert.match(html, /class="citation"/);
+  assert.doesNotMatch(html, /class="citation"/);
+  assert.doesNotMatch(html, /\[LAW-1\]/);
   assert.match(html, /Data Protection Act/);
   assert.match(html, /Legal Disclaimer/);
   assert.match(html, /&lt;script&gt;/);
@@ -309,6 +338,62 @@ test("PDF strategy fails clearly during SSR without importing its browser render
       ),
     /only available in a browser session/,
   );
+});
+
+test("PDF strategy passes populated HTML directly to the renderer", async () => {
+  const rendererCalls = {};
+  const worker = {
+    set(value) {
+      rendererCalls.options = value;
+      return this;
+    },
+    from(value, type) {
+      rendererCalls.source = value;
+      rendererCalls.sourceType = type;
+      return this;
+    },
+    toPdf() {
+      return this;
+    },
+    outputPdf(type) {
+      rendererCalls.outputType = type;
+      return Promise.resolve(
+        new Blob(["rendered-pdf"], { type: "application/pdf" }),
+      );
+    },
+  };
+  const browserPdfModule = loadTypeScriptModule(
+    path.resolve(
+      testDirectory,
+      "../src/lib/drafting/exportStrategies/PdfExportStrategy.ts",
+    ),
+    {
+      ...strategyDependencies,
+      "html2pdf.js": {
+        __esModule: true,
+        default: () => worker,
+      },
+    },
+  );
+
+  globalThis.document = {};
+  try {
+    const blob = await new browserPdfModule.PdfExportStrategy().export(
+      richDocument(),
+      [source],
+      { ...options, format: "pdf" },
+      metadata,
+    );
+
+    assert.equal(typeof rendererCalls.source, "string");
+    assert.match(rendererCalls.source, /Privacy Agreement/);
+    assert.match(rendererCalls.source, /The Controller/);
+    assert.doesNotMatch(rendererCalls.source, /\[LAW-1\]/);
+    assert.equal(rendererCalls.outputType, "blob");
+    assert.ok(blob.size > 0);
+  } finally {
+    delete globalThis.document;
+  }
 });
 
 test("ExportService uses the immutable version snapshot and a safe versioned filename", async () => {

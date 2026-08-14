@@ -17,6 +17,7 @@ import {
   escapeHtml,
   formatSource,
   LEGAL_DISCLAIMER,
+  withoutCitationMarks,
   type ExportMetadata,
   type IExportStrategy,
 } from "@/lib/drafting/exportStrategies/types";
@@ -33,41 +34,30 @@ export class PdfExportStrategy implements IExportStrategy {
     }
 
     const html2pdf = (await import("html2pdf.js")).default;
-    const container = globalThis.document.createElement("div");
-    container.setAttribute("aria-hidden", "true");
-    container.style.cssText =
-      "position:fixed;left:-100000px;top:0;width:816px;background:#fff;color:#111;";
-    container.innerHTML = renderPdfHtml(document, sources, options, metadata);
-    globalThis.document.body.appendChild(container);
-
-    try {
-      const blob = await html2pdf()
-        .set({
-          margin: [0, 0, 0, 0],
-          image: { type: "jpeg", quality: 0.98 },
-          enableLinks: true,
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-            logging: false,
-          },
-          jsPDF: {
-            unit: "pt",
-            format: options.pageSize.toLowerCase(),
-            orientation: "portrait",
-          },
-        })
-        .from(container)
-        .toPdf()
-        .outputPdf("blob");
-      if (!(blob instanceof Blob)) {
-        throw new Error("The PDF renderer returned an invalid document.");
-      }
-      return blob;
-    } finally {
-      container.remove();
+    const blob = await html2pdf()
+      .set({
+        margin: [0, 0, 0, 0],
+        image: { type: "jpeg", quality: 0.98 },
+        enableLinks: true,
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+        },
+        jsPDF: {
+          unit: "pt",
+          format: options.pageSize.toLowerCase(),
+          orientation: "portrait",
+        },
+      })
+      .from(renderPdfHtml(document, sources, options, metadata))
+      .toPdf()
+      .outputPdf("blob");
+    if (!(blob instanceof Blob)) {
+      throw new Error("The PDF renderer returned an invalid document.");
     }
+    return blob;
   }
 }
 
@@ -77,6 +67,7 @@ export function renderPdfHtml(
   options: ExportOptions,
   metadata: ExportMetadata,
 ): string {
+  const exportDocument = withoutCitationMarks(document);
   const margin = options.margins;
   const metadataHtml = options.includeMetadata
     ? `<header class="document-metadata"><h1>${escapeHtml(metadata.title)}</h1><p>Prepared by ${escapeHtml(metadata.author)} · ${escapeHtml(formatDate(metadata.date))} · Version ${metadata.versionNumber}</p></header>`
@@ -86,7 +77,7 @@ export function renderPdfHtml(
       ? `<section class="export-sources"><h2>Sources</h2><ol>${sources
           .map(
             (source) =>
-              `<li><strong>${escapeHtml(source.citation_id)}</strong> ${escapeHtml(formatSource(source).replace(`${source.citation_id} `, ""))}${
+              `<li>${escapeHtml(formatSource(source))}${
                 source.excerpt
                   ? `<blockquote>${escapeHtml(source.excerpt)}</blockquote>`
                   : ""
@@ -113,7 +104,6 @@ export function renderPdfHtml(
       .legal-export th { background: #eee9dc; font-weight: 700; }
       .legal-export code, .legal-export pre { background: #f3f4f6; font-family: "Courier New", monospace; }
       .legal-export pre { padding: 8pt; white-space: pre-wrap; }
-      .legal-export .citation { color: #8a6910; font-size: 0.78em; font-weight: 700; }
       .document-metadata { border-bottom: 0.75pt solid #b58b16; margin-bottom: 22pt; padding-bottom: 10pt; }
       .document-metadata p { color: #555; font-size: 9pt; text-align: center; }
       .export-sources { break-before: page; }
@@ -123,7 +113,7 @@ export function renderPdfHtml(
       .export-disclaimer h2 { font-size: 11pt; }
     </style>
     ${metadataHtml}
-    <main>${renderBlockNodes(document.content)}</main>
+    <main>${renderBlockNodes(exportDocument.content)}</main>
     ${sourcesHtml}
     ${disclaimerHtml}
   </article>`;
@@ -192,9 +182,6 @@ function applyInlineMarks(content: string, marks: TiptapMark[]): string {
   if (hasMark(marks, "italic")) result = `<em>${result}</em>`;
   if (hasMark(marks, "underline")) result = `<u>${result}</u>`;
   if (hasMark(marks, "strike")) result = `<s>${result}</s>`;
-  if (hasMark(marks, "citationMark")) {
-    result = `<sup class="citation">${result}</sup>`;
-  }
   return result;
 }
 

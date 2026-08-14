@@ -26,8 +26,6 @@ import {
   Scale,
   Search,
   PenTool,
-  CheckSquare,
-  BarChart2,
   User,
   LogOut,
 } from "lucide-react";
@@ -319,7 +317,7 @@ export default function DraftPage() {
           LankaLawBot
         </Link>
 
-        <nav className="flex space-x-12">
+        <nav className="flex translate-x-12 space-x-12">
           <Link
             href="/"
             className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition"
@@ -329,22 +327,8 @@ export default function DraftPage() {
           </Link>
           <button className="flex items-center space-x-2 text-app-accent border-b-2 border-app-accent pb-1">
             <PenTool size={18} />
-            <span>Draft</span>
+            <span>Drafting Workplace</span>
           </button>
-          <Link
-            href="/"
-            className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition"
-          >
-            <CheckSquare size={18} />
-            <span>Verify</span>
-          </Link>
-          <Link
-            href="/"
-            className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition"
-          >
-            <BarChart2 size={18} />
-            <span>Analyze</span>
-          </Link>
         </nav>
 
         {/* Theme and user controls */}

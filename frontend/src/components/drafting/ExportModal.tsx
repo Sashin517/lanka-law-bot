@@ -173,7 +173,7 @@ export function ExportModal({
                 }
               />
               <OptionCheckbox
-                label="Sources and citation footnotes"
+                label="Sources"
                 checked={options.includeSources}
                 onChange={(checked) =>
                   setOptions((state) => ({ ...state, includeSources: checked }))

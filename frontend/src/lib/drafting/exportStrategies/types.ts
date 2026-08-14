@@ -2,6 +2,7 @@ import type { SourceRef } from "@/lib/api";
 import type {
   ExportOptions,
   TiptapDocument,
+  TiptapNode,
 } from "@/types/drafting";
 
 export interface ExportMetadata {
@@ -38,7 +39,48 @@ export function formatSource(source: SourceRef): string {
         }`
       : null,
   ].filter(Boolean);
-  return `${source.citation_id} ${details.join(", ")}`;
+  return details.join(", ");
+}
+
+/** Return an export-only copy with interactive citation anchors removed. */
+export function withoutCitationMarks(
+  document: TiptapDocument,
+): TiptapDocument {
+  return {
+    ...document,
+    content: stripCitationNodes(document.content),
+  };
+}
+
+function stripCitationNodes(nodes: TiptapNode[]): TiptapNode[] {
+  return nodes.flatMap((node, index) => {
+    if (isCitationNode(node)) return [];
+
+    if (
+      isCitationSeparator(node) &&
+      isCitationNode(nodes[index - 1]) &&
+      isCitationNode(nodes[index + 1])
+    ) {
+      return [];
+    }
+
+    return [
+      node.content
+        ? { ...node, content: stripCitationNodes(node.content) }
+        : { ...node },
+    ];
+  });
+}
+
+function isCitationNode(node: TiptapNode | undefined): boolean {
+  return Boolean(
+    node?.type === "text" &&
+      node.marks?.some((mark) => mark.type === "citationMark"),
+  );
+}
+
+function isCitationSeparator(node: TiptapNode): boolean {
+  return node.type === "text" && /^\s*,\s*$/.test(node.text ?? "");
 }
 
 export function escapeHtml(value: string): string {

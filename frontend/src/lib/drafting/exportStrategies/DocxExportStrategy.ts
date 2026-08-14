@@ -3,7 +3,6 @@ import {
   BorderStyle,
   Document,
   FileChild,
-  FootnoteReferenceRun,
   HeadingLevel,
   LevelFormat,
   Packer,
@@ -35,6 +34,7 @@ import type {
 import {
   formatSource,
   LEGAL_DISCLAIMER,
+  withoutCitationMarks,
   type ExportMetadata,
   type IExportStrategy,
 } from "@/lib/drafting/exportStrategies/types";
@@ -63,23 +63,17 @@ export function buildDocxDocument(
   options: ExportOptions,
   metadata: ExportMetadata,
 ): Document {
-  return new DocxDocumentMapper(sources, options, metadata).map(document);
+  return new DocxDocumentMapper(sources, options, metadata).map(
+    withoutCitationMarks(document),
+  );
 }
 
 class DocxDocumentMapper {
-  private readonly sourcesById: Map<string, SourceRef>;
-  private readonly footnoteNumbers = new Map<string, number>();
-  private readonly footnotes: Record<string, { children: Paragraph[] }> = {};
-
   constructor(
     private readonly sources: SourceRef[],
     private readonly options: ExportOptions,
     private readonly metadata: ExportMetadata,
-  ) {
-    this.sourcesById = new Map(
-      sources.map((source) => [source.citation_id, source]),
-    );
-  }
+  ) {}
 
   map(document: TiptapDocument): Document {
     const children: FileChild[] = [];
@@ -99,7 +93,6 @@ class DocxDocumentMapper {
       title: this.options.includeMetadata ? this.metadata.title : undefined,
       creator: this.options.includeMetadata ? this.metadata.author : undefined,
       subject: "AI-assisted legal draft",
-      footnotes: this.footnotes,
       numbering: {
         config: [
           {
@@ -340,9 +333,8 @@ class DocxDocumentMapper {
 
   private mapTextNode(node: TiptapNode): ParagraphChild[] {
     const marks = node.marks ?? [];
-    const citation = marks.find((mark) => mark.type === "citationMark");
     const textStyle = marks.find((mark) => mark.type === "textStyle");
-    const children: ParagraphChild[] = [
+    return [
       new TextRun({
         text: node.text ?? "",
         bold: hasMark(marks, "bold"),
@@ -355,46 +347,11 @@ class DocxDocumentMapper {
         shading: hasMark(marks, "code")
           ? { type: ShadingType.CLEAR, fill: "F3F4F6" }
           : undefined,
-        superScript: Boolean(citation),
-        color: citation ? GOLD : undefined,
         size: isAllowedFontSize(textStyle?.attrs?.fontSize)
           ? textStyle.attrs.fontSize * 2
           : undefined,
       }),
     ];
-
-    if (citation && this.options.includeSources) {
-      const citationId = String(citation.attrs?.citationId ?? node.text ?? "");
-      const source = this.sourcesById.get(citationId);
-      if (source) children.push(new FootnoteReferenceRun(this.footnoteFor(source)));
-    }
-    return children;
-  }
-
-  private footnoteFor(source: SourceRef): number {
-    const existing = this.footnoteNumbers.get(source.citation_id);
-    if (existing) return existing;
-    const number = this.footnoteNumbers.size + 1;
-    this.footnoteNumbers.set(source.citation_id, number);
-    this.footnotes[String(number)] = {
-      children: [
-        new Paragraph({
-          children: [
-            new TextRun({ text: formatSource(source), size: 18 }),
-            ...(source.excerpt
-              ? [
-                  new TextRun({
-                    text: ` — ${source.excerpt}`,
-                    italics: true,
-                    size: 18,
-                  }),
-                ]
-              : []),
-          ],
-        }),
-      ],
-    };
-    return number;
   }
 
   private sourceParagraphs(): Paragraph[] {

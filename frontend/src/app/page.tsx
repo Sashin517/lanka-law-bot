@@ -8,8 +8,6 @@ import {
   ChevronUp,
   X,
   PenTool,
-  CheckSquare,
-  BarChart2,
   User,
   Scale,
   AlertTriangle,
@@ -459,7 +457,7 @@ export default function ResearchDashboard() {
           <Scale size={24} className="text-app-accent" />
           LankaLawBot
         </div>
-        <nav className="flex space-x-12">
+        <nav className="flex translate-x-16 space-x-12">
           <button className="flex items-center space-x-2 text-app-accent border-b-2 border-app-accent pb-1">
             <Search size={18} />
             <span>Research</span>
@@ -469,16 +467,8 @@ export default function ResearchDashboard() {
             className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition"
           >
             <PenTool size={18} />
-            <span>Draft</span>
+            <span>Drafting Workplace</span>
           </Link>
-          <button className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition">
-            <CheckSquare size={18} />
-            <span>Verify</span>
-          </button>
-          <button className="flex items-center space-x-2 text-app-muted hover:text-app-strong transition">
-            <BarChart2 size={18} />
-            <span>Analyze</span>
-          </button>
         </nav>
 
         <div className="flex items-center gap-3">
