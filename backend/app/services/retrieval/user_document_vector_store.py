@@ -93,11 +93,13 @@ class UserDocumentVectorStore:
             })
 
         namespace = settings.PINECONE_NAMESPACE
+        upsert_timeout = getattr(settings, "PINECONE_UPSERT_TIMEOUT", 60.0)
         for start in range(0, len(records), settings.INGESTION_BATCH_SIZE):
             batch = records[start: start + settings.INGESTION_BATCH_SIZE]
             self._index.upsert(
                 namespace=namespace,
                 vectors=batch,
+                timeout=upsert_timeout,
             )
 
         return record_ids
@@ -114,6 +116,7 @@ class UserDocumentVectorStore:
                     "tenant_id": {"$eq": tenant_id},
                     "document_id": {"$eq": document_id},
                 },
+                timeout=30.0,
             )
         except Exception as exc:
             if self._is_missing_namespace_error(exc):

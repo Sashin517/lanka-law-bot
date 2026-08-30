@@ -6,6 +6,7 @@ import logging
 import math
 import os
 import random
+import threading
 import time
 from typing import Any
 
@@ -22,7 +23,18 @@ class JinaEmbeddingService:
     def __init__(self) -> None:
         self._model = settings.JINA_EMBEDDING_MODEL
         self._dim = settings.JINA_EMBEDDING_DIMENSION
-        self._client = httpx.Client(timeout=httpx.Timeout(60.0, connect=20.0))
+        self._thread_local = threading.local()
+
+    def _get_client(self) -> httpx.Client:
+        """Return a thread-isolated httpx.Client to prevent cross-thread socket corruption."""
+        client = getattr(self._thread_local, "client", None)
+        if client is None or client.is_closed:
+            client = httpx.Client(
+                timeout=httpx.Timeout(60.0, connect=20.0),
+                limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            )
+            self._thread_local.client = client
+        return client
 
     def _api_key(self) -> str:
         api_key = settings.JINA_API_KEY or os.environ.get("JINA_API_KEY", "")
@@ -61,15 +73,23 @@ class JinaEmbeddingService:
 
         for attempt in range(max_retries):
             try:
-                response = self._client.post(
+                response = self._get_client().post(
                     "https://api.jina.ai/v1/embeddings",
                     json=payload,
                     headers=headers,
                 )
-            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+            except (httpx.TimeoutException, httpx.TransportError, httpx.RequestError) as exc:
                 if attempt == max_retries - 1:
                     raise RuntimeError("Jina embedding request failed after retries.") from exc
-                time.sleep(min(30.0, 2**attempt + random.random()))
+                delay = min(30.0, 2**attempt + random.random())
+                logger.warning(
+                    "Transient network error contacting Jina API (attempt %d/%d): %s. Retrying in %.2fs...",
+                    attempt + 1,
+                    max_retries,
+                    exc,
+                    delay,
+                )
+                time.sleep(delay)
                 continue
 
             if response.status_code == 200:
