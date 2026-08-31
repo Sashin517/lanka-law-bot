@@ -24,6 +24,9 @@ class JinaEmbeddingService:
         self._model = settings.JINA_EMBEDDING_MODEL
         self._dim = settings.JINA_EMBEDDING_DIMENSION
         self._thread_local = threading.local()
+        self._rate_limit_lock = threading.Lock()
+        self._last_request_time: float = 0.0
+        self._min_interval: float = 0.5  # Ensure at least 500ms between calls across threads
 
     def _get_client(self) -> httpx.Client:
         """Return a thread-isolated httpx.Client to prevent cross-thread socket corruption."""
@@ -72,6 +75,14 @@ class JinaEmbeddingService:
         }
 
         for attempt in range(max_retries):
+            # Proactive rate-limit throttle across concurrent threads
+            with self._rate_limit_lock:
+                now = time.time()
+                elapsed = now - self._last_request_time
+                if elapsed < self._min_interval:
+                    time.sleep(self._min_interval - elapsed)
+                self._last_request_time = time.time()
+
             try:
                 response = self._get_client().post(
                     "https://api.jina.ai/v1/embeddings",

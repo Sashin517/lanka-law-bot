@@ -189,6 +189,16 @@ class RetrievalService:
         seen_parent_ids: set[str] = set()
         seen_parent_contents: set[str] = set()
 
+        parent_map: dict[str, Document] = {}
+        if expand_parents:
+            needed_pids = [
+                child.metadata.get("parent_id") or child.metadata.get("parent_chunk_id")
+                for child in unique
+                if (child.metadata.get("parent_id") or child.metadata.get("parent_chunk_id"))
+            ]
+            if needed_pids:
+                parent_map = self._legal_store.fetch_parents_batch(needed_pids)
+
         for child in unique:
             parent = None
             if expand_parents:
@@ -198,7 +208,7 @@ class RetrievalService:
                 if parent_id:
                     if parent_id in seen_parent_ids:
                         continue
-                    parent = self._legal_store.fetch_parent(parent_id)
+                    parent = parent_map.get(parent_id)
                     if parent:
                         parent_text = parent.page_content.strip()
                         if parent_text in seen_parent_contents:
@@ -244,16 +254,13 @@ class RetrievalService:
 
         with self._reranker_lock:
             if self._reranker is None:
-                from langchain_community.cross_encoders import HuggingFaceCrossEncoder
                 from langchain_classic.retrievers.document_compressors.cross_encoder_rerank import (
                     CrossEncoderReranker,
                 )
+                from app.services.retrieval.cross_encoder_singleton import get_shared_cross_encoder
 
-                cross_encoder = HuggingFaceCrossEncoder(
-                    model_name=settings.RERANKER_MODEL,
-                )
                 self._reranker = CrossEncoderReranker(
-                    model=cross_encoder,
+                    model=get_shared_cross_encoder(),
                     top_n=settings.RERANKER_TOP_N,
                 )
         return self._reranker

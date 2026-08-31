@@ -107,23 +107,18 @@ async def deep_research_node(
         f"Decomposed into {len(sub_queries)} focused sub-queries",
     )
 
-    # ── Step 2: Parallel retrieval across all sub-queries ──
+    # ── Step 2 & 3: Run legal sub-queries retrieval and user document retrieval concurrently ──
     emitter.emit_step_detail(
         "deep_research",
-        "Searching dense and keyword legal indexes in parallel",
+        "Searching legal indexes and documents in parallel",
     )
-    legal_results = await _parallel_legal_retrieval(sub_queries, state.ablation_config)
-    logger.info("Parallel retrieval returned %d total results.", len(legal_results))
 
-    # ── Step 3: User document retrieval (when document_ids present) ──
-    user_doc_results: list[dict] = []
-    if state.use_user_documents and state.document_ids:
-        emitter.emit_step_detail(
-            "deep_research",
-            "Searching uploaded documents",
-        )
+    async def _fetch_user_docs() -> list[dict]:
+        if not (state.use_user_documents and state.document_ids):
+            return []
         try:
-            user_doc_results = get_user_doc_retrieval().search(
+            return await asyncio.to_thread(
+                get_user_doc_retrieval().search,
                 query=state.question,
                 document_ids=state.document_ids,
                 matter_id=state.matter_id,
@@ -132,6 +127,15 @@ async def deep_research_node(
             )
         except Exception:
             logger.exception("User-document retrieval failed in deep_research.")
+            return []
+
+    legal_res, user_doc_res = await asyncio.gather(
+        _parallel_legal_retrieval(sub_queries, state.ablation_config),
+        _fetch_user_docs(),
+    )
+    legal_results = legal_res or []
+    user_doc_results = user_doc_res or []
+    logger.info("Parallel retrieval returned %d total results.", len(legal_results))
 
     # Handle empty retrieval
     if not legal_results and not user_doc_results:
@@ -288,16 +292,20 @@ async def _decompose_query(question: str) -> list[str]:
 async def _parallel_legal_retrieval(
     sub_queries: list[str], ablation_config: dict
 ) -> list[dict]:
-    """Run retrieval for all sub-queries concurrently, then deduplicate."""
-    tasks = [
-        asyncio.to_thread(
-            _retrieval.search,
-            query=sq,
-            top_k=5,
-            **retrieval_search_kwargs(ablation_config),
-        )
-        for sq in sub_queries
-    ]
+    """Run retrieval for all sub-queries with rate-limiting, then deduplicate."""
+    # Concurrency limiter to prevent bursting external embedding/vector APIs
+    sem = asyncio.Semaphore(2)
+
+    async def _throttled_search(sq: str) -> list[dict]:
+        async with sem:
+            return await asyncio.to_thread(
+                _retrieval.search,
+                query=sq,
+                top_k=5,
+                **retrieval_search_kwargs(ablation_config),
+            )
+
+    tasks = [_throttled_search(sq) for sq in sub_queries]
     batches = await asyncio.gather(*tasks, return_exceptions=True)
 
     # Flatten results, skipping any failed batches

@@ -14,6 +14,7 @@ should have already handled this, but a guard is included for safety.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Optional
 
@@ -98,32 +99,36 @@ async def review_node(
             ),
         }
 
-    # ── Step 1: Retrieve user document chunks (primary source) ──
-    user_doc_results: list[dict] = []
-    emitter.emit_step_detail("review", "Reviewing document clauses and obligations")
-    try:
-        user_doc_results = get_user_doc_retrieval().search(
-            query=state.question,
-            document_ids=state.document_ids,
-            matter_id=state.matter_id,
-            top_k=_REVIEW_USER_DOC_TOP_K,
-            expand_parents=state.ablation_config.get("expand_parents", True),
-        )
-    except Exception:
-        logger.exception("User-document retrieval failed in review_node.")
+    # ── Retrieve user document chunks and cross-reference legal corpus concurrently ──
+    emitter.emit_step_detail("review", "Reviewing document clauses and cross-referencing legal authorities")
 
-    # ── Step 2: Cross-reference against legal corpus ──
-    legal_results: list[dict] = []
-    if state.use_legal_corpus:
-        emitter.emit_step_detail(
-            "review",
-            "Cross-referencing clauses against legal authorities",
-        )
-        legal_results = _retrieval.search(
+    async def _fetch_user_docs() -> list[dict]:
+        try:
+            return await asyncio.to_thread(
+                get_user_doc_retrieval().search,
+                query=state.question,
+                document_ids=state.document_ids,
+                matter_id=state.matter_id,
+                top_k=_REVIEW_USER_DOC_TOP_K,
+                expand_parents=state.ablation_config.get("expand_parents", True),
+            )
+        except Exception:
+            logger.exception("User-document retrieval failed in review_node.")
+            return []
+
+    async def _fetch_legal() -> list[dict]:
+        if not state.use_legal_corpus:
+            return []
+        return await asyncio.to_thread(
+            _retrieval.search,
             query=state.question,
             top_k=state.legal_top_k,
             **retrieval_search_kwargs(state.ablation_config),
         )
+
+    user_doc_res, legal_res = await asyncio.gather(_fetch_user_docs(), _fetch_legal())
+    user_doc_results: list[dict] = user_doc_res or []
+    legal_results: list[dict] = legal_res or []
 
     # Handle empty retrieval
     if not user_doc_results and not legal_results:

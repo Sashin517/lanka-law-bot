@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     DENSE_WEIGHT: float = 0.6
     SPARSE_WEIGHT: float = 0.4
 
-    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L6-v2"
     RERANKER_TOP_N: int = 15
     USER_DOC_RERANKER_TOP_N: int = 12
     RELEVANCE_SCORE_THRESHOLD: float = 0.0
@@ -85,6 +85,13 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.1
     PROMPT_IMPROVE_TEMPERATURE: float = 0.35
     LLM_MAX_TOKENS: int = 2048
+
+    # Grounding thresholds — the drafting agent uses a relaxed score-based
+    # threshold because its output contains template language, placeholders,
+    # and proposed terms that the strict all-or-nothing gate penalises unfairly.
+    DRAFTING_GROUNDING_SCORE_THRESHOLD: float = Field(
+        default=0.80, ge=0.0, le=1.0,
+    )
 
     # === Neo4j Settings ===
     RETRIEVAL_BACKEND: str = "pinecone"  # "pinecone" | "neo4j" | "both"

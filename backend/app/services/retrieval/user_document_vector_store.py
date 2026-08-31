@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 from uuid import NAMESPACE_URL, uuid5
 
 from langchain_core.documents import Document
@@ -14,9 +15,13 @@ logger = logging.getLogger(__name__)
 class UserDocumentVectorStore:
     def __init__(self) -> None:
         if not settings.PINECONE_API_KEY:
-            raise RuntimeError("PINECONE_API_KEY is required for user document ingestion.")
+            raise RuntimeError(
+                "PINECONE_API_KEY is required for user document ingestion."
+            )
         if not settings.PINECONE_INDEX_HOST:
-            raise RuntimeError("PINECONE_INDEX_HOST is required for user document ingestion.")
+            raise RuntimeError(
+                "PINECONE_INDEX_HOST is required for user document ingestion."
+            )
         try:
             from pinecone import Pinecone
         except ImportError as exc:
@@ -80,22 +85,21 @@ class UserDocumentVectorStore:
             chunk_metadatas.append(metadata)
 
         # Generate Jina embeddings
-        from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
+        from app.services.retrieval.jina_embedding_service import (
+            get_jina_embedding_service,
+        )
+
         embed_service = get_jina_embedding_service()
         vectors = embed_service.embed_documents(texts_to_embed)
 
         records: list[dict] = []
         for r_id, vector, metadata in zip(record_ids, vectors, chunk_metadatas):
-            records.append({
-                "id": r_id,
-                "values": vector,
-                "metadata": metadata
-            })
+            records.append({"id": r_id, "values": vector, "metadata": metadata})
 
         namespace = settings.PINECONE_NAMESPACE
         upsert_timeout = getattr(settings, "PINECONE_UPSERT_TIMEOUT", 60.0)
         for start in range(0, len(records), settings.INGESTION_BATCH_SIZE):
-            batch = records[start: start + settings.INGESTION_BATCH_SIZE]
+            batch = records[start : start + settings.INGESTION_BATCH_SIZE]
             self._index.upsert(
                 namespace=namespace,
                 vectors=batch,
@@ -149,7 +153,10 @@ class UserDocumentVectorStore:
         )
 
         # Generate Jina embedding for the search query
-        from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
+        from app.services.retrieval.jina_embedding_service import (
+            get_jina_embedding_service,
+        )
+
         embed_service = get_jina_embedding_service()
         query_vector = embed_service.embed_query(query)
 
@@ -160,7 +167,9 @@ class UserDocumentVectorStore:
             filter=query_filter,
             include_metadata=True,
         )
-        return [self._query_match_to_document(match) for match in (results.matches or [])]
+        return [
+            self._query_match_to_document(match) for match in (results.matches or [])
+        ]
 
     def load_child_documents_for_bm25(
         self,
@@ -204,14 +213,67 @@ class UserDocumentVectorStore:
                 documents.append(Document(page_content=text, metadata=metadata))
 
             pagination_token = (
-                response.pagination.get("next")
-                if response.pagination
-                else None
+                response.pagination.get("next") if response.pagination else None
             )
             if not pagination_token:
                 break
 
         return documents[:limit]
+
+    def fetch_parents_batch(
+        self,
+        parent_ids: list[str],
+        tenant_id: str,
+        user_id: str,
+        document_ids: list[str] | None = None,
+    ) -> dict[str, Document]:
+        """Batch fetch parent chunks in a single Pinecone query call.
+
+        Filters by chunk_id $in parent_ids without in-memory caching.
+        """
+        if not parent_ids:
+            return {}
+
+        unique_pids = list(dict.fromkeys(pid for pid in parent_ids if pid))
+        if not unique_pids:
+            return {}
+
+        query_filter: dict[str, Any] = {
+            "tenant_id": {"$eq": tenant_id},
+            "user_id": {"$eq": user_id},
+            "chunk_type": {"$eq": "parent"},
+        }
+
+        if len(unique_pids) == 1:
+            query_filter["chunk_id"] = {"$eq": unique_pids[0]}
+        else:
+            query_filter["chunk_id"] = {"$in": unique_pids}
+
+        if document_ids:
+            clean_doc_ids = [d for d in document_ids if d]
+            if len(clean_doc_ids) == 1:
+                query_filter["document_id"] = {"$eq": clean_doc_ids[0]}
+            elif clean_doc_ids:
+                query_filter["document_id"] = {"$in": clean_doc_ids}
+
+        zero_vector = [0.0] * settings.PINECONE_EMBEDDING_DIMENSION
+        results = self._index.query(
+            namespace=settings.PINECONE_NAMESPACE,
+            vector=zero_vector,
+            top_k=max(len(unique_pids), 10),
+            filter=query_filter,
+            include_metadata=True,
+        )
+
+        matches = results.matches or []
+        doc_map: dict[str, Document] = {}
+        for match in matches:
+            doc = self._query_match_to_document(match)
+            chunk_id = doc.metadata.get("chunk_id")
+            if chunk_id:
+                doc_map[chunk_id] = doc
+
+        return doc_map
 
     def fetch_parent(
         self,
@@ -220,25 +282,15 @@ class UserDocumentVectorStore:
         user_id: str,
         document_id: str,
     ) -> Document | None:
-        query_filter = {
-            "tenant_id": {"$eq": tenant_id},
-            "user_id": {"$eq": user_id},
-            "document_id": {"$eq": document_id},
-            "chunk_type": {"$eq": "parent"},
-            "chunk_id": {"$eq": parent_id},
-        }
-
-        # Query using a zero vector for a metadata-only exact match filter
-        zero_vector = [0.0] * settings.PINECONE_EMBEDDING_DIMENSION
-        results = self._index.query(
-            namespace=settings.PINECONE_NAMESPACE,
-            vector=zero_vector,
-            top_k=1,
-            filter=query_filter,
-            include_metadata=True,
+        if not parent_id:
+            return None
+        doc_map = self.fetch_parents_batch(
+            parent_ids=[parent_id],
+            tenant_id=tenant_id,
+            user_id=user_id,
+            document_ids=[document_id] if document_id else None,
         )
-        matches = results.matches or []
-        return self._query_match_to_document(matches[0]) if matches else None
+        return doc_map.get(parent_id)
 
     # ------------------------------------------------------------------
     # Helpers

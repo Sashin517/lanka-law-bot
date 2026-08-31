@@ -12,6 +12,7 @@ delegates to the verify_node for a targeted fact-check pipeline.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from typing import Optional
@@ -90,10 +91,14 @@ async def quick_qa_node(
         )
         return await verify_node(state, config)
 
-    # ── Step 1: Retrieve from legal corpus ──
-    legal_results: list[dict] = []
-    if state.use_legal_corpus:
-        legal_results = _retrieval.search(
+    # ── Retrieve from legal corpus and user documents concurrently ──
+    emitter.emit_step_detail("quick_qa", "Searching legal knowledge base and documents")
+
+    async def _fetch_legal() -> list[dict]:
+        if not state.use_legal_corpus:
+            return []
+        return await asyncio.to_thread(
+            _retrieval.search,
             query=state.question,
             top_k=state.legal_top_k,
             year_filter=state.year_filter,
@@ -101,12 +106,12 @@ async def quick_qa_node(
             **retrieval_search_kwargs(state.ablation_config),
         )
 
-    # ── Step 2: Retrieve from user documents (if applicable) ──
-    user_doc_results: list[dict] = []
-    if state.use_user_documents and state.document_ids:
-        emitter.emit_step_detail("quick_qa", "Searching uploaded documents")
+    async def _fetch_user_docs() -> list[dict]:
+        if not (state.use_user_documents and state.document_ids):
+            return []
         try:
-            user_doc_results = get_user_doc_retrieval().search(
+            return await asyncio.to_thread(
+                get_user_doc_retrieval().search,
                 query=state.question,
                 document_ids=state.document_ids,
                 matter_id=state.matter_id,
@@ -115,6 +120,11 @@ async def quick_qa_node(
             )
         except Exception:
             logger.exception("User-document retrieval failed in quick_qa_node.")
+            return []
+
+    legal_res, user_doc_res = await asyncio.gather(_fetch_legal(), _fetch_user_docs())
+    legal_results: list[dict] = legal_res or []
+    user_doc_results: list[dict] = user_doc_res or []
 
     # Handle empty retrieval
     if not legal_results and not user_doc_results:

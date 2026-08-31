@@ -10,6 +10,7 @@ from langchain_classic.retrievers.document_compressors.cross_encoder_rerank impo
 )
 
 from app.core.config import settings
+from app.services.retrieval.cross_encoder_singleton import get_shared_cross_encoder
 from app.services.retrieval.retrieval_fusion import reciprocal_rank_fusion, retrieval_dedup_key
 from app.services.retrieval.user_document_vector_store import UserDocumentVectorStore
 
@@ -29,9 +30,10 @@ class UserDocumentRetrievalService:
 
     def __init__(self) -> None:
         self._vector_store = UserDocumentVectorStore()
-        cross_encoder = HuggingFaceCrossEncoder(model_name=settings.RERANKER_MODEL)
+        # In-memory cache for BM25Retriever keyed by (tenant_id, tuple of sorted document_ids)
+        self._bm25_cache: dict[tuple[str, tuple[str, ...]], BM25Retriever] = {}
         self._reranker = CrossEncoderReranker(
-            model=cross_encoder,
+            model=get_shared_cross_encoder(),
             top_n=settings.USER_DOC_RERANKER_TOP_N,
         )
 
@@ -68,18 +70,29 @@ class UserDocumentRetrievalService:
         unique = self._deduplicate(reranked)
 
         results: list[dict] = []
-        for child in unique[:top_k]:
+        candidate_children = unique[:top_k]
+        parent_map: dict[str, Document] = {}
+
+        if expand_parents:
+            needed_pids = [
+                child.metadata.get("parent_id")
+                for child in candidate_children
+                if child.metadata.get("parent_id")
+            ]
+            if needed_pids:
+                parent_map = self._vector_store.fetch_parents_batch(
+                    parent_ids=needed_pids,
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    document_ids=document_ids,
+                )
+
+        for child in candidate_children:
             parent = None
             if expand_parents:
                 parent_id = child.metadata.get("parent_id")
-                document_id = child.metadata.get("document_id")
-                if parent_id and document_id:
-                    parent = self._vector_store.fetch_parent(
-                        parent_id=parent_id,
-                        tenant_id=tenant_id,
-                        user_id=user_id,
-                        document_id=document_id,
-                    )
+                if parent_id:
+                    parent = parent_map.get(parent_id)
 
             results.append(
                 {
@@ -128,18 +141,22 @@ class UserDocumentRetrievalService:
         matter_id: str | None,
     ) -> list[Document]:
         try:
-            child_docs = self._vector_store.load_child_documents_for_bm25(
-                document_ids=document_ids,
-                tenant_id=tenant_id,
-                user_id=user_id,
-                matter_id=matter_id,
-            )
-            if not child_docs:
-                return []
-            retriever = BM25Retriever.from_documents(
-                child_docs,
-                k=max(settings.RETRIEVAL_CANDIDATES_K, settings.USER_DOC_RERANKER_TOP_N * 3),
-            )
+            cache_key = (tenant_id, tuple(sorted(document_ids)))
+            retriever = self._bm25_cache.get(cache_key)
+            if retriever is None:
+                child_docs = self._vector_store.load_child_documents_for_bm25(
+                    document_ids=document_ids,
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    matter_id=matter_id,
+                )
+                if not child_docs:
+                    return []
+                retriever = BM25Retriever.from_documents(
+                    child_docs,
+                    k=max(settings.RETRIEVAL_CANDIDATES_K, settings.USER_DOC_RERANKER_TOP_N * 3),
+                )
+                self._bm25_cache[cache_key] = retriever
             return retriever.invoke(query)
         except Exception:
             logger.exception("User-document sparse retrieval failed.")

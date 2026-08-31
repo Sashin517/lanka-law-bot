@@ -196,46 +196,70 @@ class LegalVectorStore:
             logger.warning("BM25 document search failed, falling back to empty list: %s", exc)
             return []
 
+    def fetch_parents_batch(self, parent_ids: list[str]) -> dict[str, Document]:
+        """Batch fetch multiple parent documents in a single Pinecone network call.
+        
+        Fetches up to 100 IDs per network call without in-memory caching.
+        """
+        if not parent_ids:
+            return {}
+
+        unique_ids = list(dict.fromkeys(pid for pid in parent_ids if pid))
+        if not unique_ids:
+            return {}
+
+        results: dict[str, Document] = {}
+        missing_ids = list(unique_ids)
+
+        # Attempt 1: Batch fetch from dense vector index
+        try:
+            # Pinecone fetch supports batches of IDs (standard batch size <= 100)
+            for i in range(0, len(missing_ids), 100):
+                batch_ids = missing_ids[i : i + 100]
+                response = self._dense_index.fetch(
+                    ids=batch_ids,
+                    namespace=self.dense_namespace,
+                )
+                vectors = getattr(response, "vectors", {}) or {}
+                for pid, vec in vectors.items():
+                    metadata = dict(getattr(vec, "metadata", {}) or {})
+                    body = metadata.get("text") or metadata.get("body") or ""
+                    metadata["point_id"] = pid
+                    metadata["retrieval_channel"] = "parent_fetch"
+                    if metadata.get("chunk_type") and metadata.get("chunk_type") != "parent":
+                        logger.warning("ID %s resolved to a non-parent document in dense index", pid)
+                    results[pid] = Document(page_content=body, metadata=metadata)
+        except Exception as exc:
+            logger.debug("Batch fetch parents from dense index failed: %s", exc)
+
+        # Attempt 2: Fetch any missing IDs from BM25 document index
+        remaining_ids = [pid for pid in unique_ids if pid not in results]
+        if remaining_ids:
+            try:
+                for i in range(0, len(remaining_ids), 100):
+                    batch_ids = remaining_ids[i : i + 100]
+                    response = self._bm25_index.documents.fetch(
+                        namespace=self.bm25_namespace,
+                        ids=batch_ids,
+                        include_fields=RETURN_FIELDS,
+                    )
+                    docs = getattr(response, "documents", {}) or {}
+                    for pid, parent in docs.items():
+                        if parent is not None:
+                            results[pid] = self._preview_document_to_langchain(
+                                parent, channel="parent_fetch"
+                            )
+            except Exception as exc:
+                logger.debug("Batch fetch parents from BM25 index failed: %s", exc)
+
+        return results
+
     def fetch_parent(self, parent_id: str) -> Document | None:
         """Fetch an exact parent document by ID from dense index or BM25 index."""
         if not parent_id:
             return None
-
-        # Attempt 1: Fetch from dense vector index
-        try:
-            response = self._dense_index.fetch(
-                ids=[parent_id],
-                namespace=self.dense_namespace,
-            )
-            vectors = getattr(response, "vectors", {}) or {}
-            if parent_id in vectors:
-                vec = vectors[parent_id]
-                metadata = dict(getattr(vec, "metadata", {}) or {})
-                body = metadata.get("text") or metadata.get("body") or ""
-                metadata["point_id"] = parent_id
-                metadata["retrieval_channel"] = "parent_fetch"
-                if metadata.get("chunk_type") and metadata.get("chunk_type") != "parent":
-                    logger.warning("ID %s resolved to a non-parent document in dense index", parent_id)
-                return Document(page_content=body, metadata=metadata)
-        except Exception as exc:
-            logger.debug("Fetch parent from dense index failed: %s", exc)
-
-        # Attempt 2: Fetch from BM25 document index
-        try:
-            response = self._bm25_index.documents.fetch(
-                namespace=self.bm25_namespace,
-                ids=[parent_id],
-                include_fields=RETURN_FIELDS,
-            )
-            docs = getattr(response, "documents", {}) or {}
-            parent = docs.get(parent_id)
-            if parent is not None:
-                doc = self._preview_document_to_langchain(parent, channel="parent_fetch")
-                return doc
-        except Exception as exc:
-            logger.debug("Fetch parent from BM25 index failed: %s", exc)
-
-        return None
+        batch_res = self.fetch_parents_batch([parent_id])
+        return batch_res.get(parent_id)
 
 
 class PineconeLegalRetriever(BaseRetriever):

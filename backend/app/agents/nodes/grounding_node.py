@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 # Prevents token overflow and reduces grounding latency for large contexts
 _MAX_CONTEXT_CHARS = 100_000
 
+# Agent-specific grounding thresholds
+_DRAFTING_AGENT_NAME = "drafting"
+
 # Dedicated LLM instance for grounding verification
 _grounding_llm = ChatGoogleGenerativeAI(
     model=settings.LLM_MODEL_NAME,
@@ -52,6 +55,47 @@ def _has_remaining_plan_steps(state: AgentState) -> bool:
     if plan.plan_type != "planned":
         return False
     return (state.current_step_index + 1) < len(plan.steps)
+
+
+def _apply_drafting_threshold(
+    grounding: GroundingResult,
+    current_agent: str | None,
+) -> GroundingResult:
+    """Apply a relaxed score-based threshold for the drafting agent.
+
+    Drafting output inherently contains template language, unfilled
+    placeholders, and proposed contractual terms that the strict
+    all-or-nothing ``is_grounded`` boolean from the LLM judge penalises
+    unfairly.  For the drafting agent *only*, we override ``is_grounded``
+    to ``True`` when ``grounding_score`` meets the configurable threshold
+    (default 80 %).
+
+    All other agents continue using the LLM judge's original boolean.
+    """
+    if current_agent != _DRAFTING_AGENT_NAME:
+        return grounding
+
+    threshold = settings.DRAFTING_GROUNDING_SCORE_THRESHOLD
+
+    if not grounding.is_grounded and grounding.grounding_score >= threshold:
+        logger.info(
+            "Drafting agent grounding override: score %.2f >= threshold %.2f. "
+            "Marking as grounded.",
+            grounding.grounding_score,
+            threshold,
+        )
+        return GroundingResult(
+            is_grounded=True,
+            grounding_score=grounding.grounding_score,
+            ungrounded_claims=grounding.ungrounded_claims,
+            feedback=(
+                f"Grounding accepted for drafting (score {grounding.grounding_score:.0%} "
+                f">= threshold {threshold:.0%}). "
+                f"Original feedback: {grounding.feedback}"
+            ),
+        )
+
+    return grounding
 
 
 @traceable(name="GroundingVerifier")
@@ -141,11 +185,15 @@ async def grounding_node(
             }
         )
 
-        grounding = GroundingResult(
+        raw_grounding = GroundingResult(
             is_grounded=raw.get("is_grounded", False),
             grounding_score=float(raw.get("grounding_score", 0.0)),
             ungrounded_claims=raw.get("ungrounded_claims", []),
             feedback=raw.get("feedback", ""),
+        )
+        # Apply drafting-specific relaxed threshold (no-op for other agents)
+        grounding = _apply_drafting_threshold(
+            raw_grounding, state.current_agent,
         )
     except Exception:
         logger.exception("Grounding verification LLM call failed.")
