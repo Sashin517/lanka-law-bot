@@ -1,15 +1,10 @@
 from __future__ import annotations
 
+import json
 import unittest
 from pathlib import Path
 from typing import Annotated
 from unittest.mock import MagicMock, patch
-
-from fastapi import Depends, FastAPI, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials
-from fastapi.testclient import TestClient
-from firebase_admin import auth as firebase_auth
-from pydantic import ValidationError
 
 from app.auth import firebase_auth as auth_module
 from app.auth.firebase_auth import (
@@ -18,6 +13,11 @@ from app.auth.firebase_auth import (
     init_firebase_admin,
 )
 from app.core.config import Settings, settings
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.testclient import TestClient
+from firebase_admin import auth as firebase_auth
+from pydantic import ValidationError
 
 
 def _bearer(token: str = "firebase-id-token") -> HTTPAuthorizationCredentials:
@@ -68,6 +68,48 @@ class FirebaseAdminInitializationTests(unittest.TestCase):
 
         self.assertIs(result, initialized_app)
         certificate.assert_called_once_with(str(resolved_path))
+        initialize.assert_called_once_with(
+            credential,
+            options={"projectId": "law-bot-production"},
+        )
+
+    def test_service_account_json_initialization_uses_secret_payload(self) -> None:
+        initialized_app = MagicMock(name="firebase_app")
+        initialized_app.project_id = "law-bot-production"
+        credential = MagicMock(name="credential")
+        service_account = {
+            "type": "service_account",
+            "project_id": "law-bot-production",
+            "private_key": "redacted-for-test",
+            "client_email": "firebase@example.test",
+        }
+
+        with (
+            patch.object(
+                auth_module.firebase_admin,
+                "get_app",
+                side_effect=ValueError("default app missing"),
+            ),
+            patch.object(
+                auth_module.firebase_admin,
+                "initialize_app",
+                return_value=initialized_app,
+            ) as initialize,
+            patch.object(settings, "FIREBASE_SERVICE_ACCOUNT_PATH", ""),
+            patch.object(
+                settings,
+                "FIREBASE_SERVICE_ACCOUNT_JSON",
+                json.dumps(service_account),
+            ),
+            patch.object(settings, "FIREBASE_PROJECT_ID", "law-bot-production"),
+            patch.object(
+                auth_module.credentials, "Certificate", return_value=credential
+            ) as certificate,
+        ):
+            result = init_firebase_admin()
+
+        self.assertIs(result, initialized_app)
+        certificate.assert_called_once_with(service_account)
         initialize.assert_called_once_with(
             credential,
             options={"projectId": "law-bot-production"},
@@ -265,7 +307,9 @@ class FirebaseTokenDependencyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(raised.status_code, 503)
         self.assertEqual(raised.detail, "Authentication service is unavailable.")
         self.assertNotIn(sensitive_message, raised.detail)
-        self.assertIn("Unexpected Firebase token verification failure", "\n".join(captured.output))
+        self.assertIn(
+            "Unexpected Firebase token verification failure", "\n".join(captured.output)
+        )
 
     async def test_initialization_failure_returns_503_without_verification(
         self,

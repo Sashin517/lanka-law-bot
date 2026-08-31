@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import Mapping
 from pathlib import Path
@@ -68,9 +69,9 @@ async def get_current_user_id(
         logger.error("Firebase authentication is not configured: %s", exc)
         raise _authentication_unavailable() from exc
 
-    should_check_revoked = (
-        settings.FIREBASE_CHECK_REVOKED_TOKENS
-        and bool(settings.FIREBASE_SERVICE_ACCOUNT_PATH.strip())
+    should_check_revoked = settings.FIREBASE_CHECK_REVOKED_TOKENS and bool(
+        settings.FIREBASE_SERVICE_ACCOUNT_PATH.strip()
+        or settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip()
     )
     try:
         decoded = await run_in_threadpool(
@@ -87,11 +88,15 @@ async def get_current_user_id(
     except firebase_auth.InvalidIdTokenError as exc:
         raise _unauthorized("Invalid authentication token.") from exc
     except firebase_auth.CertificateFetchError as exc:
-        logger.warning("Firebase public-key retrieval failed: %s - %s", type(exc).__name__, exc)
+        logger.warning(
+            "Firebase public-key retrieval failed: %s - %s", type(exc).__name__, exc
+        )
         raise _authentication_unavailable() from exc
     except firebase_exceptions.FirebaseError as exc:
         logger.warning(
-            "Firebase token verification service failed: %s - %s", type(exc).__name__, exc
+            "Firebase token verification service failed: %s - %s",
+            type(exc).__name__,
+            exc,
         )
         raise _authentication_unavailable() from exc
     except Exception as exc:
@@ -120,11 +125,29 @@ def _get_default_app() -> firebase_admin.App | None:
 
 def _initialize_default_app() -> firebase_admin.App:
     service_account_path = settings.FIREBASE_SERVICE_ACCOUNT_PATH.strip()
+    service_account_json = settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip()
     project_id = settings.FIREBASE_PROJECT_ID.strip()
     options = {"projectId": project_id} if project_id else None
 
     app: firebase_admin.App | None = None
     try:
+        if service_account_json:
+            try:
+                service_account_info = json.loads(service_account_json)
+            except json.JSONDecodeError as exc:
+                raise FirebaseConfigurationError(
+                    "Configured Firebase service-account JSON is invalid."
+                ) from exc
+            if not isinstance(service_account_info, dict):
+                raise FirebaseConfigurationError(
+                    "Configured Firebase service-account JSON must be an object."
+                )
+            credential = credentials.Certificate(service_account_info)
+            app = firebase_admin.initialize_app(credential, options=options)
+            _require_project_identity(app)
+            logger.info("Firebase Admin initialized from an environment secret.")
+            return app
+
         if service_account_path:
             path = Path(service_account_path).expanduser().resolve()
             if not path.is_file():

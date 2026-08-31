@@ -8,6 +8,7 @@ asyncpg. Both paths share one declarative metadata registry and database.
 from __future__ import annotations
 
 import importlib
+import ssl
 import threading
 from collections.abc import AsyncGenerator, Generator
 
@@ -50,7 +51,17 @@ def _create_async_engine() -> AsyncEngine:
         max_overflow=settings.POSTGRES_MAX_OVERFLOW,
         pool_pre_ping=True,
         echo=False,
+        connect_args=postgres_async_connect_args(),
     )
+
+
+def postgres_async_connect_args() -> dict[str, object]:
+    """Return a certificate-verifying SSL context for managed PostgreSQL."""
+
+    sslmode = str(settings.postgres_url.query.get("ssl", "")).strip().lower()
+    if sslmode in {"require", "verify-ca", "verify-full"}:
+        return {"ssl": ssl.create_default_context()}
+    return {}
 
 
 postgres_engine = _create_async_engine()

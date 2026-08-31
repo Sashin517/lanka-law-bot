@@ -1,0 +1,4 @@
+environment = "staging"
+region      = "us-central1"
+
+# Use distinct image tags and a staging alert address.

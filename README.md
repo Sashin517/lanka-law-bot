@@ -75,6 +75,14 @@ The Vector Database (`chroma_db`) is ignored by Git to keep the repository light
 
 Open your web browser and navigate to **`http://localhost:3000`**. You can now type a legal query and the UI will communicate directly with your local AI backend.
 
+### Containerized local stack
+
+Copy `backend/.env.example` to `backend/.env`, add the required development credentials, and run `docker compose up --build`. The stack applies Alembic migrations before starting the API and waits for service health checks before starting dependent containers.
+
+## Google Cloud production deployment
+
+The repository includes production Docker images, Cloud Build delivery, modular Terraform for Cloud Run and supporting GCP services, Neon migration automation, GCS-backed uploads, structured logging, monitoring, and operator scripts. Follow the [GCP production deployment runbook](docs/deployment/gcp-production.md) from bootstrap through validation and rollback.
+
 ---
 
 ## 🔄 Complete User Flow

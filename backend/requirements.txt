@@ -29,3 +29,4 @@ redis
 neo4j>=5.20.0
 neo4j-graphrag>=1.5.0
 google-genai
+google-cloud-storage>=2.18.0,<4.0.0

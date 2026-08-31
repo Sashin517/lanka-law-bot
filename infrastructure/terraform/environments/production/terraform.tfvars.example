@@ -1,0 +1,4 @@
+environment = "production"
+region      = "us-central1"
+
+# Copy the remaining required values from ../../terraform.tfvars.example.

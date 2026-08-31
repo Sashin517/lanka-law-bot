@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
-from datetime import datetime
+from datetime import UTC, datetime
 
 from app.database.postgres_session import SessionLocal, init_db
 from app.models.document import DocumentChunk, IngestionJob, UserDocument
@@ -21,6 +21,12 @@ logger = logging.getLogger(__name__)
 _INGESTION_SEMAPHORE = threading.BoundedSemaphore(2)
 
 
+def _utc_now() -> datetime:
+    """Return naive UTC for compatibility with the existing database columns."""
+
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 def process_document_ingestion(job_id: str) -> None:
     with _INGESTION_SEMAPHORE:
         init_db()
@@ -36,7 +42,7 @@ def process_document_ingestion(job_id: str) -> None:
                 return
 
             job.status = "processing"
-            job.started_at = datetime.utcnow()
+            job.started_at = _utc_now()
             job.attempt_count += 1
             document.status = "processing"
             document.error_message = None
@@ -48,12 +54,20 @@ def process_document_ingestion(job_id: str) -> None:
                 document.matter_id,
                 document.id,
             )
-            parsed = DocumentParser().parse_to_markdown(
-                document.stored_path,
-                str(markdown_path),
-                document.document_type if document.document_type != "unknown" else None,
+            with storage.materialize(document.stored_path) as source_path:
+                parsed = DocumentParser().parse_to_markdown(
+                    source_path,
+                    str(markdown_path),
+                    document.document_type
+                    if document.document_type != "unknown"
+                    else None,
+                )
+            document.markdown_path = storage.persist_markdown(
+                parsed.markdown_path,
+                document.tenant_id,
+                document.matter_id,
+                document.id,
             )
-            document.markdown_path = parsed.markdown_path
             if document.document_type == "unknown":
                 document.document_type = parsed.detected_type
             db.commit()
@@ -85,7 +99,7 @@ def process_document_ingestion(job_id: str) -> None:
             if has_existing_chunks or (document.chunk_count or 0) > 0:
                 try:
                     vector_store.delete_document(document.id, document.tenant_id)
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 -- best-effort remote cleanup
                     logger.warning(
                         "Non-fatal warning cleaning up existing Pinecone records for document=%s: %s",
                         document.id,
@@ -120,7 +134,7 @@ def process_document_ingestion(job_id: str) -> None:
             document.chunk_count = len(chunks)
             document.error_message = None
             job.status = "completed"
-            job.completed_at = datetime.utcnow()
+            job.completed_at = _utc_now()
             job.error_message = None
             db.commit()
             logger.info(
@@ -145,7 +159,7 @@ def _fail_job(
 ) -> None:
     if job:
         job.status = "failed"
-        job.completed_at = datetime.utcnow()
+        job.completed_at = _utc_now()
         job.error_message = error_message
     if document:
         document.status = "failed"

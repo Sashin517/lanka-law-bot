@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 from __future__ import annotations
 
 import logging
@@ -15,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.api_routes import api_router
 from app.auth.firebase_auth import init_firebase_admin
 from app.core.config import settings
+from app.core.logging_config import configure_logging
 from app.database.postgres_session import (
     check_postgres_connection,
     close_postgres,
@@ -22,11 +24,7 @@ from app.database.postgres_session import (
     init_postgres,
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(name)-30s | %(levelname)-7s | %(message)s",
-)
+configure_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -56,12 +54,19 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.effective_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+
+@app.get("/healthz", tags=["infrastructure"], include_in_schema=False)
+async def health_check() -> dict[str, str]:
+    """Return a dependency-free liveness response for Cloud Run probes."""
+
+    return {"status": "healthy"}
 
 
 app.include_router(api_router)

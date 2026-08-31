@@ -4,7 +4,7 @@ import os
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy.engine import URL
+from sqlalchemy.engine import URL, make_url
 
 # Resolve paths relative to the *backend* directory
 _BACKEND_DIR = os.path.dirname(
@@ -16,10 +16,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://10.148.67.159:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
     ]
+    CORS_ORIGINS_STR: str = ""
+    CORS_INCLUDE_LOCALHOST: bool = True
 
     BASE_DIR: str = _BACKEND_DIR
     DATA_PATH: str = os.path.join(_BACKEND_DIR, "data")
@@ -28,6 +27,10 @@ class Settings(BaseSettings):
 
     USER_UPLOAD_DIR: str = os.path.join(_BACKEND_DIR, "storage", "uploads")
     USER_MARKDOWN_DIR: str = os.path.join(_BACKEND_DIR, "storage", "processed_markdown")
+    STORAGE_BACKEND: str = "local"
+    GCS_BUCKET_NAME: str = ""
+    GCS_OBJECT_PREFIX: str = "documents"
+    EPHEMERAL_STORAGE_ROOT: str = "/tmp/lankalawbot"
     PINECONE_API_KEY: str = ""
     PINECONE_INDEX_HOST: str = ""
     PINECONE_INDEX_NAME: str = "lawdex-index"
@@ -87,10 +90,11 @@ class Settings(BaseSettings):
     LLM_MAX_TOKENS: int = 2048
 
     # Grounding thresholds — the drafting agent uses a relaxed score-based
-    # threshold because its output contains template language, placeholders,
-    # and proposed terms that the strict all-or-nothing gate penalises unfairly.
+
     DRAFTING_GROUNDING_SCORE_THRESHOLD: float = Field(
-        default=0.80, ge=0.0, le=1.0,
+        default=0.80,
+        ge=0.0,
+        le=1.0,
     )
 
     # === Neo4j Settings ===
@@ -130,10 +134,16 @@ class Settings(BaseSettings):
     POSTGRES_POOL_SIZE: int = Field(default=10, ge=1)
     POSTGRES_MAX_OVERFLOW: int = Field(default=5, ge=0)
     POSTGRES_AUTO_CREATE_SCHEMA: bool = False
+    POSTGRES_SSLMODE: str = Field(
+        default="",
+        pattern=r"^(|disable|allow|prefer|require|verify-ca|verify-full)$",
+    )
+    DATABASE_URL: str = ""
 
     # Firebase Admin uses this file when supplied and otherwise relies on
     # Application Default Credentials.
     FIREBASE_SERVICE_ACCOUNT_PATH: str = ""
+    FIREBASE_SERVICE_ACCOUNT_JSON: str = ""
     FIREBASE_PROJECT_ID: str = ""
     FIREBASE_CHECK_REVOKED_TOKENS: bool = False
     FIREBASE_CLOCK_SKEW_SECONDS: int = Field(default=0, ge=0, le=60)
@@ -147,7 +157,26 @@ class Settings(BaseSettings):
 
     @property
     def postgres_url(self) -> URL:
-        """Return a structured URL without hand-assembling credentials."""
+        """Return the asyncpg URL, preferring a complete managed-database DSN."""
+        url = self._base_postgres_url().set(drivername="postgresql+asyncpg")
+        query = dict(url.query)
+        # asyncpg calls this option ``ssl``; psycopg calls it ``sslmode``.
+        sslmode = query.pop("sslmode", None) or self.POSTGRES_SSLMODE.strip()
+        # Some managed-provider URLs advertise libpq-only connection options.
+        query.pop("channel_binding", None)
+        query.pop("application_name", None)
+        if sslmode:
+            query["ssl"] = sslmode
+        return url.set(query=query)
+
+    def _base_postgres_url(self) -> URL:
+        configured_url = self.DATABASE_URL.strip()
+        if configured_url:
+            url = make_url(configured_url)
+            if not url.drivername.startswith("postgresql"):
+                raise ValueError("DATABASE_URL must use the PostgreSQL dialect")
+            return url
+
         return URL.create(
             drivername="postgresql+asyncpg",
             username=self.POSTGRES_USER,
@@ -165,12 +194,35 @@ class Settings(BaseSettings):
     @property
     def postgres_sync_url(self) -> URL:
         """Return the PostgreSQL URL used by existing synchronous services."""
-        return self.postgres_url.set(drivername="postgresql+psycopg")
+        url = self._base_postgres_url().set(drivername="postgresql+psycopg")
+        query = dict(url.query)
+        sslmode = query.pop("ssl", None) or query.get("sslmode")
+        if not sslmode:
+            sslmode = self.POSTGRES_SSLMODE.strip()
+        if sslmode:
+            query["sslmode"] = sslmode
+        return url.set(query=query)
 
     @property
     def postgres_sync_dsn(self) -> str:
         """Return the synchronous PostgreSQL DSN with escaped credentials."""
         return self.postgres_sync_url.render_as_string(hide_password=False)
+
+    @property
+    def effective_cors_origins(self) -> list[str]:
+        """Return stable, de-duplicated local and deployment CORS origins."""
+        origins = [*self.CORS_ORIGINS] if self.CORS_INCLUDE_LOCALHOST else []
+        if self.CORS_ORIGINS_STR.strip():
+            origins.extend(self.CORS_ORIGINS_STR.split(","))
+
+        result: list[str] = []
+        seen: set[str] = set()
+        for origin in origins:
+            normalized = origin.strip().rstrip("/")
+            if normalized and normalized not in seen:
+                result.append(normalized)
+                seen.add(normalized)
+        return result
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(_BACKEND_DIR, ".env"),
