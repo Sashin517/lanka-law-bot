@@ -80,5 +80,26 @@ yarn-error.log*
 **/.terraform/
 *.tfstate
 *.tfstate.*
+*.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+tfplan
 *.tfplan
+*.plan
 crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local container orchestration overrides may contain credentials
+docker-compose.override.yml
+docker-compose.override.yaml
+compose.override.yml
+compose.override.yaml
+
+# Local Google Cloud credential exports
+**/application_default_credentials.json
+**/gcp-credentials*.json
