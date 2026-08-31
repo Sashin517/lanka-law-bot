@@ -103,3 +103,6 @@ compose.override.yaml
 # Local Google Cloud credential exports
 **/application_default_credentials.json
 **/gcp-credentials*.json
+
+*firebase-adminsdk*.json
+repomix-output.xml
