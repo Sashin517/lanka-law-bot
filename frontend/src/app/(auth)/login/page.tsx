@@ -73,7 +73,7 @@ export default function LoginPage() {
             onChange={(event) => setEmail(event.target.value)}
             required
             autoComplete="email"
-            className="bg-app-elevated p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg pl-4"
           />
 
           <label htmlFor="password">Password</label>
@@ -85,7 +85,7 @@ export default function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
             required
             autoComplete="current-password"
-            className="bg-app-elevated p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg pl-4"
           />
 
           <p className="text-sm text-center">

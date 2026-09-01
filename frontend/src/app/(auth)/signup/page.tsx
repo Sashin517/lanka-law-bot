@@ -81,7 +81,7 @@ export default function SignupPage() {
             onChange={(event) => setDisplayName(event.target.value)}
             required
             autoComplete="name"
-            className="bg-app-elevated p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg pl-4"
           />
 
           <label htmlFor="email">Email</label>
@@ -93,7 +93,7 @@ export default function SignupPage() {
             onChange={(event) => setEmail(event.target.value)}
             required
             autoComplete="email"
-            className="bg-app-elevated p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg pl-4"
           />
 
           <label htmlFor="password">Password</label>
@@ -106,7 +106,7 @@ export default function SignupPage() {
             required
             minLength={6}
             autoComplete="new-password"
-            className="bg-app-elevated p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg pl-4"
           />
 
           <label htmlFor="confirm-password">Confirm Password</label>
@@ -119,7 +119,7 @@ export default function SignupPage() {
             required
             minLength={6}
             autoComplete="new-password"
-            className="bg-app-elevated p-2 rounded-lg"
+            className="bg-app-elevated p-2 rounded-lg pl-4"
           />
 
           <button
