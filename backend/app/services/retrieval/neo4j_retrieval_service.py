@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 import logging
+from threading import Lock
 from typing import Any, Dict, List, Optional
 
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_core.documents import Document
 from neo4j import GraphDatabase
 
-from evaluation.ablation import describe_neo4j_effects, retrieval_search_kwargs
 from app.core.config import settings
 from app.services.retrieval.jina_embedding_service import get_jina_embedding_service
 from app.services.retrieval.neo4j_graph_store import Neo4jGraphStore
 from app.services.retrieval.retrieval_fusion import retrieval_dedup_key
+from evaluation.ablation import describe_neo4j_effects, retrieval_search_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -28,19 +28,26 @@ class Neo4jRetrievalService:
         )
         self._driver.verify_connectivity()
         self._store = Neo4jGraphStore(self._driver)
-        self._cross_encoder: HuggingFaceCrossEncoder | None = None
+        self._cross_encoder: Any | None = None
+        self._cross_encoder_lock = Lock()
 
     def close(self) -> None:
         self._driver.close()
 
-    def _reranker(self) -> HuggingFaceCrossEncoder:
+    def _reranker(self) -> Any:
         # Lazy loading avoids network/model initialization when reranking is
         # disabled by an ablation or no candidates were retrieved.
         if self._cross_encoder is None:
-            logger.info("Loading cross-encoder '%s'", settings.RERANKER_MODEL)
-            self._cross_encoder = HuggingFaceCrossEncoder(
-                model_name=settings.RERANKER_MODEL
-            )
+            with self._cross_encoder_lock:
+                if self._cross_encoder is None:
+                    logger.info("Loading cross-encoder '%s'", settings.RERANKER_MODEL)
+                    from langchain_community.cross_encoders import (
+                        HuggingFaceCrossEncoder,
+                    )
+
+                    self._cross_encoder = HuggingFaceCrossEncoder(
+                        model_name=settings.RERANKER_MODEL
+                    )
         return self._cross_encoder
 
     @staticmethod
@@ -287,10 +294,13 @@ class Neo4jRetrievalService:
 
 
 _instance: Optional[Neo4jRetrievalService] = None
+_instance_lock = Lock()
 
 
 def get_neo4j_retrieval_service() -> Neo4jRetrievalService:
     global _instance
     if _instance is None:
-        _instance = Neo4jRetrievalService()
+        with _instance_lock:
+            if _instance is None:
+                _instance = Neo4jRetrievalService()
     return _instance

@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from collections.abc import Awaitable, Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from typing import Annotated, Any, TypeVar
 from uuid import uuid4
 
@@ -69,11 +69,21 @@ def get_conversation_graph() -> Any:
     return get_graph()
 
 
+def get_conversation_graph_loader() -> Callable[[], Any]:
+    """Return a cheap loader so graph imports happen inside the SSE producer."""
+
+    return get_graph
+
+
 ConversationServiceDependency = Annotated[
     ConversationService,
     Depends(get_conversation_service),
 ]
 ConversationGraphDependency = Annotated[Any, Depends(get_conversation_graph)]
+ConversationGraphLoaderDependency = Annotated[
+    Callable[[], Any],
+    Depends(get_conversation_graph_loader),
+]
 
 
 @router.post(
@@ -221,7 +231,7 @@ async def send_message_stream(
     body: SendMessageRequest,
     user_id: CurrentUserId,
     service: ConversationServiceDependency,
-    graph: ConversationGraphDependency,
+    graph_loader: ConversationGraphLoaderDependency,
 ) -> StreamingResponse:
     """Persist one conversation turn while streaming its graph activity."""
 
@@ -229,9 +239,7 @@ async def send_message_stream(
     channel = event_bus.create_channel(session_id)
     stream_manager = ExecutionStreamManager(session_id, event_bus)
     graph_emitter = FinalSuppressingEmitter(stream_manager)
-    graph_config: RunnableConfig = {
-        "configurable": {"stream_emitter": graph_emitter}
-    }
+    graph_config: RunnableConfig = {"configurable": {"stream_emitter": graph_emitter}}
 
     logger.info(
         "Conversation SSE stream created: session=%s conversation=%s mode=%s",
@@ -243,6 +251,10 @@ async def send_message_stream(
     async def run_message() -> None:
         try:
             stream_manager.emit_stream_start(body.content, body.query_mode.value)
+            # Import and build the graph in a worker only after the first SSE event
+            # is queued.  Heartbeats remain available while cold initialization is
+            # in progress, and the event loop is never blocked by model imports.
+            graph = await asyncio.to_thread(graph_loader)
             response = await _execute_message(
                 conversation_id=conversation_id,
                 body=body,

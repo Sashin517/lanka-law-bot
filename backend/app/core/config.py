@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     EPHEMERAL_STORAGE_ROOT: str = "/tmp/lankalawbot"
     PINECONE_API_KEY: str = ""
     PINECONE_INDEX_HOST: str = ""
-    PINECONE_INDEX_NAME: str = "lawdex-index"
+    PINECONE_INDEX_NAME: str = "lawdex-doc-index"
     PINECONE_NAMESPACE: str = "user_documents"
 
     PINECONE_LEGAL_INDEX_HOST: str = ""
@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     DOCLING_ENABLE_TABLE_STRUCTURE: bool = False
     DOCLING_PREFER_NATIVE_PDF_TEXT: bool = True
     DOCLING_NATIVE_TEXT_MIN_CHARS: int = 200
-    INGESTION_BATCH_SIZE: int = 32
+    INGESTION_BATCH_SIZE: int = 64
     PINECONE_UPSERT_TIMEOUT: float = 60.0
     USER_PARENT_CHUNK_SIZE: int = 2200
     USER_PARENT_CHUNK_OVERLAP: int = 250

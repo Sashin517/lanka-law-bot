@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import json
+import threading
 import unittest
 from copy import deepcopy
 from typing import Any
@@ -219,6 +221,9 @@ class ConversationRouteTests(unittest.TestCase):
         app.dependency_overrides[conversation_routes.get_conversation_graph] = lambda: (
             self.graph
         )
+        app.dependency_overrides[conversation_routes.get_conversation_graph_loader] = (
+            lambda: lambda: self.graph
+        )
         self.app = app
         self.client = TestClient(app)
 
@@ -384,7 +389,9 @@ class ConversationRouteTests(unittest.TestCase):
             body = "\n".join(response.iter_lines())
 
         self.assertEqual(response.status_code, 200, body)
-        self.assertTrue(response.headers["content-type"].startswith("text/event-stream"))
+        self.assertTrue(
+            response.headers["content-type"].startswith("text/event-stream")
+        )
         events = _parse_sse_events(body)
         self.assertEqual(
             [event["event_type"] for event in events],
@@ -407,9 +414,10 @@ class ConversationRouteTests(unittest.TestCase):
     def test_streaming_graph_failure_emits_terminal_error_without_assistant(
         self,
     ) -> None:
-        self.app.dependency_overrides[conversation_routes.get_conversation_graph] = (
-            lambda: _FakeGraph(failure=RuntimeError("private provider failure"))
-        )
+        failing_graph = _FakeGraph(failure=RuntimeError("private provider failure"))
+        self.app.dependency_overrides[
+            conversation_routes.get_conversation_graph_loader
+        ] = lambda: lambda: failing_graph
 
         with self.client.stream(
             "POST",
@@ -443,6 +451,9 @@ class ConversationAuthenticationTests(unittest.TestCase):
         app.dependency_overrides[conversation_routes.get_conversation_graph] = (
             _FakeGraph
         )
+        app.dependency_overrides[conversation_routes.get_conversation_graph_loader] = (
+            lambda: _FakeGraph
+        )
 
         with TestClient(app) as client:
             response = client.get("/api/conversations")
@@ -451,6 +462,65 @@ class ConversationAuthenticationTests(unittest.TestCase):
         self.assertEqual(response.headers["www-authenticate"], "Bearer")
         self.assertEqual(service.calls, [])
 
+
+class ConversationEarlyStreamTests(unittest.IsolatedAsyncioTestCase):
+    async def test_stream_start_and_heartbeat_precede_graph_initialization(
+        self,
+    ) -> None:
+        service = _FakeConversationService()
+        graph = _FakeGraph()
+        loader_started = threading.Event()
+        release_loader = threading.Event()
+
+        def blocked_graph_loader() -> _FakeGraph:
+            loader_started.set()
+            if not release_loader.wait(timeout=5):
+                raise TimeoutError("test graph loader was not released")
+            return graph
+
+        real_stream_channel = conversation_routes.stream_channel
+
+        def fast_stream_channel(**kwargs: Any) -> Any:
+            return real_stream_channel(**kwargs, heartbeat_seconds=0.01)
+
+        try:
+            with patch.object(
+                conversation_routes,
+                "stream_channel",
+                side_effect=fast_stream_channel,
+            ):
+                response = await conversation_routes.send_message_stream(
+                    conversation_id="conversation-1",
+                    body=conversation_routes.SendMessageRequest(
+                        content="What does section 3 provide?"
+                    ),
+                    user_id="firebase-user-1",
+                    service=service,
+                    graph_loader=blocked_graph_loader,
+                )
+
+            iterator = response.body_iterator
+            first_frame = await asyncio.wait_for(anext(iterator), timeout=1)
+            self.assertEqual(
+                _parse_sse_events(first_frame)[0]["event_type"],
+                "stream_start",
+            )
+            self.assertTrue(
+                await asyncio.to_thread(loader_started.wait, 1),
+                "graph loader did not start in its worker thread",
+            )
+            heartbeat = await asyncio.wait_for(anext(iterator), timeout=1)
+            self.assertEqual(heartbeat, ": heartbeat\n\n")
+
+            release_loader.set()
+            remaining_frames = [frame async for frame in iterator]
+            terminal_events = _parse_sse_events("".join(remaining_frames))
+            self.assertEqual(terminal_events[-1]["event_type"], "final")
+        finally:
+            release_loader.set()
+
+
+class ConversationStreamAuthenticationTests(unittest.TestCase):
     def test_conversation_stream_fails_closed_before_starting_work(self) -> None:
         service = _FakeConversationService()
         app = FastAPI()

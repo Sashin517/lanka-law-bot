@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import logging
+from threading import Lock
+from typing import Any
 
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
-from langchain_classic.retrievers.document_compressors.cross_encoder_rerank import (
-    CrossEncoderReranker,
-)
 
 from app.core.config import settings
 from app.services.retrieval.cross_encoder_singleton import get_shared_cross_encoder
-from app.services.retrieval.retrieval_fusion import reciprocal_rank_fusion, retrieval_dedup_key
+from app.services.retrieval.retrieval_fusion import (
+    reciprocal_rank_fusion,
+    retrieval_dedup_key,
+)
 from app.services.retrieval.user_document_vector_store import UserDocumentVectorStore
 
 logger = logging.getLogger(__name__)
@@ -31,11 +31,25 @@ class UserDocumentRetrievalService:
     def __init__(self) -> None:
         self._vector_store = UserDocumentVectorStore()
         # In-memory cache for BM25Retriever keyed by (tenant_id, tuple of sorted document_ids)
-        self._bm25_cache: dict[tuple[str, tuple[str, ...]], BM25Retriever] = {}
-        self._reranker = CrossEncoderReranker(
-            model=get_shared_cross_encoder(),
-            top_n=settings.USER_DOC_RERANKER_TOP_N,
-        )
+        self._bm25_cache: dict[tuple[str, tuple[str, ...]], Any] = {}
+        self._reranker: Any | None = None
+        self._reranker_lock = Lock()
+
+    def _get_reranker(self) -> Any:
+        """Build the reranker only after retrieval has produced candidates."""
+
+        if self._reranker is None:
+            with self._reranker_lock:
+                if self._reranker is None:
+                    from langchain_classic.retrievers.document_compressors.cross_encoder_rerank import (
+                        CrossEncoderReranker,
+                    )
+
+                    self._reranker = CrossEncoderReranker(
+                        model=get_shared_cross_encoder(),
+                        top_n=settings.USER_DOC_RERANKER_TOP_N,
+                    )
+        return self._reranker
 
     def search(
         self,
@@ -152,6 +166,8 @@ class UserDocumentRetrievalService:
                 )
                 if not child_docs:
                     return []
+                from langchain_community.retrievers import BM25Retriever
+
                 retriever = BM25Retriever.from_documents(
                     child_docs,
                     k=max(settings.RETRIEVAL_CANDIDATES_K, settings.USER_DOC_RERANKER_TOP_N * 3),
@@ -166,7 +182,7 @@ class UserDocumentRetrievalService:
         if not documents:
             return []
         try:
-            return list(self._reranker.compress_documents(documents, query))
+            return list(self._get_reranker().compress_documents(documents, query))
         except Exception:
             logger.exception("User-document reranking failed; using fused order.")
             return documents[: settings.USER_DOC_RERANKER_TOP_N]
